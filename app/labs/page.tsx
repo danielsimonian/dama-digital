@@ -7,16 +7,16 @@ export const metadata = {
 };
 
 export default function LabsPage() {
-  const apps = [
-    {
-      id: 'pay-poker',
-      name: 'Pay Poker',
-      description: 'Gerenciador completo de torneio de poker com cálculo automático de pagamentos',
-      icon: '🎰',
-      color: 'from-green-500 to-emerald-500',
-      href: '/labs/pay-poker'
-    }
-  ];
+    const apps = [
+      {
+        id: 'poker-pay',
+        name: 'Poker Pay',
+        description: 'Gerenciador completo de torneio de poker com cálculo automático de pagamentos',
+        icon: '🎰',
+        color: 'from-green-500 to-emerald-500',
+        href: '/labs/poker-pay'
+      }
+    ];
 
   return (
     <div className="min-h-screen bg-black text-white">

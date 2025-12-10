@@ -19,8 +19,8 @@ interface Config {
   maxRebuys: number;
 }
 
-export default function PayPoker() {
-  const [config, setConfig] = useState<Config>({
+export default function PokerPay() {
+    const [config, setConfig] = useState<Config>({
     buyIn: 50,
     rebuy: 50,
     addOn: 100,
