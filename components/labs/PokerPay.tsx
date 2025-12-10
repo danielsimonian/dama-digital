@@ -125,17 +125,26 @@ export default function PokerPay() {
   };
 
   return (
+    
     <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-gray-900 p-3 pb-20">
+      
       <div className="max-w-2xl mx-auto">
         {/* Header */}
+        {/* Botão Voltar */}
+        <a 
+          href="/labs" 
+          className="inline-flex items-center gap-2 text-purple-400 hover:text-purple-300 mb-4 transition-colors">
+            ← Voltar para Labs
+        </a>
         <div className="bg-gray-800 rounded-xl shadow-2xl p-4 mb-4">
           <div className="flex items-center justify-between">
+            
             <div>
               <h1 className="text-xl font-bold text-green-400 flex items-center gap-2">
                 <Trophy className="w-6 h-6" />
-                Torneio Poker
+                Poker Pay
               </h1>
-              <p className="text-xs text-gray-400">Texas Hold'em</p>
+              <p className="text-xs text-gray-400">by DAMA Digital</p>
             </div>
             <button
               onClick={() => setShowConfig(!showConfig)}
