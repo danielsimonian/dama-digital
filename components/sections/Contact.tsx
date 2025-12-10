@@ -1,4 +1,5 @@
 import { Instagram, Youtube, MessageCircle } from 'lucide-react';
+import { socialLinks } from '@/lib/constants';
 
 export default function Contact() {
   return (
@@ -43,13 +44,31 @@ export default function Contact() {
             </div>
 
             <div className="flex justify-center space-x-4">
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+              <a 
+                href={socialLinks.instagram} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                aria-label="Instagram"
+              >
                 <Instagram size={20} />
               </a>
-              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+              <a 
+                href={socialLinks.youtube} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                aria-label="YouTube"
+              >
                 <Youtube size={20} />
               </a>
-              <a href="https://wa.me/" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform">
+              <a 
+                href={socialLinks.whatsapp} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
+                aria-label="WhatsApp"
+              >
                 <MessageCircle size={20} />
               </a>
             </div>

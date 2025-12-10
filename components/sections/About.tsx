@@ -15,20 +15,41 @@ export default function About() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto mb-16">
-          {team.map((member, index) => (
-            <div key={index} className="group">
-              <div className={`bg-gradient-to-br ${member.gradient === 'from-purple-500 to-pink-500' ? 'from-purple-500/10 to-pink-500/10' : 'from-blue-500/10 to-purple-500/10'} p-8 rounded-2xl border border-white/10 hover:border-${member.gradient === 'from-purple-500 to-pink-500' ? 'purple' : 'blue'}-500/50 transition-all h-full`}>
-                <div className={`w-24 h-24 bg-gradient-to-br ${member.gradient} rounded-2xl mx-auto mb-6 flex items-center justify-center text-3xl font-bold`}>
-                  {member.initial}
-                </div>
-                <h3 className="text-2xl font-bold text-center mb-2">{member.name}</h3>
-                <p className={`${member.gradient === 'from-purple-500 to-pink-500' ? 'text-purple-400' : 'text-blue-400'} text-center mb-4 font-semibold`}>{member.role}</p>
-                <p className="text-gray-400 text-center leading-relaxed">
-                  {member.description}
-                </p>
+          {/* Marcella */}
+          <div className="group">
+            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-8 rounded-2xl border border-white/10 hover:border-purple-500/50 transition-all h-full">
+              <div className="w-48 h-48 mx-auto mb-6 overflow-hidden rounded-2xl transform rotate-3 hover:rotate-0 transition-transform">
+                <img 
+                  src="/images/marcella.png" 
+                  alt="Marcella Lima"
+                  className="w-full h-full object-cover"
+                />
               </div>
+              <h3 className="text-2xl font-bold text-center mb-2">Marcella Lima</h3>
+              <p className="text-purple-400 text-center mb-4 font-semibold">CEO & Filmmaker</p>
+              <p className="text-gray-400 text-center leading-relaxed">
+                Diretora criativa especializada em storytelling visual. Transforma conceitos em narrativas impactantes que emocionam e engajam audiências.
+              </p>
             </div>
-          ))}
+          </div>
+
+          {/* Daniel */}
+          <div className="group">
+            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-8 rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all h-full">
+              <div className="w-48 h-48 mx-auto mb-6 overflow-hidden rounded-2xl transform -rotate-3 hover:rotate-0 transition-transform">
+                <img 
+                  src="/images/daniel.png" 
+                  alt="Daniel Simonian"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <h3 className="text-2xl font-bold text-center mb-2">Daniel Simonian</h3>
+              <p className="text-blue-400 text-center mb-4 font-semibold">CEO & Produtor Musical</p>
+              <p className="text-gray-400 text-center leading-relaxed">
+                Produtor musical com expertise em criação sonora, mixagem e masterização. Cria paisagens sonoras que complementam perfeitamente o visual.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-8 rounded-2xl border border-white/10 max-w-4xl mx-auto">

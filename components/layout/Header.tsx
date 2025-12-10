@@ -44,8 +44,8 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden mt-4 pb-4 space-y-3">
             <button onClick={() => scrollToSection('inicio')} className="block w-full text-left py-2 text-gray-300 hover:text-white">Início</button>
-            <button onClick={() => scrollToSection('sobre')} className="block w-full text-left py-2 text-gray-300 hover:text-white">Sobre</button>
             <button onClick={() => scrollToSection('servicos')} className="block w-full text-left py-2 text-gray-300 hover:text-white">Serviços</button>
+            <button onClick={() => scrollToSection('sobre')} className="block w-full text-left py-2 text-gray-300 hover:text-white">Sobre</button>
             <button onClick={() => scrollToSection('portfolio')} className="block w-full text-left py-2 text-gray-300 hover:text-white">Portfolio</button>
             <button onClick={() => scrollToSection('contato')} className="block w-full text-left py-2 text-gray-300 hover:text-white">Contato</button>
           </div>

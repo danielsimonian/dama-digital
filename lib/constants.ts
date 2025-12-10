@@ -54,3 +54,9 @@ export const team = [
     description: 'Produtor musical com expertise em criação sonora, mixagem e masterização. Cria paisagens sonoras que complementam perfeitamente o visual.'
   }
 ];
+
+export const socialLinks = {
+  instagram: 'https://www.instagram.com/damadigital__/',
+  youtube: 'https://www.youtube.com/@damadigital',
+  whatsapp: 'https://wa.me/5513997434878'
+};
