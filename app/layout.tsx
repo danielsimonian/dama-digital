@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "DAMA Digital - Agência Criativa",
-  description: "Transformamos ideias em experiências audiovisuais memoráveis",
+  description: "Transformamos ideias em experiências audiovisuais memoráveis"
 };
 
 export default function RootLayout({

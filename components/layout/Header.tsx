@@ -19,16 +19,17 @@ export default function Header() {
       <nav className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center font-bold">
-              D
+                <img 
+                    src="/images/logo.png" 
+                    alt="DAMA Digital" 
+                    className="h-12 w-auto"
+                />
             </div>
-            <span className="text-xl font-bold">DAMA Digital</span>
-          </div>
           
           <div className="hidden md:flex items-center space-x-8">
             <button onClick={() => scrollToSection('inicio')} className="text-gray-300 hover:text-white transition-colors">Início</button>
-            <button onClick={() => scrollToSection('sobre')} className="text-gray-300 hover:text-white transition-colors">Sobre</button>
             <button onClick={() => scrollToSection('servicos')} className="text-gray-300 hover:text-white transition-colors">Serviços</button>
+            <button onClick={() => scrollToSection('sobre')} className="text-gray-300 hover:text-white transition-colors">Sobre</button>
             <button onClick={() => scrollToSection('portfolio')} className="text-gray-300 hover:text-white transition-colors">Portfolio</button>
             <button onClick={() => scrollToSection('contato')} className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-2 rounded-full hover:shadow-lg hover:shadow-purple-500/50 transition-all">
               Contato

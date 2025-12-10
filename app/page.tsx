@@ -14,8 +14,8 @@ export default function Home() {
     <div className="bg-black text-white">
       <Header />
       <Hero />
-      <About />
       <Services />
+      <About />
       <Portfolio />
       <CTA />
       <Contact />
