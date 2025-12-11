@@ -34,8 +34,15 @@ export const services = [
 ];
 
 export const clients = [
-  'ASSESP', 'Hortifruti', 'Hydra', 'Simonian', 'SPFC', 
-  'Tom Beach', 'Genial', 'Open SP', 'Sampaio', 'Glorinha'
+  { name: 'ASSESP', logo: '/images/clients/assesp.jpeg' },
+  { name: 'Hortifruti', logo: '/images/clients/nossohortifruti.png' },
+  { name: 'Hydra', logo: '/images/clients/hydra.png' },
+  { name: 'Simonian', logo: '/images/clients/esm.png' },
+  { name: 'SPFC', logo: '/images/clients/spfc.png' },
+  { name: 'Tom Beach', logo: '/images/clients/tombeach.png' },
+  { name: 'Genial', logo: '/images/clients/genial.png' },
+  { name: 'Open SP', logo: '/images/clients/opensp.webp' },
+  { name: 'Sampaio', logo: '/images/clients/sampaio.png' }
 ];
 
 export const team = [

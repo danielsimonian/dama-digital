@@ -1,4 +1,5 @@
 import { clients } from '@/lib/constants';
+import Image from 'next/image';
 
 export default function Portfolio() {
   return (
@@ -18,9 +19,15 @@ export default function Portfolio() {
           {clients.map((client, index) => (
             <div 
               key={index} 
-              className="aspect-square bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center border border-white/10 hover:border-purple-500/50 hover:scale-105 transition-all cursor-pointer group"
+              className="aspect-square bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center border border-white/10 hover:border-purple-500/50 transition-all cursor-pointer group p-6"
             >
-              <span className="text-sm md:text-base font-semibold text-gray-400 group-hover:text-white transition-colors">{client}</span>
+              <Image
+                src={client.logo}
+                alt={client.name}
+                width={200}
+                height={200}
+                className="w-full h-full object-contain rounded-full grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+              />
             </div>
           ))}
         </div>
