@@ -10,7 +10,7 @@ export default function Footer() {
               className="h-10 w-auto"
             />
           </div>
-          <p className="text-gray-400">© 2024 Dama Digital. Sua agência criativa.</p>
+          <p className="text-gray-400">© 2026 Dama Digital. Sua agência criativa.</p>
         </div>
       </div>
     </footer>
