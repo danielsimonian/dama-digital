@@ -108,7 +108,7 @@ export default function FidelidadeHome() {
               placeholder="Ex: Sucos do Zé"
               value={formData.nome}
               onChange={handleNomeChange}
-              className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors"
+              className="text-gray-500 w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors"
             />
           </div>
 
@@ -155,7 +155,7 @@ export default function FidelidadeHome() {
                 max={20}
                 value={formData.meta}
                 onChange={(e) => setFormData(prev => ({ ...prev, meta: parseInt(e.target.value) }))}
-                className="flex-1 accent-purple-500"
+                className="text-gray-500 flex-1 accent-purple-500"
               />
               <span className="w-12 text-center text-2xl font-bold text-purple-600">{formData.meta}</span>
             </div>
@@ -172,7 +172,7 @@ export default function FidelidadeHome() {
               placeholder="Mínimo 4 caracteres"
               value={formData.senha}
               onChange={(e) => setFormData(prev => ({ ...prev, senha: e.target.value }))}
-              className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors"
+              className="text-gray-500 w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:border-purple-400 focus:outline-none transition-colors"
             />
             <p className="text-xs text-gray-400 mt-1">Você vai usar essa senha para gerar códigos de compra</p>
           </div>

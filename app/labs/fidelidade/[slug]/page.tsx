@@ -322,7 +322,7 @@ export default function LojaFidelidade() {
                     placeholder="(11) 99999-9999"
                     value={telefone}
                     onChange={(e) => setTelefone(formatarTelefone(e.target.value))}
-                    className="w-full px-4 py-4 text-center text-xl bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
+                    className="text-gray-500 w-full px-4 py-4 text-center text-xl bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
                   />
                   <button
                     onClick={loginCliente}
@@ -391,7 +391,7 @@ export default function LojaFidelidade() {
                       placeholder="Código da compra"
                       value={codigoInput}
                       onChange={(e) => setCodigoInput(e.target.value.replace(/\D/g, ''))}
-                      className="w-full px-4 py-4 text-center text-2xl font-mono tracking-[0.5em] bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
+                      className="text-gray-500 w-full px-4 py-4 text-center text-1xl font-mono tracking-[0.5em] bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
                     />
                     <button
                       onClick={adicionarPonto}
@@ -438,7 +438,7 @@ export default function LojaFidelidade() {
                   placeholder="Senha do vendedor"
                   value={senhaInput}
                   onChange={(e) => setSenhaInput(e.target.value)}
-                  className="w-full px-4 py-4 text-center bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
+                  className="text-gray-500 w-full px-4 py-4 text-center bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
                 />
                 <button
                   onClick={gerarCodigo}
