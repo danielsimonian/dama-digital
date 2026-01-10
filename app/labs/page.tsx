@@ -15,7 +15,15 @@ export default function LabsPage() {
         icon: '🎰',
         color: 'from-green-500 to-emerald-500',
         href: '/labs/poker-pay'
-      }
+      },
+      {
+    id: 'fidelidade',
+    name: 'Fidelidade Digital',
+    description: 'Crie cartões fidelidade digitais para seu negócio. Sem papel, sem app, direto no celular do cliente.',
+    icon: '🎯',
+    color: 'from-purple-500 to-fuchsia-500',
+    href: '/labs/fidelidade'
+  }
     ];
 
   return (
