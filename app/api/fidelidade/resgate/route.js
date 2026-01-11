@@ -6,13 +6,13 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// POST - Resgatar prêmio
+// POST - Resgatar prêmio (requer senha do vendedor)
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { slug, telefone } = body;
+    const { slug, telefone, senha } = body;
 
-    if (!slug || !telefone) {
+    if (!slug || !telefone || !senha) {
       return NextResponse.json({ erro: 'Dados incompletos' }, { status: 400 });
     }
 
@@ -20,6 +20,11 @@ export async function POST(request) {
     const loja = await redis.get(`loja:${slug}`);
     if (!loja) {
       return NextResponse.json({ erro: 'Loja não encontrada' }, { status: 404 });
+    }
+
+    // Verifica senha do vendedor
+    if (loja.senha !== senha) {
+      return NextResponse.json({ erro: 'Senha incorreta' }, { status: 401 });
     }
 
     // Busca cliente
