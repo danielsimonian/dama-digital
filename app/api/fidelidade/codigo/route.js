@@ -6,19 +6,9 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// Gera código baseado em timestamp + slug
-function gerarCodigo(slug, senha) {
-  const agora = Date.now();
-  const bloco = Math.floor(agora / (5 * 60 * 1000)); // Bloco de 5 minutos
-  
-  let hash = 0;
-  const str = `${slug}-${senha}-${bloco}`;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash = hash & hash;
-  }
-  
-  return Math.abs(hash % 900000 + 100000).toString();
+// Gera código aleatório de 6 dígitos
+function gerarCodigoAleatorio() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // POST - Gerar código de compra
@@ -42,8 +32,12 @@ export async function POST(request) {
       return NextResponse.json({ erro: 'Senha incorreta' }, { status: 401 });
     }
 
-    // Gera o código
-    const codigo = gerarCodigo(slug, senha);
+    // Gera código aleatório único
+    const codigo = gerarCodigoAleatorio();
+    
+    // Salva o código no Redis com expiração de 1 minuto (60 segundos)
+    // O código é marcado como válido para a loja
+    await redis.set(`codigo:${slug}:${codigo}`, { usado: false }, { ex: 60 });
 
     return NextResponse.json({ codigo });
   } catch (error) {

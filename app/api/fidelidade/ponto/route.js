@@ -6,35 +6,6 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-// Valida código (verifica bloco atual e anterior)
-function validarCodigo(codigo, slug, senha) {
-  const agora = Date.now();
-  
-  // Verifica bloco atual
-  const blocoAtual = Math.floor(agora / (5 * 60 * 1000));
-  let hash = 0;
-  let str = `${slug}-${senha}-${blocoAtual}`;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash = hash & hash;
-  }
-  const codigoAtual = Math.abs(hash % 900000 + 100000).toString();
-  
-  if (codigo === codigoAtual) return true;
-  
-  // Verifica bloco anterior (para códigos gerados no fim do bloco)
-  const blocoAnterior = blocoAtual - 1;
-  hash = 0;
-  str = `${slug}-${senha}-${blocoAnterior}`;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash = hash & hash;
-  }
-  const codigoAnterior = Math.abs(hash % 900000 + 100000).toString();
-  
-  return codigo === codigoAnterior;
-}
-
 // POST - Adicionar ponto
 export async function POST(request) {
   try {
@@ -51,25 +22,28 @@ export async function POST(request) {
       return NextResponse.json({ erro: 'Loja não encontrada' }, { status: 404 });
     }
 
-    // Valida o código
-    if (!validarCodigo(codigo, slug, loja.senha)) {
+    // Verifica se o código existe e ainda não foi usado
+    const codigoData = await redis.get(`codigo:${slug}:${codigo}`);
+    
+    if (!codigoData) {
       return NextResponse.json({ erro: 'Código inválido ou expirado' }, { status: 400 });
     }
+
+    if (codigoData.usado) {
+      return NextResponse.json({ erro: 'Código já foi utilizado' }, { status: 400 });
+    }
+
+    // Marca o código como usado (globalmente)
+    await redis.del(`codigo:${slug}:${codigo}`);
 
     // Busca ou cria cliente
     let cliente = await redis.get(`cliente:${slug}:${telefone}`);
     if (!cliente) {
-      cliente = { pontos: 0, resgates: 0, ultimoCodigo: '' };
-    }
-
-    // Verifica se código já foi usado por este cliente
-    if (cliente.ultimoCodigo === codigo) {
-      return NextResponse.json({ erro: 'Código já utilizado' }, { status: 400 });
+      cliente = { pontos: 0, resgates: 0 };
     }
 
     // Adiciona ponto
     cliente.pontos += 1;
-    cliente.ultimoCodigo = codigo;
     
     let ganhouResgate = false;
 

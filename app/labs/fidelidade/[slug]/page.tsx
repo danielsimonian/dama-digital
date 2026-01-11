@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
+import { QRCodeSVG } from 'qrcode.react';
 
 // ============================================
 // PÁGINA DA LOJA - CLIENTE E VENDEDOR
@@ -30,7 +31,7 @@ export default function LojaFidelidade() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const isAdmin = searchParams.get('admin') === '1';
+  const codigoUrl = searchParams.get('codigo');
 
   const [loja, setLoja] = useState<Loja | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +51,13 @@ export default function LojaFidelidade() {
 
   // Mensagens
   const [mensagem, setMensagem] = useState<Mensagem>({ texto: '', tipo: '' });
+
+  // Preenche código se veio pela URL
+  useEffect(() => {
+    if (codigoUrl) {
+      setCodigoInput(codigoUrl);
+    }
+  }, [codigoUrl]);
 
   // Carrega dados da loja
   useEffect(() => {
@@ -74,7 +82,7 @@ export default function LojaFidelidade() {
     if (slug) carregarLoja();
   }, [slug]);
 
-  // Timer do código
+  // Timer do código - 1 minuto
   useEffect(() => {
     if (codigoGerado && tempoRestante > 0) {
       const timer = setTimeout(() => setTempoRestante(t => t - 1), 1000);
@@ -207,10 +215,17 @@ export default function LojaFidelidade() {
       }
 
       setCodigoGerado(data.codigo);
-      setTempoRestante(300); // 5 minutos
+      setTempoRestante(60); // 1 minuto
     } catch {
       mostrarMensagem('Erro de conexão', 'erro');
     }
+  };
+
+  // Gera URL do QR Code
+  const getQrCodeUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/labs/fidelidade/${slug}?codigo=${codigoGerado}`;
   };
 
   // Loading state
@@ -322,7 +337,7 @@ export default function LojaFidelidade() {
                     placeholder="(11) 99999-9999"
                     value={telefone}
                     onChange={(e) => setTelefone(formatarTelefone(e.target.value))}
-                    className="text-gray-500 w-full px-4 py-4 text-center text-xl bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
+                    className="w-full px-4 py-4 text-center text-xl bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors text-gray-800 placeholder-gray-400"
                   />
                   <button
                     onClick={loginCliente}
@@ -342,6 +357,7 @@ export default function LojaFidelidade() {
                       onClick={() => {
                         setTelefoneLogado('');
                         setTelefone('');
+                        setCodigoInput('');
                       }}
                       className="text-xs text-gray-400 hover:text-gray-600"
                     >
@@ -391,7 +407,7 @@ export default function LojaFidelidade() {
                       placeholder="Código da compra"
                       value={codigoInput}
                       onChange={(e) => setCodigoInput(e.target.value.replace(/\D/g, ''))}
-                      className="text-gray-500 w-full px-4 py-4 text-center text-1xl font-mono tracking-[0.5em] bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
+                      className="w-full px-4 py-4 text-center text-xl font-mono tracking-[0.25em] bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors text-gray-800 placeholder-gray-400"
                     />
                     <button
                       onClick={adicionarPonto}
@@ -438,7 +454,7 @@ export default function LojaFidelidade() {
                   placeholder="Senha do vendedor"
                   value={senhaInput}
                   onChange={(e) => setSenhaInput(e.target.value)}
-                  className="text-gray-500 w-full px-4 py-4 text-center bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors"
+                  className="w-full px-4 py-4 text-center bg-gray-50 border-2 border-gray-200 rounded-2xl focus:border-orange-400 focus:outline-none transition-colors text-gray-800 placeholder-gray-400"
                 />
                 <button
                   onClick={gerarCodigo}
@@ -450,48 +466,36 @@ export default function LojaFidelidade() {
             ) : (
               <div className="text-center">
                 <p className="text-gray-500 mb-2">Código da compra:</p>
-                <div className="bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl p-6 mb-4">
-                  <p className="text-5xl font-mono font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500">
+                <div className="bg-gradient-to-r from-orange-100 to-amber-100 rounded-2xl p-4 mb-4">
+                  <p className="text-4xl font-mono font-black tracking-[0.3em] text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500">
                     {codigoGerado}
                   </p>
                 </div>
-                <div className="flex items-center justify-center gap-2 text-gray-500 mb-4">
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                  <p>Expira em {Math.floor(tempoRestante / 60)}:{(tempoRestante % 60).toString().padStart(2, '0')}</p>
+                
+                {/* QR Code */}
+                <div className="bg-white rounded-2xl p-4 mb-4 inline-block">
+                  <QRCodeSVG 
+                    value={getQrCodeUrl()} 
+                    size={180}
+                    level="H"
+                    includeMargin={true}
+                  />
                 </div>
-                <p className="text-sm text-gray-400 mb-4">
-                  Mostre este código para o cliente digitar
+                <p className="text-xs text-gray-400 mb-3">
+                  Cliente escaneia o QR Code para adicionar o ponto
                 </p>
+
+                <div className="flex items-center justify-center gap-2 text-gray-500 mb-4">
+                  <div className={`w-3 h-3 rounded-full animate-pulse ${tempoRestante > 20 ? 'bg-green-500' : tempoRestante > 10 ? 'bg-yellow-500' : 'bg-red-500'}`} />
+                  <p>Expira em {tempoRestante}s</p>
+                </div>
+                
                 <button
-                  onClick={() => {
-                    setCodigoGerado('');
-                    setTempoRestante(0);
-                  }}
+                  onClick={gerarCodigo}
                   className="px-6 py-2 text-orange-600 font-medium hover:bg-orange-50 rounded-xl transition-colors"
                 >
                   Gerar novo código
                 </button>
-              </div>
-            )}
-
-            {/* Link para compartilhar */}
-            {isAdmin && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <p className="text-sm text-gray-500 mb-2">Link para seus clientes:</p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 px-3 py-2 bg-gray-100 rounded-lg text-xs text-gray-600 truncate">
-                    {typeof window !== 'undefined' ? window.location.href.replace('?admin=1', '') : ''}
-                  </code>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(window.location.href.replace('?admin=1', ''));
-                      mostrarMensagem('Link copiado!');
-                    }}
-                    className="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition-colors"
-                  >
-                    📋
-                  </button>
-                </div>
               </div>
             )}
           </div>
