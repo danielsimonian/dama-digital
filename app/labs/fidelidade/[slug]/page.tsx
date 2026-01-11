@@ -477,6 +477,23 @@ export default function LojaFidelidade() {
                 </div>
               ) : (
                 <>
+                  {/* Card de Resgates - PRIMEIRO */}
+                  {dadosCliente.resgates > 0 && (
+                    <div className="bg-gradient-to-r from-yellow-400 to-amber-500 rounded-3xl p-6 shadow-2xl">
+                      <div className="text-center text-white">
+                        <p className="text-lg mb-2">🎉 Você tem</p>
+                        <p className="text-5xl font-black mb-2">{dadosCliente.resgates}</p>
+                        <p className="text-lg mb-4">grátis para resgatar!</p>
+                        <button
+                          onClick={abrirVoucher}
+                          className="w-full py-3 bg-white text-amber-600 font-bold rounded-xl hover:bg-amber-50 transition-colors"
+                        >
+                          🎁 USAR MEU VALE
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Card de Pontos */}
                   <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 shadow-2xl">
                     <div className="flex items-center justify-between mb-4">
@@ -545,23 +562,6 @@ export default function LojaFidelidade() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Card de Resgates */}
-                  {dadosCliente.resgates > 0 && (
-                    <div className="bg-gradient-to-r from-yellow-400 to-amber-500 rounded-3xl p-6 shadow-2xl">
-                      <div className="text-center text-white">
-                        <p className="text-lg mb-2">🎉 Você tem</p>
-                        <p className="text-5xl font-black mb-2">{dadosCliente.resgates}</p>
-                        <p className="text-lg mb-4">grátis para resgatar!</p>
-                        <button
-                          onClick={abrirVoucher}
-                          className="w-full py-3 bg-white text-amber-600 font-bold rounded-xl hover:bg-amber-50 transition-colors"
-                        >
-                          🎁 USAR MEU VALE
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </>
               )}
             </div>
