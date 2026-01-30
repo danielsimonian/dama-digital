@@ -8,13 +8,15 @@ import Services from '@/components/sections/Services';
 import Portfolio from '@/components/sections/Portfolio';
 import CTA from '@/components/sections/CTA';
 import Contact from '@/components/sections/Contact';
+import Divisions from '@/components/sections/Divisions';
+
 
 export default function Home() {
   return (
     <div className="bg-black text-white">
       <Header />
       <Hero />
-      <Services />
+      <Divisions /> {/* Muda aqui */}
       <About />
       <Portfolio />
       <CTA />

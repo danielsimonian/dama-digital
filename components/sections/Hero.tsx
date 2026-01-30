@@ -34,7 +34,7 @@ export default function Hero() {
           <button onClick={() => scrollToSection('contato')} className="bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 rounded-full font-semibold hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2">
             Iniciar Projeto <ArrowRight size={20} />
           </button>
-          <button onClick={() => scrollToSection('sobre')} className="border border-white/20 px-8 py-4 rounded-full font-semibold hover:bg-white/5 transition-all">
+          <button onClick={() => scrollToSection('divisions')} className="border border-white/20 px-8 py-4 rounded-full font-semibold hover:bg-white/5 transition-all">
             Conheça Nosso Trabalho
           </button>
         </div>
