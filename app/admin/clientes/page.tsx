@@ -5,6 +5,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Plus, 
   Search, 
@@ -16,11 +17,51 @@ import {
   Phone,
   Building,
   X,
-  Loader2
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
-import { supabase, Cliente } from '@/lib/supabase';
+import { supabase, DIVISAO_CONFIG } from '@/lib/supabase';
+
+type Area = 'tech' | 'sports' | 'studio';
+
+interface Cliente {
+  id: string;
+  nome: string;
+  empresa?: string;
+  email?: string;
+  telefone?: string;
+  documento?: string;
+  endereco?: string;
+  notas?: string;
+  areas?: Area[];
+  slug?: string;
+  senha_acesso?: string;
+}
+
+// Função para gerar slug a partir do nome
+function gerarSlug(nome: string): string {
+  return nome
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // remove acentos
+    .replace(/[^a-z0-9\s-]/g, '') // remove caracteres especiais
+    .replace(/\s+/g, '-') // espaços viram hífens
+    .replace(/-+/g, '-') // múltiplos hífens viram um
+    .trim();
+}
+
+// Função para gerar senha aleatória
+function gerarSenha(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let senha = '';
+  for (let i = 0; i < 6; i++) {
+    senha += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return senha;
+}
 
 export default function ClientesPage() {
+  const router = useRouter();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -36,7 +77,10 @@ export default function ClientesPage() {
     telefone: '',
     documento: '',
     endereco: '',
-    notas: ''
+    notas: '',
+    areas: [] as Area[],
+    slug: '',
+    senha_acesso: ''
   });
 
   useEffect(() => {
@@ -75,7 +119,10 @@ export default function ClientesPage() {
         telefone: cliente.telefone || '',
         documento: cliente.documento || '',
         endereco: cliente.endereco || '',
-        notas: cliente.notas || ''
+        notas: cliente.notas || '',
+        areas: cliente.areas || [],
+        slug: cliente.slug || '',
+        senha_acesso: cliente.senha_acesso || ''
       });
     } else {
       setEditingCliente(null);
@@ -86,7 +133,10 @@ export default function ClientesPage() {
         telefone: '',
         documento: '',
         endereco: '',
-        notas: ''
+        notas: '',
+        areas: [],
+        slug: '',
+        senha_acesso: gerarSenha()
       });
     }
     setShowModal(true);
@@ -103,8 +153,31 @@ export default function ClientesPage() {
       telefone: '',
       documento: '',
       endereco: '',
-      notas: ''
+      notas: '',
+      areas: [],
+      slug: '',
+      senha_acesso: ''
     });
+  }
+
+  // Toggle área selecionada
+  function toggleArea(area: Area) {
+    setForm(prev => {
+      const areas = prev.areas.includes(area)
+        ? prev.areas.filter(a => a !== area)
+        : [...prev.areas, area];
+      return { ...prev, areas };
+    });
+  }
+
+  // Atualizar slug quando nome mudar
+  function handleNomeChange(nome: string) {
+    const novoSlug = editingCliente?.slug || gerarSlug(nome);
+    setForm(prev => ({
+      ...prev,
+      nome,
+      slug: editingCliente ? prev.slug : novoSlug
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -119,7 +192,10 @@ export default function ClientesPage() {
         telefone: form.telefone || null,
         documento: form.documento || null,
         endereco: form.endereco || null,
-        notas: form.notas || null
+        notas: form.notas || null,
+        areas: form.areas,
+        slug: form.slug || gerarSlug(form.nome),
+        senha_acesso: form.senha_acesso || gerarSenha()
       };
 
       if (editingCliente) {
@@ -161,6 +237,10 @@ export default function ClientesPage() {
 
     setClientes(clientes.filter(c => c.id !== id));
     setMenuOpen(null);
+  }
+
+  function goToCliente(clienteId: string) {
+    router.push(`/admin/clientes/${clienteId}`);
   }
 
   return (
@@ -221,9 +301,10 @@ export default function ClientesPage() {
           {filteredClientes.map((cliente) => (
             <div
               key={cliente.id}
-              className="bg-gray-900/50 rounded-2xl border border-gray-800 p-5 hover:border-gray-700 transition-colors"
+              onClick={() => goToCliente(cliente.id)}
+              className="bg-gray-900/50 rounded-2xl border border-gray-800 p-5 hover:border-purple-500/50 hover:bg-gray-800/50 transition-all cursor-pointer group"
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
                     <span className="text-purple-400 font-semibold text-lg">
@@ -231,16 +312,20 @@ export default function ClientesPage() {
                     </span>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">{cliente.nome}</h3>
+                    <h3 className="font-semibold text-white group-hover:text-purple-400 transition-colors">{cliente.nome}</h3>
                     {cliente.empresa && (
                       <p className="text-sm text-gray-500">{cliente.empresa}</p>
                     )}
                   </div>
                 </div>
                 
-                <div className="relative">
+                <div className="relative flex items-center gap-1">
+                  <ChevronRight size={18} className="text-gray-600 group-hover:text-purple-400 transition-colors" />
                   <button
-                    onClick={() => setMenuOpen(menuOpen === cliente.id ? null : cliente.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuOpen(menuOpen === cliente.id ? null : cliente.id);
+                    }}
                     className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
                   >
                     <MoreVertical size={18} className="text-gray-400" />
@@ -250,18 +335,27 @@ export default function ClientesPage() {
                     <>
                       <div 
                         className="fixed inset-0 z-10" 
-                        onClick={() => setMenuOpen(null)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMenuOpen(null);
+                        }}
                       />
                       <div className="absolute right-0 top-full mt-1 w-40 bg-gray-800 rounded-xl border border-gray-700 shadow-xl z-20 overflow-hidden">
                         <button
-                          onClick={() => openModal(cliente)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openModal(cliente);
+                          }}
                           className="flex items-center gap-2 px-4 py-3 hover:bg-gray-700 transition-colors w-full text-white"
                         >
                           <Pencil size={16} />
                           Editar
                         </button>
                         <button
-                          onClick={() => deleteCliente(cliente.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteCliente(cliente.id);
+                          }}
                           className="flex items-center gap-2 px-4 py-3 hover:bg-gray-700 transition-colors w-full text-red-400"
                         >
                           <Trash2 size={16} />
@@ -272,6 +366,23 @@ export default function ClientesPage() {
                   )}
                 </div>
               </div>
+
+              {/* Badges das áreas */}
+              {cliente.areas && cliente.areas.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {cliente.areas.map((area) => {
+                    const config = DIVISAO_CONFIG[area];
+                    return (
+                      <span
+                        key={area}
+                        className={`text-xs px-2 py-1 rounded-full ${config.bgLight} ${config.textColor}`}
+                      >
+                        {config.nome}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
 
               <div className="space-y-2">
                 {cliente.email && (
@@ -298,7 +409,7 @@ export default function ClientesPage() {
       {/* Modal Criar/Editar */}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 rounded-2xl p-6 max-w-lg w-full border border-gray-800 max-h-[90vh] overflow-y-auto">
+          <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-2xl border border-gray-800 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-white">
                 {editingCliente ? 'Editar Cliente' : 'Novo Cliente'}
@@ -312,16 +423,80 @@ export default function ClientesPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Seleção de Áreas */}
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Áreas do Cliente *</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {(['tech', 'sports', 'studio'] as const).map((area) => {
+                    const config = DIVISAO_CONFIG[area];
+                    const isSelected = form.areas.includes(area);
+                    return (
+                      <button
+                        key={area}
+                        type="button"
+                        onClick={() => toggleArea(area)}
+                        className={`p-3 rounded-xl border-2 transition-all ${
+                          isSelected 
+                            ? `${config.borderColor} ${config.bgLight}` 
+                            : 'border-gray-700 hover:border-gray-600'
+                        }`}
+                      >
+                        <p className={`font-medium text-sm ${isSelected ? config.textColor : 'text-gray-400'}`}>
+                          {config.nome}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+                {form.areas.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-2">Selecione pelo menos uma área</p>
+                )}
+              </div>
+
               <div>
                 <label className="block text-sm text-gray-400 mb-2">Nome *</label>
                 <input
                   type="text"
                   value={form.nome}
-                  onChange={(e) => setForm({ ...form, nome: e.target.value })}
+                  onChange={(e) => handleNomeChange(e.target.value)}
                   placeholder="Nome completo"
                   required
                   className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white"
                 />
+              </div>
+
+              {/* Slug e Senha */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">URL (slug)</label>
+                  <input
+                    type="text"
+                    value={form.slug}
+                    onChange={(e) => setForm({ ...form, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    placeholder="nome-do-cliente"
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">/cliente/{form.slug || 'nome-do-cliente'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Senha de Acesso</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={form.senha_acesso}
+                      onChange={(e) => setForm({ ...form, senha_acesso: e.target.value })}
+                      placeholder="abc123"
+                      className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, senha_acesso: gerarSenha() })}
+                      className="px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-xl text-xs transition-colors"
+                    >
+                      Gerar
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -401,7 +576,7 @@ export default function ClientesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || form.areas.length === 0}
                   className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl font-medium transition-colors text-white disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {saving ? (
