@@ -363,6 +363,9 @@ export default function ClienteDetalhesPage() {
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   });
 
+  // Toggle para mostrar totais gerais das sessões
+  const [mostrarTotaisGeraisSessoes, setMostrarTotaisGeraisSessoes] = useState(false);
+
   // Estados para Aulas/Módulos
   const [modulos, setModulos] = useState<Modulo[]>([]);
   const [expandedModulos, setExpandedModulos] = useState<string[]>([]);
@@ -602,6 +605,19 @@ export default function ClienteDetalhesPage() {
       qtdSessoes: acc.qtdSessoes + 1
     };
   }, { totalHoras: 0, totalValor: 0, valorAberto: 0, qtdSessoes: 0 });
+
+  // Calcular TOTAIS GERAIS das sessões (todos os meses)
+  const resumoGeralSessoes = sessoes.reduce((acc, s) => {
+    const horas = calcularHoras(s.hora_inicio, s.hora_fim);
+    const valor = horas * Number(s.valor_hora);
+    return {
+      totalHoras: acc.totalHoras + horas,
+      totalValor: acc.totalValor + valor,
+      valorAberto: acc.valorAberto + (s.pago ? 0 : valor),
+      valorPago: acc.valorPago + (s.pago ? valor : 0),
+      qtdSessoes: acc.qtdSessoes + 1
+    };
+  }, { totalHoras: 0, totalValor: 0, valorAberto: 0, valorPago: 0, qtdSessoes: 0 });
 
   // Filtrar orçamentos
   const orcamentosFiltrados = filtroOrcamento === 'todos' 
@@ -1185,36 +1201,71 @@ export default function ClienteDetalhesPage() {
     studio: orcamentos.filter(o => o.divisao === 'studio').length,
   };
 
-  // Filtrar pagamentos por mês
-  const pagamentosFiltrados = pagamentos.filter(p => p.data.startsWith(mesFinanceiro));
+  // Converter sessões para itens do financeiro
+  const sessoesComoFinanceiro = sessoes.map(s => {
+    const horas = calcularHoras(s.hora_inicio, s.hora_fim);
+    const valor = horas * Number(s.valor_hora);
+    return {
+      id: s.id,
+      tipo: 'sessao' as const,
+      data: s.data,
+      valor: valor,
+      pago: s.pago,
+      pago_em: s.pago_em,
+      referencia: `Sessão de ${formatarHoras(horas)} (${s.hora_inicio} - ${s.hora_fim})`,
+      observacoes: s.observacoes,
+      sessaoOriginal: s
+    };
+  });
+
+  // Converter pagamentos para itens do financeiro
+  const pagamentosComoFinanceiro = pagamentos.map(p => ({
+    id: p.id,
+    tipo: 'pagamento' as const,
+    data: p.data,
+    valor: Number(p.valor),
+    pago: p.pago,
+    pago_em: p.pago_em,
+    referencia: p.referencia,
+    observacoes: p.observacoes,
+    forma_pagamento: p.forma_pagamento,
+    pagamentoOriginal: p
+  }));
+
+  // Combinar e ordenar por data (mais recente primeiro)
+  const todosItensFinanceiro = [...sessoesComoFinanceiro, ...pagamentosComoFinanceiro]
+    .sort((a, b) => b.data.localeCompare(a.data));
+
+  // Filtrar por mês
+  const itensFinanceiroFiltrados = todosItensFinanceiro.filter(i => i.data.startsWith(mesFinanceiro));
   
-  // Calcular totais do mês selecionado
-  const totalMesPagamentos = pagamentosFiltrados.reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalPagoMes = pagamentosFiltrados.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalAbertoMes = pagamentosFiltrados.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  // Calcular totais do mês selecionado (pagamentos + sessões)
+  const totalMesFinanceiro = itensFinanceiroFiltrados.reduce((acc, i) => acc + i.valor, 0);
+  const totalPagoMesFinanceiro = itensFinanceiroFiltrados.filter(i => i.pago).reduce((acc, i) => acc + i.valor, 0);
+  const totalAbertoMesFinanceiro = itensFinanceiroFiltrados.filter(i => !i.pago).reduce((acc, i) => acc + i.valor, 0);
 
-  // Calcular totais GERAIS (todos os pagamentos)
-  const totalGeralPagamentos = pagamentos.reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalGeralPago = pagamentos.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalGeralAberto = pagamentos.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  // Calcular totais GERAIS (todos)
+  const totalGeralFinanceiro = todosItensFinanceiro.reduce((acc, i) => acc + i.valor, 0);
+  const totalGeralPagoFinanceiro = todosItensFinanceiro.filter(i => i.pago).reduce((acc, i) => acc + i.valor, 0);
+  const totalGeralAbertoFinanceiro = todosItensFinanceiro.filter(i => !i.pago).reduce((acc, i) => acc + i.valor, 0);
 
-  // Agrupar pagamentos por mês para resumo
-  const resumoPorMes = pagamentos.reduce((acc, p) => {
-    const mes = p.data.substring(0, 7); // "2024-01"
+  // Agrupar por mês para resumo (pagamentos + sessões)
+  const resumoFinanceiroPorMes = todosItensFinanceiro.reduce((acc, item) => {
+    const mes = item.data.substring(0, 7);
     if (!acc[mes]) {
       acc[mes] = { total: 0, pago: 0, aberto: 0 };
     }
-    acc[mes].total += Number(p.valor);
-    if (p.pago) {
-      acc[mes].pago += Number(p.valor);
+    acc[mes].total += item.valor;
+    if (item.pago) {
+      acc[mes].pago += item.valor;
     } else {
-      acc[mes].aberto += Number(p.valor);
+      acc[mes].aberto += item.valor;
     }
     return acc;
   }, {} as Record<string, { total: number; pago: number; aberto: number }>);
 
   // Ordenar meses do mais recente para o mais antigo
-  const mesesOrdenados = Object.keys(resumoPorMes).sort((a, b) => b.localeCompare(a));
+  const mesesFinanceiroOrdenados = Object.keys(resumoFinanceiroPorMes).sort((a, b) => b.localeCompare(a));
 
   // Função para formatar mês/ano
   function formatarMesAno(mesAno: string): string {
@@ -1605,15 +1656,29 @@ export default function ClienteDetalhesPage() {
         {/* Tab: Sessões */}
         {activeTab === 'sessoes' && (
           <div className="space-y-6">
-            {/* Header + Filtro de Mês */}
+            {/* Header + Filtro de Mês + Botão Totais */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
                 <input
                   type="month"
                   value={mesSessao}
-                  onChange={(e) => setMesSessao(e.target.value)}
-                  className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white"
+                  onChange={(e) => {
+                    setMesSessao(e.target.value);
+                    setMostrarTotaisGeraisSessoes(false);
+                  }}
+                  className={`px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white ${mostrarTotaisGeraisSessoes ? 'opacity-50' : ''}`}
+                  disabled={mostrarTotaisGeraisSessoes}
                 />
+                <button
+                  onClick={() => setMostrarTotaisGeraisSessoes(!mostrarTotaisGeraisSessoes)}
+                  className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                    mostrarTotaisGeraisSessoes
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  {mostrarTotaisGeraisSessoes ? '✓ Totais Gerais' : 'Totais Gerais'}
+                </button>
               </div>
               
               <button
@@ -1625,29 +1690,49 @@ export default function ClienteDetalhesPage() {
               </button>
             </div>
 
-            {/* Resumo do Mês */}
+            {/* Resumo - Mês ou Geral */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
-                <p className="text-sm text-blue-400 mb-1">Sessões no Mês</p>
-                <p className="text-2xl font-bold">{resumoMes.qtdSessoes}</p>
+                <p className="text-sm text-blue-400 mb-1">
+                  {mostrarTotaisGeraisSessoes ? 'Sessões Totais' : 'Sessões no Mês'}
+                </p>
+                <p className="text-2xl font-bold">
+                  {mostrarTotaisGeraisSessoes ? resumoGeralSessoes.qtdSessoes : resumoMes.qtdSessoes}
+                </p>
               </div>
               
               <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
                 <p className="text-sm text-blue-400 mb-1">Total de Horas</p>
-                <p className="text-2xl font-bold">{formatarHoras(resumoMes.totalHoras)}</p>
+                <p className="text-2xl font-bold">
+                  {formatarHoras(mostrarTotaisGeraisSessoes ? resumoGeralSessoes.totalHoras : resumoMes.totalHoras)}
+                </p>
               </div>
               
               <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
                 <p className="text-sm text-blue-400 mb-1">Valor Total</p>
-                <p className="text-2xl font-bold text-blue-400">{formatarMoeda(resumoMes.totalValor)}</p>
+                <p className="text-2xl font-bold text-blue-400">
+                  {formatarMoeda(mostrarTotaisGeraisSessoes ? resumoGeralSessoes.totalValor : resumoMes.totalValor)}
+                </p>
               </div>
 
-              <div className={`bg-gray-900/50 rounded-xl border p-4 ${resumoMes.valorAberto > 0 ? 'border-yellow-500/30' : 'border-emerald-500/30'}`}>
-                <p className={`text-sm mb-1 ${resumoMes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+              <div className={`bg-gray-900/50 rounded-xl border p-4 ${
+                (mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto) > 0 
+                  ? 'border-yellow-500/30' 
+                  : 'border-emerald-500/30'
+              }`}>
+                <p className={`text-sm mb-1 ${
+                  (mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto) > 0 
+                    ? 'text-yellow-400' 
+                    : 'text-emerald-400'
+                }`}>
                   Valor em Aberto
                 </p>
-                <p className={`text-2xl font-bold ${resumoMes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                  {formatarMoeda(resumoMes.valorAberto)}
+                <p className={`text-2xl font-bold ${
+                  (mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto) > 0 
+                    ? 'text-yellow-400' 
+                    : 'text-emerald-400'
+                }`}>
+                  {formatarMoeda(mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto)}
                 </p>
               </div>
             </div>
@@ -1656,17 +1741,20 @@ export default function ClienteDetalhesPage() {
             <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
               <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
                 <Music size={20} className="text-blue-400" />
-                Sessões ({sessoesFiltradas.length})
+                {mostrarTotaisGeraisSessoes 
+                  ? `Todas as Sessões (${sessoes.length})`
+                  : `Sessões (${sessoesFiltradas.length})`
+                }
               </h2>
 
-              {sessoesFiltradas.length === 0 ? (
+              {(mostrarTotaisGeraisSessoes ? sessoes : sessoesFiltradas).length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
                   <Music size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma sessão neste mês</p>
+                  <p>{mostrarTotaisGeraisSessoes ? 'Nenhuma sessão registrada' : 'Nenhuma sessão neste mês'}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sessoesFiltradas.map((sessao) => {
+                  {(mostrarTotaisGeraisSessoes ? sessoes : sessoesFiltradas).map((sessao) => {
                     const horas = calcularHoras(sessao.hora_inicio, sessao.hora_fim);
                     const valor = horas * Number(sessao.valor_hora);
                     
@@ -1872,7 +1960,7 @@ export default function ClienteDetalhesPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold">Financeiro</h2>
-                <p className="text-gray-400 text-sm">Pagamentos e acordos</p>
+                <p className="text-gray-400 text-sm">Pagamentos e sessões</p>
               </div>
               
               <button
@@ -1893,25 +1981,25 @@ export default function ClienteDetalhesPage() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="bg-gray-800/50 rounded-xl p-4 text-center">
                   <p className="text-sm text-gray-400 mb-1">Total</p>
-                  <p className="text-2xl font-bold">{formatarMoeda(totalGeralPagamentos)}</p>
+                  <p className="text-2xl font-bold">{formatarMoeda(totalGeralFinanceiro)}</p>
                 </div>
                 
                 <div className="bg-emerald-500/10 rounded-xl p-4 text-center border border-emerald-500/30">
                   <p className="text-sm text-emerald-400 mb-1">Pago</p>
-                  <p className="text-2xl font-bold text-emerald-400">{formatarMoeda(totalGeralPago)}</p>
+                  <p className="text-2xl font-bold text-emerald-400">{formatarMoeda(totalGeralPagoFinanceiro)}</p>
                 </div>
 
-                <div className={`rounded-xl p-4 text-center border ${totalGeralAberto > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-                  <p className={`text-sm mb-1 ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
-                  <p className={`text-2xl font-bold ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                    {formatarMoeda(totalGeralAberto)}
+                <div className={`rounded-xl p-4 text-center border ${totalGeralAbertoFinanceiro > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                  <p className={`text-sm mb-1 ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
+                  <p className={`text-2xl font-bold ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                    {formatarMoeda(totalGeralAbertoFinanceiro)}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Histórico por Mês */}
-            {mesesOrdenados.length > 0 && (
+            {mesesFinanceiroOrdenados.length > 0 && (
               <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                   <Calendar size={20} className="text-blue-400" />
@@ -1928,8 +2016,8 @@ export default function ClienteDetalhesPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mesesOrdenados.map((mes) => {
-                        const dados = resumoPorMes[mes];
+                      {mesesFinanceiroOrdenados.map((mes) => {
+                        const dados = resumoFinanceiroPorMes[mes];
                         const isMesSelecionado = mes === mesFinanceiro;
                         return (
                           <tr 
@@ -1956,12 +2044,12 @@ export default function ClienteDetalhesPage() {
               </div>
             )}
 
-            {/* Pagamentos do Mês Selecionado */}
+            {/* Itens do Mês Selecionado (Pagamentos + Sessões) */}
             <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   <CreditCard size={20} className="text-emerald-400" />
-                  Pagamentos de {formatarMesAno(mesFinanceiro)} ({pagamentosFiltrados.length})
+                  {formatarMesAno(mesFinanceiro)} ({itensFinanceiroFiltrados.length} itens)
                 </h3>
                 <input
                   type="month"
@@ -1975,35 +2063,38 @@ export default function ClienteDetalhesPage() {
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-gray-800/50 rounded-xl p-3 text-center">
                   <p className="text-xs text-gray-400 mb-1">Total</p>
-                  <p className="text-lg font-bold">{formatarMoeda(totalMesPagamentos)}</p>
+                  <p className="text-lg font-bold">{formatarMoeda(totalMesFinanceiro)}</p>
                 </div>
                 <div className="bg-gray-800/50 rounded-xl p-3 text-center">
                   <p className="text-xs text-emerald-400 mb-1">Pago</p>
-                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalPagoMes)}</p>
+                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalPagoMesFinanceiro)}</p>
                 </div>
                 <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                  <p className={`text-xs mb-1 ${totalAbertoMes > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Aberto</p>
-                  <p className={`text-lg font-bold ${totalAbertoMes > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                    {formatarMoeda(totalAbertoMes)}
+                  <p className={`text-xs mb-1 ${totalAbertoMesFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Aberto</p>
+                  <p className={`text-lg font-bold ${totalAbertoMesFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                    {formatarMoeda(totalAbertoMesFinanceiro)}
                   </p>
                 </div>
               </div>
 
-              {pagamentosFiltrados.length === 0 ? (
+              {itensFinanceiroFiltrados.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
                   <Wallet size={40} className="mx-auto mb-3 opacity-50" />
-                  <p>Nenhum pagamento neste mês</p>
+                  <p>Nenhum item neste mês</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {pagamentosFiltrados.map((pagamento) => {
-                    const forma = formasPagamento.find(f => f.value === pagamento.forma_pagamento);
+                  {itensFinanceiroFiltrados.map((item) => {
+                    const isSessao = item.tipo === 'sessao';
+                    const forma = !isSessao && item.forma_pagamento 
+                      ? formasPagamento.find(f => f.value === item.forma_pagamento)
+                      : null;
                     
                     return (
                       <div
-                        key={pagamento.id}
+                        key={`${item.tipo}-${item.id}`}
                         className={`rounded-xl border p-4 transition-colors ${
-                          pagamento.pago 
+                          item.pago 
                             ? 'bg-emerald-500/10 border-emerald-500/30' 
                             : 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50'
                         }`}
@@ -2011,59 +2102,83 @@ export default function ClienteDetalhesPage() {
                         <div className="flex items-center gap-4">
                           {/* Checkbox de Pago */}
                           <button
-                            onClick={() => togglePagamentoPago(pagamento)}
+                            onClick={() => {
+                              if (isSessao && item.sessaoOriginal) {
+                                togglePagamento(item.sessaoOriginal);
+                              } else if (!isSessao && item.pagamentoOriginal) {
+                                togglePagamentoPago(item.pagamentoOriginal);
+                              }
+                            }}
                             className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
-                              pagamento.pago
+                              item.pago
                                 ? 'bg-emerald-500 border-emerald-500'
                                 : 'border-gray-600 hover:border-emerald-500'
                             }`}
-                            title={pagamento.pago 
-                              ? `Pago em ${pagamento.pago_em ? formatarDataLocal(pagamento.pago_em.split('T')[0]) : ''}` 
+                            title={item.pago 
+                              ? `Pago em ${item.pago_em ? formatarDataLocal(item.pago_em.split('T')[0]) : ''}` 
                               : 'Marcar como pago'
                             }
                           >
-                            {pagamento.pago && <Check size={14} className="text-white" />}
+                            {item.pago && <Check size={14} className="text-white" />}
                           </button>
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="font-medium">{formatarDataLocal(pagamento.data)}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
-                                {forma?.label || pagamento.forma_pagamento}
-                              </span>
-                              {pagamento.pago && (
+                              <span className="font-medium">{formatarDataLocal(item.data)}</span>
+                              {isSessao ? (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+                                  Sessão
+                                </span>
+                              ) : forma && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
+                                  {forma.label}
+                                </span>
+                              )}
+                              {item.pago && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
                                   Pago
                                 </span>
                               )}
                             </div>
-                            {pagamento.referencia && (
-                              <p className="text-sm text-gray-400">{pagamento.referencia}</p>
+                            {item.referencia && (
+                              <p className="text-sm text-gray-400">{item.referencia}</p>
                             )}
-                            {pagamento.observacoes && (
-                              <p className="text-sm text-gray-500 mt-1">{pagamento.observacoes}</p>
+                            {item.observacoes && (
+                              <p className="text-sm text-gray-500 mt-1">{item.observacoes}</p>
                             )}
                           </div>
                           
                           <div className="flex items-center gap-4">
-                            <p className={`text-xl font-bold ${pagamento.pago ? 'text-gray-500' : 'text-emerald-400'}`}>
-                              {formatarMoeda(Number(pagamento.valor))}
+                            <p className={`text-xl font-bold ${item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : 'text-emerald-400'}`}>
+                              {formatarMoeda(item.valor)}
                             </p>
                             
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => openPagamentoModal(pagamento)}
-                                className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                onClick={() => deletePagamento(pagamento.id)}
-                                className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
+                            {!isSessao && item.pagamentoOriginal && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => openPagamentoModal(item.pagamentoOriginal)}
+                                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button
+                                  onClick={() => deletePagamento(item.id)}
+                                  className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            )}
+                            {isSessao && item.sessaoOriginal && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => openSessaoModal(item.sessaoOriginal)}
+                                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
