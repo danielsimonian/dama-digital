@@ -1,5 +1,5 @@
 // ============================================
-// ARQUIVO: app/[slug]/page.tsx
+// ARQUIVO: app/cliente/[slug]/page.tsx
 // Página pública do cliente (acesso com senha)
 // ============================================
 
@@ -23,12 +23,22 @@ import {
   ChevronDown,
   ChevronUp,
   User,
-  LogOut
+  LogOut,
+  Wallet,
+  CreditCard
 } from 'lucide-react';
-import { supabase, formatarMoeda, formatarData, DIVISAO_CONFIG } from '@/lib/supabase';
+import { supabase, formatarMoeda, DIVISAO_CONFIG } from '@/lib/supabase';
+
+// Função para formatar data sem problema de timezone
+function formatarDataLocal(dataString: string): string {
+  if (!dataString) return '';
+  // Pega apenas a parte da data (YYYY-MM-DD)
+  const [ano, mes, dia] = dataString.split('T')[0].split('-');
+  return `${dia}/${mes}/${ano}`;
+}
 
 type Area = 'tech' | 'sports' | 'studio';
-type Tab = 'sessoes' | 'aulas';
+type Tab = 'sessoes' | 'conteudo' | 'financeiro';
 type TipoConteudo = 'video' | 'pdf' | 'exercicio' | 'link' | 'texto';
 
 interface Cliente {
@@ -37,6 +47,9 @@ interface Cliente {
   areas: Area[];
   slug: string;
   senha_acesso: string;
+  sessoes_visiveis: boolean;
+  conteudo_visivel: boolean;
+  financeiro_visivel: boolean;
 }
 
 interface Sessao {
@@ -67,6 +80,17 @@ interface Conteudo {
   ordem: number;
 }
 
+interface Pagamento {
+  id: string;
+  data: string;
+  valor: number;
+  forma_pagamento: string;
+  referencia: string;
+  observacoes: string;
+  pago: boolean;
+  pago_em: string | null;
+}
+
 export default function ClientePublicoPage() {
   const params = useParams();
   const slug = params?.slug as string;
@@ -81,6 +105,7 @@ export default function ClientePublicoPage() {
   const [activeTab, setActiveTab] = useState<Tab>('sessoes');
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [modulos, setModulos] = useState<Modulo[]>([]);
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [expandedModulos, setExpandedModulos] = useState<string[]>([]);
 
   // Filtro de mês para sessões
@@ -88,6 +113,22 @@ export default function ClientePublicoPage() {
     const hoje = new Date();
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   });
+
+  // Filtro de mês para financeiro
+  const [mesFinanceiro, setMesFinanceiro] = useState(() => {
+    const hoje = new Date();
+    return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  // Formas de pagamento
+  const formasPagamento = [
+    { value: 'pix', label: 'PIX' },
+    { value: 'cartao_credito', label: 'Cartão de Crédito' },
+    { value: 'cartao_debito', label: 'Cartão de Débito' },
+    { value: 'boleto', label: 'Boleto' },
+    { value: 'dinheiro', label: 'Dinheiro' },
+    { value: 'transferencia', label: 'Transferência' },
+  ];
 
   useEffect(() => {
     if (slug) {
@@ -110,7 +151,7 @@ export default function ClientePublicoPage() {
     try {
       const { data, error } = await supabase
         .from('clientes')
-        .select('id, nome, areas, slug, senha_acesso')
+        .select('id, nome, areas, slug, senha_acesso, sessoes_visiveis, conteudo_visivel, financeiro_visivel')
         .eq('slug', slug)
         .single();
 
@@ -154,6 +195,15 @@ export default function ClientePublicoPage() {
     }));
 
     setModulos(modulosOrdenados);
+
+    // Buscar pagamentos
+    const { data: pagamentosData } = await supabase
+      .from('pagamentos')
+      .select('*')
+      .eq('cliente_id', cliente.id)
+      .order('data', { ascending: false });
+
+    setPagamentos(pagamentosData || []);
   }
 
   function handleLogin(e: React.FormEvent) {
@@ -240,6 +290,62 @@ export default function ClientePublicoPage() {
 
   // Verificar se cliente é Studio
   const isStudio = cliente?.areas?.includes('studio') || false;
+
+  // Filtrar pagamentos por mês
+  const pagamentosFiltrados = pagamentos.filter(p => p.data.startsWith(mesFinanceiro));
+  
+  // Calcular totais do mês selecionado
+  const totalMesPagamentos = pagamentosFiltrados.reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalPagoMes = pagamentosFiltrados.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalAbertoMes = pagamentosFiltrados.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+
+  // Calcular totais GERAIS (todos os pagamentos)
+  const totalGeralPagamentos = pagamentos.reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalGeralPago = pagamentos.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalGeralAberto = pagamentos.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+
+  // Agrupar pagamentos por mês para resumo
+  const resumoPorMes = pagamentos.reduce((acc, p) => {
+    const mes = p.data.substring(0, 7); // "2024-01"
+    if (!acc[mes]) {
+      acc[mes] = { total: 0, pago: 0, aberto: 0 };
+    }
+    acc[mes].total += Number(p.valor);
+    if (p.pago) {
+      acc[mes].pago += Number(p.valor);
+    } else {
+      acc[mes].aberto += Number(p.valor);
+    }
+    return acc;
+  }, {} as Record<string, { total: number; pago: number; aberto: number }>);
+
+  // Ordenar meses do mais recente para o mais antigo
+  const mesesOrdenados = Object.keys(resumoPorMes).sort((a, b) => b.localeCompare(a));
+
+  // Função para formatar mês/ano
+  function formatarMesAno(mesAno: string): string {
+    const [ano, mes] = mesAno.split('-');
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    return `${meses[parseInt(mes) - 1]}/${ano}`;
+  }
+
+  // Verificar quais abas estão visíveis
+  const mostrarSessoes = isStudio && cliente?.sessoes_visiveis;
+  const mostrarConteudo = isStudio && cliente?.conteudo_visivel;
+  const mostrarFinanceiro = cliente?.financeiro_visivel;
+
+  // Definir primeira aba disponível
+  useEffect(() => {
+    if (cliente && autenticado) {
+      if (mostrarSessoes) {
+        setActiveTab('sessoes');
+      } else if (mostrarConteudo) {
+        setActiveTab('conteudo');
+      } else if (mostrarFinanceiro) {
+        setActiveTab('financeiro');
+      }
+    }
+  }, [cliente, autenticado, mostrarSessoes, mostrarConteudo, mostrarFinanceiro]);
 
   // Loading
   if (loading) {
@@ -364,31 +470,48 @@ export default function ClientePublicoPage() {
         </div>
 
         {/* Tabs */}
-        {isStudio && (
+        {(mostrarSessoes || mostrarConteudo || mostrarFinanceiro) && (
           <div className="max-w-4xl mx-auto px-4">
             <nav className="flex gap-1 -mb-px">
-              <button
-                onClick={() => setActiveTab('sessoes')}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                  activeTab === 'sessoes'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                <Music size={18} />
-                Sessões
-              </button>
-              <button
-                onClick={() => setActiveTab('aulas')}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                  activeTab === 'aulas'
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-white'
-                }`}
-              >
-                <BookOpen size={18} />
-                Aulas
-              </button>
+              {mostrarSessoes && (
+                <button
+                  onClick={() => setActiveTab('sessoes')}
+                  className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                    activeTab === 'sessoes'
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <Music size={18} />
+                  Sessões
+                </button>
+              )}
+              {mostrarConteudo && (
+                <button
+                  onClick={() => setActiveTab('conteudo')}
+                  className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                    activeTab === 'conteudo'
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <BookOpen size={18} />
+                  Conteúdo
+                </button>
+              )}
+              {mostrarFinanceiro && (
+                <button
+                  onClick={() => setActiveTab('financeiro')}
+                  className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                    activeTab === 'financeiro'
+                      ? 'border-emerald-500 text-emerald-400'
+                      : 'border-transparent text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <Wallet size={18} />
+                  Financeiro
+                </button>
+              )}
             </nav>
           </div>
         )}
@@ -396,7 +519,7 @@ export default function ClientePublicoPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Tab: Sessões */}
-        {activeTab === 'sessoes' && (
+        {activeTab === 'sessoes' && mostrarSessoes && (
           <div className="space-y-6">
             {/* Filtro de Mês */}
             <div className="flex items-center justify-between">
@@ -457,7 +580,7 @@ export default function ClientePublicoPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium">{formatarData(sessao.data)}</span>
+                              <span className="font-medium">{formatarDataLocal(sessao.data)}</span>
                               <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
                                 {getDiaSemana(sessao.data)}
                               </span>
@@ -489,10 +612,10 @@ export default function ClientePublicoPage() {
           </div>
         )}
 
-        {/* Tab: Aulas */}
-        {activeTab === 'aulas' && (
+        {/* Tab: Conteúdo */}
+        {activeTab === 'conteudo' && mostrarConteudo && (
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Suas Aulas</h2>
+            <h2 className="text-xl font-semibold">Seu Conteúdo</h2>
 
             {modulos.length === 0 ? (
               <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-12 text-center">
@@ -592,6 +715,146 @@ export default function ClientePublicoPage() {
                 })}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab: Financeiro */}
+        {activeTab === 'financeiro' && mostrarFinanceiro && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Seu Financeiro</h2>
+
+            {/* Resumo GERAL */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4">
+              <h3 className="font-medium text-sm text-gray-400 mb-3">Resumo Geral</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-400 mb-1">Total</p>
+                  <p className="text-lg font-bold">{formatarMoeda(totalGeralPagamentos)}</p>
+                </div>
+                
+                <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/30">
+                  <p className="text-xs text-emerald-400 mb-1">Pago</p>
+                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalGeralPago)}</p>
+                </div>
+
+                <div className={`rounded-xl p-3 text-center border ${totalGeralAberto > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                  <p className={`text-xs mb-1 ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
+                  <p className={`text-lg font-bold ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                    {formatarMoeda(totalGeralAberto)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Histórico por Mês */}
+            {mesesOrdenados.length > 0 && (
+              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4">
+                <h3 className="font-medium text-sm text-gray-400 mb-3">Histórico por Mês</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="text-left py-2 px-2 text-gray-400 font-medium">Mês</th>
+                        <th className="text-right py-2 px-2 text-gray-400 font-medium">Total</th>
+                        <th className="text-right py-2 px-2 text-gray-400 font-medium">Pago</th>
+                        <th className="text-right py-2 px-2 text-gray-400 font-medium">Aberto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mesesOrdenados.map((mes) => {
+                        const dados = resumoPorMes[mes];
+                        const isMesSelecionado = mes === mesFinanceiro;
+                        return (
+                          <tr 
+                            key={mes} 
+                            className={`border-b border-gray-800 cursor-pointer transition-colors ${isMesSelecionado ? 'bg-blue-500/10' : 'hover:bg-gray-800/50'}`}
+                            onClick={() => setMesFinanceiro(mes)}
+                          >
+                            <td className="py-2 px-2">
+                              <span className={`font-medium ${isMesSelecionado ? 'text-blue-400' : ''}`}>
+                                {formatarMesAno(mes)}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2 text-right">{formatarMoeda(dados.total)}</td>
+                            <td className="py-2 px-2 text-right text-emerald-400">{formatarMoeda(dados.pago)}</td>
+                            <td className={`py-2 px-2 text-right ${dados.aberto > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                              {formatarMoeda(dados.aberto)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Pagamentos do Mês Selecionado */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 overflow-hidden">
+              <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+                <h3 className="font-medium">Pagamentos de {formatarMesAno(mesFinanceiro)}</h3>
+                <input
+                  type="month"
+                  value={mesFinanceiro}
+                  onChange={(e) => setMesFinanceiro(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 text-white text-sm"
+                />
+              </div>
+
+              {pagamentosFiltrados.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <Wallet size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>Nenhum pagamento neste mês</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-800">
+                  {pagamentosFiltrados.map((pagamento) => {
+                    const forma = formasPagamento.find(f => f.value === pagamento.forma_pagamento);
+                    
+                    return (
+                      <div 
+                        key={pagamento.id} 
+                        className={`p-4 ${pagamento.pago ? 'bg-emerald-500/5' : ''}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-medium">{formatarDataLocal(pagamento.data)}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+                                {forma?.label || pagamento.forma_pagamento}
+                              </span>
+                              {pagamento.pago && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                                  Pago
+                                </span>
+                              )}
+                            </div>
+                            {pagamento.referencia && (
+                              <p className="text-sm text-gray-400">{pagamento.referencia}</p>
+                            )}
+                            {pagamento.observacoes && (
+                              <p className="text-sm text-gray-500 mt-1">{pagamento.observacoes}</p>
+                            )}
+                          </div>
+                          
+                          <p className={`text-lg font-bold ${pagamento.pago ? 'text-gray-500' : 'text-emerald-400'}`}>
+                            {formatarMoeda(Number(pagamento.valor))}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Nenhuma aba disponível */}
+        {!mostrarSessoes && !mostrarConteudo && !mostrarFinanceiro && (
+          <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-12 text-center">
+            <User size={48} className="mx-auto mb-4 text-gray-600" />
+            <p className="text-gray-400">Nenhum conteúdo disponível no momento.</p>
           </div>
         )}
       </main>

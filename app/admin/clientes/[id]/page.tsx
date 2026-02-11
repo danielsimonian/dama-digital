@@ -39,7 +39,11 @@ import {
   Type,
   ChevronDown,
   ChevronUp,
-  GripVertical
+  GripVertical,
+  Lock,
+  LockOpen,
+  Wallet,
+  CreditCard
 } from 'lucide-react';
 import {
   DndContext,
@@ -58,11 +62,19 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { supabase, formatarMoeda, formatarData, DIVISAO_CONFIG } from '@/lib/supabase';
+import { supabase, formatarMoeda, DIVISAO_CONFIG } from '@/lib/supabase';
+
+// Função para formatar data sem problema de timezone
+function formatarDataLocal(dataString: string): string {
+  if (!dataString) return '';
+  // Pega apenas a parte da data (YYYY-MM-DD)
+  const [ano, mes, dia] = dataString.split('T')[0].split('-');
+  return `${dia}/${mes}/${ano}`;
+}
 
 type Divisao = 'tech' | 'sports' | 'studio';
 type Area = 'tech' | 'sports' | 'studio';
-type Tab = 'sobre' | 'orcamentos' | 'sessoes' | 'aulas';
+type Tab = 'sobre' | 'orcamentos' | 'sessoes' | 'conteudo' | 'financeiro';
 type TipoConteudo = 'video' | 'pdf' | 'exercicio' | 'link' | 'texto';
 
 interface Cliente {
@@ -78,6 +90,9 @@ interface Cliente {
   slug: string;
   senha_acesso: string;
   created_at: string;
+  sessoes_visiveis: boolean;
+  conteudo_visivel: boolean;
+  financeiro_visivel: boolean;
 }
 
 interface Orcamento {
@@ -122,6 +137,18 @@ interface Conteudo {
   url: string;
   conteudo: string;
   ordem: number;
+}
+
+interface Pagamento {
+  id: string;
+  cliente_id: string;
+  data: string;
+  valor: number;
+  forma_pagamento: string;
+  referencia: string;
+  observacoes: string;
+  pago: boolean;
+  pago_em: string | null;
 }
 
 // Componente Sortable para Módulo
@@ -374,12 +401,42 @@ export default function ClienteDetalhesPage() {
     conteudo: ''
   });
 
+  // Estados para Financeiro
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
+  const [mesFinanceiro, setMesFinanceiro] = useState(() => {
+    const hoje = new Date();
+    return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  });
+  
+  // Modal de pagamento
+  const [showPagamentoModal, setShowPagamentoModal] = useState(false);
+  const [editingPagamento, setEditingPagamento] = useState<Pagamento | null>(null);
+  const [savingPagamento, setSavingPagamento] = useState(false);
+  const [pagamentoForm, setPagamentoForm] = useState({
+    data: '',
+    valor: '',
+    forma_pagamento: 'pix',
+    referencia: '',
+    observacoes: ''
+  });
+
+  // Formas de pagamento
+  const formasPagamento = [
+    { value: 'pix', label: 'PIX' },
+    { value: 'cartao_credito', label: 'Cartão de Crédito' },
+    { value: 'cartao_debito', label: 'Cartão de Débito' },
+    { value: 'boleto', label: 'Boleto' },
+    { value: 'dinheiro', label: 'Dinheiro' },
+    { value: 'transferencia', label: 'Transferência' },
+  ];
+
   useEffect(() => {
     if (clienteId) {
       fetchCliente();
       fetchOrcamentos();
       fetchSessoes();
       fetchModulos();
+      fetchPagamentos();
     }
   }, [clienteId]);
 
@@ -476,6 +533,25 @@ export default function ClienteDetalhesPage() {
       }));
 
       setModulos(modulosOrdenados);
+    } catch (err) {
+      console.error('Erro:', err);
+    }
+  }
+
+  async function fetchPagamentos() {
+    try {
+      const { data, error } = await supabase
+        .from('pagamentos')
+        .select('*')
+        .eq('cliente_id', clienteId)
+        .order('data', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar pagamentos:', error);
+        return;
+      }
+
+      setPagamentos(data || []);
     } catch (err) {
       console.error('Erro:', err);
     }
@@ -955,6 +1031,143 @@ export default function ClienteDetalhesPage() {
     await fetchModulos();
   }
 
+  // ========== FUNÇÕES DE PAGAMENTOS ==========
+
+  function openPagamentoModal(pagamento?: Pagamento) {
+    if (pagamento) {
+      setEditingPagamento(pagamento);
+      setPagamentoForm({
+        data: pagamento.data,
+        valor: String(pagamento.valor),
+        forma_pagamento: pagamento.forma_pagamento,
+        referencia: pagamento.referencia || '',
+        observacoes: pagamento.observacoes || ''
+      });
+    } else {
+      setEditingPagamento(null);
+      setPagamentoForm({
+        data: new Date().toISOString().split('T')[0],
+        valor: '',
+        forma_pagamento: 'pix',
+        referencia: '',
+        observacoes: ''
+      });
+    }
+    setShowPagamentoModal(true);
+  }
+
+  function closePagamentoModal() {
+    setShowPagamentoModal(false);
+    setEditingPagamento(null);
+    setPagamentoForm({
+      data: '',
+      valor: '',
+      forma_pagamento: 'pix',
+      referencia: '',
+      observacoes: ''
+    });
+  }
+
+  async function handlePagamentoSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingPagamento(true);
+
+    try {
+      const pagamentoData = {
+        cliente_id: clienteId,
+        data: pagamentoForm.data,
+        valor: Number(pagamentoForm.valor),
+        forma_pagamento: pagamentoForm.forma_pagamento,
+        referencia: pagamentoForm.referencia || null,
+        observacoes: pagamentoForm.observacoes || null
+      };
+
+      if (editingPagamento) {
+        const { error } = await supabase
+          .from('pagamentos')
+          .update(pagamentoData)
+          .eq('id', editingPagamento.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('pagamentos')
+          .insert(pagamentoData);
+
+        if (error) throw error;
+      }
+
+      await fetchPagamentos();
+      closePagamentoModal();
+    } catch (err: any) {
+      alert('Erro ao salvar: ' + err.message);
+    } finally {
+      setSavingPagamento(false);
+    }
+  }
+
+  async function deletePagamento(id: string) {
+    if (!confirm('Tem certeza que deseja excluir este pagamento?')) return;
+
+    const { error } = await supabase
+      .from('pagamentos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert('Erro ao excluir: ' + error.message);
+      return;
+    }
+
+    setPagamentos(pagamentos.filter(p => p.id !== id));
+  }
+
+  // Marcar pagamento como pago/não pago
+  async function togglePagamentoPago(pagamento: Pagamento) {
+    const novoPago = !pagamento.pago;
+    const pagoEm = novoPago ? new Date().toISOString() : null;
+
+    const { error } = await supabase
+      .from('pagamentos')
+      .update({ 
+        pago: novoPago,
+        pago_em: pagoEm
+      })
+      .eq('id', pagamento.id);
+
+    if (error) {
+      alert('Erro ao atualizar: ' + error.message);
+      return;
+    }
+
+    // Atualiza estado local
+    setPagamentos(pagamentos.map(p => 
+      p.id === pagamento.id 
+        ? { ...p, pago: novoPago, pago_em: pagoEm }
+        : p
+    ));
+  }
+
+  // ========== TOGGLE VISIBILIDADE ==========
+
+  async function toggleVisibilidade(campo: 'sessoes_visiveis' | 'conteudo_visivel' | 'financeiro_visivel') {
+    if (!cliente) return;
+
+    const novoValor = !cliente[campo];
+
+    const { error } = await supabase
+      .from('clientes')
+      .update({ [campo]: novoValor })
+      .eq('id', cliente.id);
+
+    if (error) {
+      alert('Erro ao atualizar: ' + error.message);
+      return;
+    }
+
+    setCliente({ ...cliente, [campo]: novoValor });
+  }
+
   // Copiar link de acesso
   function copiarLink() {
     const link = `${window.location.origin}/cliente/${cliente?.slug}`;
@@ -965,12 +1178,58 @@ export default function ClienteDetalhesPage() {
   // Verificar se cliente é Studio
   const isStudio = cliente?.areas?.includes('studio') || false;
 
-  // Tabs disponíveis
-  const tabs: { id: Tab; label: string; icon: any; visible: boolean }[] = [
+  // Calcular estatísticas dinâmicas (só divisões com orçamentos)
+  const divisoesComOrcamentos = {
+    tech: orcamentos.filter(o => o.divisao === 'tech').length,
+    sports: orcamentos.filter(o => o.divisao === 'sports').length,
+    studio: orcamentos.filter(o => o.divisao === 'studio').length,
+  };
+
+  // Filtrar pagamentos por mês
+  const pagamentosFiltrados = pagamentos.filter(p => p.data.startsWith(mesFinanceiro));
+  
+  // Calcular totais do mês selecionado
+  const totalMesPagamentos = pagamentosFiltrados.reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalPagoMes = pagamentosFiltrados.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalAbertoMes = pagamentosFiltrados.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+
+  // Calcular totais GERAIS (todos os pagamentos)
+  const totalGeralPagamentos = pagamentos.reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalGeralPago = pagamentos.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  const totalGeralAberto = pagamentos.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+
+  // Agrupar pagamentos por mês para resumo
+  const resumoPorMes = pagamentos.reduce((acc, p) => {
+    const mes = p.data.substring(0, 7); // "2024-01"
+    if (!acc[mes]) {
+      acc[mes] = { total: 0, pago: 0, aberto: 0 };
+    }
+    acc[mes].total += Number(p.valor);
+    if (p.pago) {
+      acc[mes].pago += Number(p.valor);
+    } else {
+      acc[mes].aberto += Number(p.valor);
+    }
+    return acc;
+  }, {} as Record<string, { total: number; pago: number; aberto: number }>);
+
+  // Ordenar meses do mais recente para o mais antigo
+  const mesesOrdenados = Object.keys(resumoPorMes).sort((a, b) => b.localeCompare(a));
+
+  // Função para formatar mês/ano
+  function formatarMesAno(mesAno: string): string {
+    const [ano, mes] = mesAno.split('-');
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    return `${meses[parseInt(mes) - 1]}/${ano}`;
+  }
+
+  // Tabs disponíveis com campo de visibilidade
+  const tabs: { id: Tab; label: string; icon: any; visible: boolean; visibilidadeCampo?: 'sessoes_visiveis' | 'conteudo_visivel' | 'financeiro_visivel' }[] = [
     { id: 'sobre', label: 'Sobre', icon: User, visible: true },
     { id: 'orcamentos', label: 'Orçamentos', icon: FileText, visible: true },
-    { id: 'sessoes', label: 'Sessões', icon: Music, visible: isStudio },
-    { id: 'aulas', label: 'Aulas', icon: BookOpen, visible: isStudio },
+    { id: 'sessoes', label: 'Sessões', icon: Music, visible: isStudio, visibilidadeCampo: 'sessoes_visiveis' },
+    { id: 'conteudo', label: 'Conteúdo', icon: BookOpen, visible: isStudio, visibilidadeCampo: 'conteudo_visivel' },
+    { id: 'financeiro', label: 'Financeiro', icon: Wallet, visible: true, visibilidadeCampo: 'financeiro_visivel' },
   ];
 
   if (loading) {
@@ -1046,19 +1305,34 @@ export default function ClienteDetalhesPage() {
             {tabs.filter(t => t.visible).map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
+              const isVisible = tab.visibilidadeCampo ? cliente[tab.visibilidadeCampo] : true;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
-                    isActive
-                      ? 'border-purple-500 text-purple-400'
-                      : 'border-transparent text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <Icon size={18} />
-                  {tab.label}
-                </button>
+                <div key={tab.id} className="flex items-center">
+                  <button
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                      isActive
+                        ? 'border-purple-500 text-purple-400'
+                        : 'border-transparent text-gray-400 hover:text-white'
+                    }`}
+                  >
+                    <Icon size={18} />
+                    {tab.label}
+                  </button>
+                  {tab.visibilidadeCampo && (
+                    <button
+                      onClick={() => toggleVisibilidade(tab.visibilidadeCampo!)}
+                      className={`p-1.5 rounded-lg transition-colors ${
+                        isVisible 
+                          ? 'text-emerald-400 hover:bg-emerald-500/20' 
+                          : 'text-gray-500 hover:bg-gray-700'
+                      }`}
+                      title={isVisible ? 'Visível para o cliente' : 'Oculto do cliente'}
+                    >
+                      {isVisible ? <LockOpen size={14} /> : <Lock size={14} />}
+                    </button>
+                  )}
+                </div>
               );
             })}
           </nav>
@@ -1121,7 +1395,7 @@ export default function ClienteDetalhesPage() {
                     <Calendar size={14} />
                     Cliente desde
                   </div>
-                  <p className="font-medium">{formatarData(cliente.created_at)}</p>
+                  <p className="font-medium">{formatarDataLocal(cliente.created_at)}</p>
                 </div>
               </div>
 
@@ -1178,7 +1452,7 @@ export default function ClienteDetalhesPage() {
         {activeTab === 'orcamentos' && (
           <div className="space-y-6">
             {/* Estatísticas */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
                 <p className="text-sm text-gray-400 mb-1">Total</p>
                 <p className="text-2xl font-bold">{estatisticas.total}</p>
@@ -1191,20 +1465,26 @@ export default function ClienteDetalhesPage() {
                 </p>
               </div>
               
-              <div className="bg-gray-900/50 rounded-xl border border-purple-500/30 p-4">
-                <p className="text-sm text-purple-400 mb-1">DAMA Tech</p>
-                <p className="text-2xl font-bold">{estatisticas.tech}</p>
-              </div>
+              {divisoesComOrcamentos.tech > 0 && (
+                <div className="bg-gray-900/50 rounded-xl border border-purple-500/30 p-4">
+                  <p className="text-sm text-purple-400 mb-1">DAMA Tech</p>
+                  <p className="text-2xl font-bold">{divisoesComOrcamentos.tech}</p>
+                </div>
+              )}
               
-              <div className="bg-gray-900/50 rounded-xl border border-orange-500/30 p-4">
-                <p className="text-sm text-orange-400 mb-1">DAMA Sports</p>
-                <p className="text-2xl font-bold">{estatisticas.sports}</p>
-              </div>
+              {divisoesComOrcamentos.sports > 0 && (
+                <div className="bg-gray-900/50 rounded-xl border border-orange-500/30 p-4">
+                  <p className="text-sm text-orange-400 mb-1">DAMA Sports</p>
+                  <p className="text-2xl font-bold">{divisoesComOrcamentos.sports}</p>
+                </div>
+              )}
               
-              <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
-                <p className="text-sm text-blue-400 mb-1">DAMA Studio</p>
-                <p className="text-2xl font-bold">{estatisticas.studio}</p>
-              </div>
+              {divisoesComOrcamentos.studio > 0 && (
+                <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
+                  <p className="text-sm text-blue-400 mb-1">DAMA Studio</p>
+                  <p className="text-2xl font-bold">{divisoesComOrcamentos.studio}</p>
+                </div>
+              )}
             </div>
 
             {/* Lista de Orçamentos */}
@@ -1285,7 +1565,7 @@ export default function ClienteDetalhesPage() {
                             </div>
                             <h3 className="font-semibold">{orc.projeto_titulo}</h3>
                             <p className="text-sm text-gray-400">
-                              #{orc.numero} • {formatarData(orc.data_emissao)}
+                              #{orc.numero} • {formatarDataLocal(orc.data_emissao)}
                             </p>
                           </div>
                           
@@ -1407,7 +1687,7 @@ export default function ClienteDetalhesPage() {
                                   ? 'bg-emerald-500 border-emerald-500' 
                                   : 'border-gray-600 hover:border-gray-500'
                               }`}
-                              title={sessao.pago ? `Pago em ${formatarData(sessao.pago_em!)}` : 'Marcar como pago'}
+                              title={sessao.pago ? `Pago em ${formatarDataLocal(sessao.pago_em!)}` : 'Marcar como pago'}
                             >
                               {sessao.pago && <Check size={14} className="text-white" />}
                             </button>
@@ -1415,7 +1695,7 @@ export default function ClienteDetalhesPage() {
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-1">
                                 <span className={`font-semibold ${sessao.pago ? 'text-gray-400' : 'text-white'}`}>
-                                  {formatarData(sessao.data)}
+                                  {formatarDataLocal(sessao.data)}
                                 </span>
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
                                   {getDiaSemana(sessao.data)}
@@ -1475,14 +1755,14 @@ export default function ClienteDetalhesPage() {
           </div>
         )}
 
-        {/* Tab: Aulas */}
-        {activeTab === 'aulas' && (
+        {/* Tab: Conteúdo */}
+        {activeTab === 'conteudo' && (
           <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold">Módulos de Aulas</h2>
-                <p className="text-gray-400 text-sm">{modulos.length} módulo(s) • {modulos.reduce((acc, m) => acc + (m.conteudos?.length || 0), 0)} conteúdo(s)</p>
+                <h2 className="text-xl font-semibold">Conteúdo</h2>
+                <p className="text-gray-400 text-sm">{modulos.length} módulo(s) • {modulos.reduce((acc, m) => acc + (m.conteudos?.length || 0), 0)} item(ns)</p>
               </div>
               
               <button
@@ -1582,6 +1862,216 @@ export default function ClienteDetalhesPage() {
                 </SortableContext>
               </DndContext>
             )}
+          </div>
+        )}
+
+        {/* Tab: Financeiro */}
+        {activeTab === 'financeiro' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Financeiro</h2>
+                <p className="text-gray-400 text-sm">Pagamentos e acordos</p>
+              </div>
+              
+              <button
+                onClick={() => openPagamentoModal()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-medium transition-all"
+              >
+                <Plus size={20} />
+                Novo Pagamento
+              </button>
+            </div>
+
+            {/* Resumo GERAL */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <Wallet size={20} className="text-purple-400" />
+                Resumo Geral
+              </h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
+                  <p className="text-sm text-gray-400 mb-1">Total</p>
+                  <p className="text-2xl font-bold">{formatarMoeda(totalGeralPagamentos)}</p>
+                </div>
+                
+                <div className="bg-emerald-500/10 rounded-xl p-4 text-center border border-emerald-500/30">
+                  <p className="text-sm text-emerald-400 mb-1">Pago</p>
+                  <p className="text-2xl font-bold text-emerald-400">{formatarMoeda(totalGeralPago)}</p>
+                </div>
+
+                <div className={`rounded-xl p-4 text-center border ${totalGeralAberto > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                  <p className={`text-sm mb-1 ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
+                  <p className={`text-2xl font-bold ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                    {formatarMoeda(totalGeralAberto)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Histórico por Mês */}
+            {mesesOrdenados.length > 0 && (
+              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Calendar size={20} className="text-blue-400" />
+                  Histórico por Mês
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="text-left py-3 px-2 text-sm text-gray-400 font-medium">Mês</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Total</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Pago</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Em Aberto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mesesOrdenados.map((mes) => {
+                        const dados = resumoPorMes[mes];
+                        const isMesSelecionado = mes === mesFinanceiro;
+                        return (
+                          <tr 
+                            key={mes} 
+                            className={`border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${isMesSelecionado ? 'bg-purple-500/10' : ''}`}
+                            onClick={() => setMesFinanceiro(mes)}
+                          >
+                            <td className="py-3 px-2">
+                              <span className={`font-medium ${isMesSelecionado ? 'text-purple-400' : ''}`}>
+                                {formatarMesAno(mes)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 text-right font-medium">{formatarMoeda(dados.total)}</td>
+                            <td className="py-3 px-2 text-right text-emerald-400">{formatarMoeda(dados.pago)}</td>
+                            <td className={`py-3 px-2 text-right ${dados.aberto > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                              {formatarMoeda(dados.aberto)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Pagamentos do Mês Selecionado */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <CreditCard size={20} className="text-emerald-400" />
+                  Pagamentos de {formatarMesAno(mesFinanceiro)} ({pagamentosFiltrados.length})
+                </h3>
+                <input
+                  type="month"
+                  value={mesFinanceiro}
+                  onChange={(e) => setMesFinanceiro(e.target.value)}
+                  className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white text-sm"
+                />
+              </div>
+
+              {/* Cards do mês */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-gray-400 mb-1">Total</p>
+                  <p className="text-lg font-bold">{formatarMoeda(totalMesPagamentos)}</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
+                  <p className="text-xs text-emerald-400 mb-1">Pago</p>
+                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalPagoMes)}</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
+                  <p className={`text-xs mb-1 ${totalAbertoMes > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Aberto</p>
+                  <p className={`text-lg font-bold ${totalAbertoMes > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                    {formatarMoeda(totalAbertoMes)}
+                  </p>
+                </div>
+              </div>
+
+              {pagamentosFiltrados.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Wallet size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>Nenhum pagamento neste mês</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pagamentosFiltrados.map((pagamento) => {
+                    const forma = formasPagamento.find(f => f.value === pagamento.forma_pagamento);
+                    
+                    return (
+                      <div
+                        key={pagamento.id}
+                        className={`rounded-xl border p-4 transition-colors ${
+                          pagamento.pago 
+                            ? 'bg-emerald-500/10 border-emerald-500/30' 
+                            : 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          {/* Checkbox de Pago */}
+                          <button
+                            onClick={() => togglePagamentoPago(pagamento)}
+                            className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+                              pagamento.pago
+                                ? 'bg-emerald-500 border-emerald-500'
+                                : 'border-gray-600 hover:border-emerald-500'
+                            }`}
+                            title={pagamento.pago 
+                              ? `Pago em ${pagamento.pago_em ? formatarDataLocal(pagamento.pago_em.split('T')[0]) : ''}` 
+                              : 'Marcar como pago'
+                            }
+                          >
+                            {pagamento.pago && <Check size={14} className="text-white" />}
+                          </button>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="font-medium">{formatarDataLocal(pagamento.data)}</span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
+                                {forma?.label || pagamento.forma_pagamento}
+                              </span>
+                              {pagamento.pago && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                                  Pago
+                                </span>
+                              )}
+                            </div>
+                            {pagamento.referencia && (
+                              <p className="text-sm text-gray-400">{pagamento.referencia}</p>
+                            )}
+                            {pagamento.observacoes && (
+                              <p className="text-sm text-gray-500 mt-1">{pagamento.observacoes}</p>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-4">
+                            <p className={`text-xl font-bold ${pagamento.pago ? 'text-gray-500' : 'text-emerald-400'}`}>
+                              {formatarMoeda(Number(pagamento.valor))}
+                            </p>
+                            
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => openPagamentoModal(pagamento)}
+                                className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                onClick={() => deletePagamento(pagamento.id)}
+                                className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
@@ -1890,6 +2380,113 @@ export default function ClienteDetalhesPage() {
                   className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {savingConteudo ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Pagamento */}
+      {showPagamentoModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">
+                {editingPagamento ? 'Editar Pagamento' : 'Novo Pagamento'}
+              </h3>
+              <button
+                onClick={closePagamentoModal}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handlePagamentoSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Data *</label>
+                  <input
+                    type="date"
+                    value={pagamentoForm.data}
+                    onChange={(e) => setPagamentoForm({ ...pagamentoForm, data: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-emerald-500 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Valor *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={pagamentoForm.valor}
+                    onChange={(e) => setPagamentoForm({ ...pagamentoForm, valor: e.target.value })}
+                    placeholder="0.00"
+                    required
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-emerald-500 text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Forma de Pagamento *</label>
+                <select
+                  value={pagamentoForm.forma_pagamento}
+                  onChange={(e) => setPagamentoForm({ ...pagamentoForm, forma_pagamento: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-emerald-500 text-white"
+                >
+                  {formasPagamento.map((forma) => (
+                    <option key={forma.value} value={forma.value}>
+                      {forma.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Referência</label>
+                <input
+                  type="text"
+                  value={pagamentoForm.referencia}
+                  onChange={(e) => setPagamentoForm({ ...pagamentoForm, referencia: e.target.value })}
+                  placeholder="Ex: Orçamento #001, Sessões Janeiro..."
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-emerald-500 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Observações / Acordos</label>
+                <textarea
+                  value={pagamentoForm.observacoes}
+                  onChange={(e) => setPagamentoForm({ ...pagamentoForm, observacoes: e.target.value })}
+                  placeholder="Anotações sobre o pagamento, acordos feitos..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-emerald-500 text-white"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closePagamentoModal}
+                  className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPagamento}
+                  className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {savingPagamento ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
                       Salvando...
