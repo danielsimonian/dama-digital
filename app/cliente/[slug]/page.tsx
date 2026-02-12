@@ -60,6 +60,7 @@ interface Sessao {
   valor_hora: number;
   observacoes: string;
   pago: boolean;
+  pago_em: string | null;
 }
 
 interface Modulo {
@@ -68,6 +69,7 @@ interface Modulo {
   descricao: string;
   ordem: number;
   conteudos?: Conteudo[];
+  
 }
 
 interface Conteudo {
@@ -78,6 +80,7 @@ interface Conteudo {
   url: string;
   conteudo: string;
   ordem: number;
+  
 }
 
 interface Pagamento {
@@ -327,7 +330,7 @@ export default function ClientePublicoPage() {
   const isStudio = cliente?.areas?.includes('studio') || false;
 
   // Converter sessões para itens do financeiro
-  const sessoesComoFinanceiro = sessoes.map(s => {
+const sessoesComoFinanceiro = sessoes.map(s => {
     const horas = calcularHoras(s.hora_inicio, s.hora_fim);
     const valor = horas * Number(s.valor_hora);
     return {
@@ -336,18 +339,20 @@ export default function ClientePublicoPage() {
       data: s.data,
       valor: valor,
       pago: s.pago,
+      pago_em: s.pago_em,
       referencia: `Sessão de ${formatarHoras(horas)} (${s.hora_inicio} - ${s.hora_fim})`,
       observacoes: s.observacoes
     };
   });
 
   // Converter pagamentos para itens do financeiro
-  const pagamentosComoFinanceiro = pagamentos.map(p => ({
+const pagamentosComoFinanceiro = pagamentos.map(p => ({
     id: p.id,
     tipo: 'pagamento' as const,
     data: p.data,
     valor: Number(p.valor),
     pago: p.pago,
+    pago_em: p.pago_em,
     referencia: p.referencia,
     observacoes: p.observacoes,
     forma_pagamento: p.forma_pagamento
@@ -512,7 +517,7 @@ export default function ClientePublicoPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/50 sticky top-0 z-10">
+      <header className="border-b border-white/10 bg-white/10 backdrop-blur-xl sticky top-0 z-20">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -589,7 +594,7 @@ export default function ClientePublicoPage() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold">Suas Sessões</h2>
 
-            {/* Resumo GERAL */}
+        {/* Resumo GERAL */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
                 <p className="text-xs text-gray-400 mb-1">Sessões Totais</p>
@@ -599,26 +604,6 @@ export default function ClientePublicoPage() {
               <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
                 <p className="text-xs text-gray-400 mb-1">Total de Horas</p>
                 <p className="text-xl font-bold">{formatarHoras(resumoGeralSessoes.totalHoras)}</p>
-              </div>
-              
-              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
-                <p className="text-xs text-gray-400 mb-1">Valor Total</p>
-                <p className="text-xl font-bold text-blue-400">{formatarMoeda(resumoGeralSessoes.totalValor)}</p>
-              </div>
-
-              <div className={`bg-gray-900/50 rounded-xl border p-3 ${
-                resumoGeralSessoes.valorAberto > 0 ? 'border-yellow-500/30' : 'border-emerald-500/30'
-              }`}>
-                <p className={`text-xs mb-1 ${
-                  resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
-                }`}>
-                  Em Aberto
-                </p>
-                <p className={`text-xl font-bold ${
-                  resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
-                }`}>
-                  {formatarMoeda(resumoGeralSessoes.valorAberto)}
-                </p>
               </div>
             </div>
 
@@ -638,17 +623,11 @@ export default function ClientePublicoPage() {
                         onClick={() => setMesSessao(mes)}
                         className={`p-3 rounded-xl cursor-pointer transition-colors ${isMesSelecionado ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-gray-800/50'}`}
                       >
-                        <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center justify-between">
                           <span className={`font-semibold ${isMesSelecionado ? 'text-blue-400' : ''}`}>
                             {formatarMesAno(mes)}
                           </span>
                           <span className="text-sm text-gray-400">{dados.qtd} sessões • {formatarHoras(dados.horas)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="font-bold text-blue-400">{formatarMoeda(dados.total)}</span>
-                          <span className={dados.aberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}>
-                            Aberto: {formatarMoeda(dados.aberto)}
-                          </span>
                         </div>
                       </div>
                     );
@@ -692,24 +671,24 @@ export default function ClientePublicoPage() {
                               <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
                                 {getDiaSemana(sessao.data)}
                               </span>
-                              {sessao.pago && (
+                              {sessao.pago && sessao.pago_em && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                                  Pago
+                                  Pago em {formatarDataLocal(sessao.pago_em.split('T')[0])}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-3 text-sm text-gray-400">
+                          <div className="flex items-center gap-3 text-sm text-gray-400">
                               <span className="flex items-center gap-1">
                                 <Clock size={14} />
                                 {sessao.hora_inicio} - {sessao.hora_fim}
                               </span>
-                              <span>{formatarHoras(horas)}</span>
+                              <span className='font-bold'>({formatarHoras(horas)})</span>
                             </div>
+                            {sessao.observacoes && (
+                              <p className="text-sm text-gray-500 mt-1">{sessao.observacoes}</p>
+                            )}
                           </div>
                           
-                          <p className={`text-lg font-bold ${sessao.pago ? 'text-gray-500' : 'text-blue-400'}`}>
-                            {formatarMoeda(valor)}
-                          </p>
                         </div>
                       </div>
                     );
@@ -831,25 +810,15 @@ export default function ClientePublicoPage() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold">Seu Financeiro</h2>
 
-            {/* Resumo GERAL - Grid 2x2 no mobile */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3 text-center">
-                <p className="text-xs text-gray-400 mb-1">Total</p>
-                <p className="text-xl font-bold">{formatarMoeda(totalGeralFinanceiro)}</p>
-              </div>
-              
-              <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/30">
-                <p className="text-xs text-emerald-400 mb-1">Pago</p>
-                <p className="text-xl font-bold text-emerald-400">{formatarMoeda(totalGeralPagoFinanceiro)}</p>
-              </div>
-
-              <div className={`col-span-2 rounded-xl p-3 text-center border ${totalGeralAbertoFinanceiro > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-                <p className={`text-xs mb-1 ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
-                <p className={`text-xl font-bold ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                  {formatarMoeda(totalGeralAbertoFinanceiro)}
-                </p>
-              </div>
-            </div>
+{/* Resumo GERAL */}
+            <div className={`rounded-xl px-4 py-3 flex items-center justify-between border ${totalGeralAbertoFinanceiro > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+  <p className={`text-sm ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+    {totalGeralAbertoFinanceiro > 0 ? 'Em Aberto' : 'Tudo em dia! ✓'}
+  </p>
+  <p className={`text-lg font-bold ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+    {formatarMoeda(totalGeralAbertoFinanceiro)}
+  </p>
+</div>
 
             {/* Histórico por Mês - Cards no mobile */}
             {mesesFinanceiroOrdenados.length > 0 && (
@@ -967,9 +936,9 @@ export default function ClientePublicoPage() {
                                   {forma.label}
                                 </span>
                               )}
-                              {item.pago && (
+                              {item.pago && item.pago_em && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                                  Pago
+                                  Pago em {formatarDataLocal(item.pago_em.split('T')[0])}
                                 </span>
                               )}
                             </div>

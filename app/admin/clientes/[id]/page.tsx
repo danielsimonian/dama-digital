@@ -1860,9 +1860,9 @@ export default function ClienteDetalhesPage() {
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
                                   {getDiaSemana(sessao.data)}
                                 </span>
-                                {sessao.pago && (
+                                {sessao.pago && sessao.pago_em && (
                                   <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                                    Pago
+                                    Pago em {formatarDataLocal(sessao.pago_em.split('T')[0])}
                                   </span>
                                 )}
                               </div>
@@ -2212,9 +2212,9 @@ export default function ClienteDetalhesPage() {
                                   {forma.label}
                                 </span>
                               )}
-                              {item.pago && (
+                             {item.pago && item.pago_em && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
-                                  Pago
+                                  Pago em {formatarDataLocal(item.pago_em.split('T')[0])}
                                 </span>
                               )}
                             </div>
