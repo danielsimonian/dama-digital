@@ -363,9 +363,6 @@ export default function ClienteDetalhesPage() {
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Toggle para mostrar totais gerais das sessões
-  const [mostrarTotaisGeraisSessoes, setMostrarTotaisGeraisSessoes] = useState(false);
-
   // Estados para Aulas/Módulos
   const [modulos, setModulos] = useState<Modulo[]>([]);
   const [expandedModulos, setExpandedModulos] = useState<string[]>([]);
@@ -618,6 +615,28 @@ export default function ClienteDetalhesPage() {
       qtdSessoes: acc.qtdSessoes + 1
     };
   }, { totalHoras: 0, totalValor: 0, valorAberto: 0, valorPago: 0, qtdSessoes: 0 });
+
+  // Agrupar sessões por mês para histórico
+  const resumoSessoesPorMes = sessoes.reduce((acc, s) => {
+    const mes = s.data.substring(0, 7);
+    const horas = calcularHoras(s.hora_inicio, s.hora_fim);
+    const valor = horas * Number(s.valor_hora);
+    if (!acc[mes]) {
+      acc[mes] = { qtd: 0, horas: 0, total: 0, pago: 0, aberto: 0 };
+    }
+    acc[mes].qtd += 1;
+    acc[mes].horas += horas;
+    acc[mes].total += valor;
+    if (s.pago) {
+      acc[mes].pago += valor;
+    } else {
+      acc[mes].aberto += valor;
+    }
+    return acc;
+  }, {} as Record<string, { qtd: number; horas: number; total: number; pago: number; aberto: number }>);
+
+  // Ordenar meses de sessões do mais recente para o mais antigo
+  const mesesSessoesOrdenados = Object.keys(resumoSessoesPorMes).sort((a, b) => b.localeCompare(a));
 
   // Filtrar orçamentos
   const orcamentosFiltrados = filtroOrcamento === 'todos' 
@@ -1502,57 +1521,57 @@ export default function ClienteDetalhesPage() {
         {/* Tab: Orçamentos */}
         {activeTab === 'orcamentos' && (
           <div className="space-y-6">
-            {/* Estatísticas */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
-                <p className="text-sm text-gray-400 mb-1">Total</p>
-                <p className="text-2xl font-bold">{estatisticas.total}</p>
+            {/* Estatísticas - Grid responsivo */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-gray-400 mb-1">Total</p>
+                <p className="text-xl sm:text-2xl font-bold">{estatisticas.total}</p>
               </div>
               
-              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
-                <p className="text-sm text-gray-400 mb-1">Valor Total</p>
-                <p className="text-2xl font-bold text-purple-400">
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-gray-400 mb-1">Valor Total</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-400">
                   {formatarMoeda(estatisticas.valorTotal)}
                 </p>
               </div>
               
               {divisoesComOrcamentos.tech > 0 && (
-                <div className="bg-gray-900/50 rounded-xl border border-purple-500/30 p-4">
-                  <p className="text-sm text-purple-400 mb-1">DAMA Tech</p>
-                  <p className="text-2xl font-bold">{divisoesComOrcamentos.tech}</p>
+                <div className="bg-gray-900/50 rounded-xl border border-purple-500/30 p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-purple-400 mb-1">DAMA Tech</p>
+                  <p className="text-xl sm:text-2xl font-bold">{divisoesComOrcamentos.tech}</p>
                 </div>
               )}
               
               {divisoesComOrcamentos.sports > 0 && (
-                <div className="bg-gray-900/50 rounded-xl border border-orange-500/30 p-4">
-                  <p className="text-sm text-orange-400 mb-1">DAMA Sports</p>
-                  <p className="text-2xl font-bold">{divisoesComOrcamentos.sports}</p>
+                <div className="bg-gray-900/50 rounded-xl border border-orange-500/30 p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-orange-400 mb-1">DAMA Sports</p>
+                  <p className="text-xl sm:text-2xl font-bold">{divisoesComOrcamentos.sports}</p>
                 </div>
               )}
               
               {divisoesComOrcamentos.studio > 0 && (
-                <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
-                  <p className="text-sm text-blue-400 mb-1">DAMA Studio</p>
-                  <p className="text-2xl font-bold">{divisoesComOrcamentos.studio}</p>
+                <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-3 sm:p-4">
+                  <p className="text-xs sm:text-sm text-blue-400 mb-1">DAMA Studio</p>
+                  <p className="text-xl sm:text-2xl font-bold">{divisoesComOrcamentos.studio}</p>
                 </div>
               )}
             </div>
 
             {/* Lista de Orçamentos */}
-            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h2 className="font-semibold text-lg flex items-center gap-2">
                   <FileText size={20} className="text-purple-400" />
                   Orçamentos ({orcamentosFiltrados.length})
                 </h2>
                 
-                {/* Filtro */}
-                <div className="flex items-center gap-2">
-                  <Filter size={16} className="text-gray-400" />
+                {/* Filtro - scroll horizontal no mobile */}
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0">
+                  <Filter size={16} className="text-gray-400 flex-shrink-0" />
                   <div className="flex gap-2">
                     <button
                       onClick={() => setFiltroOrcamento('todos')}
-                      className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                         filtroOrcamento === 'todos'
                           ? 'bg-gray-700 text-white'
                           : 'text-gray-400 hover:bg-gray-800'
@@ -1566,7 +1585,7 @@ export default function ClienteDetalhesPage() {
                         <button
                           key={div}
                           onClick={() => setFiltroOrcamento(div)}
-                          className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                          className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
                             filtroOrcamento === div
                               ? `${config.bgLight} ${config.textColor}`
                               : 'text-gray-400 hover:bg-gray-800'
@@ -1601,11 +1620,12 @@ export default function ClienteDetalhesPage() {
                     return (
                       <div
                         key={orc.id}
-                        className={`bg-gray-800/30 rounded-xl border ${divisaoConfig.borderColor} p-4 hover:bg-gray-800/50 transition-colors`}
+                        className={`bg-gray-800/30 rounded-xl border ${divisaoConfig.borderColor} p-3 sm:p-4 hover:bg-gray-800/50 transition-colors`}
                       >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex flex-col gap-3">
+                          {/* Info principal */}
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className={`text-xs px-2 py-0.5 rounded-full ${divisaoConfig.bgLight} ${divisaoConfig.textColor}`}>
                                 {divisaoConfig.nome}
                               </span>
@@ -1620,8 +1640,9 @@ export default function ClienteDetalhesPage() {
                             </p>
                           </div>
                           
-                          <div className="flex items-center gap-4">
-                            <p className={`text-xl font-bold ${divisaoConfig.textColor}`}>
+                          {/* Valor e ações */}
+                          <div className="flex items-center justify-between">
+                            <p className={`text-lg sm:text-xl font-bold ${divisaoConfig.textColor}`}>
                               {formatarMoeda(calcularValorTotal(orc))}
                             </p>
                             
@@ -1656,29 +1677,11 @@ export default function ClienteDetalhesPage() {
         {/* Tab: Sessões */}
         {activeTab === 'sessoes' && (
           <div className="space-y-6">
-            {/* Header + Filtro de Mês + Botão Totais */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <input
-                  type="month"
-                  value={mesSessao}
-                  onChange={(e) => {
-                    setMesSessao(e.target.value);
-                    setMostrarTotaisGeraisSessoes(false);
-                  }}
-                  className={`px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white ${mostrarTotaisGeraisSessoes ? 'opacity-50' : ''}`}
-                  disabled={mostrarTotaisGeraisSessoes}
-                />
-                <button
-                  onClick={() => setMostrarTotaisGeraisSessoes(!mostrarTotaisGeraisSessoes)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                    mostrarTotaisGeraisSessoes
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700'
-                  }`}
-                >
-                  {mostrarTotaisGeraisSessoes ? '✓ Totais Gerais' : 'Totais Gerais'}
-                </button>
+              <div>
+                <h2 className="text-xl font-semibold">Sessões</h2>
+                <p className="text-gray-400 text-sm">Horas de estúdio</p>
               </div>
               
               <button
@@ -1690,78 +1693,147 @@ export default function ClienteDetalhesPage() {
               </button>
             </div>
 
-            {/* Resumo - Mês ou Geral */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
-                <p className="text-sm text-blue-400 mb-1">
-                  {mostrarTotaisGeraisSessoes ? 'Sessões Totais' : 'Sessões no Mês'}
-                </p>
-                <p className="text-2xl font-bold">
-                  {mostrarTotaisGeraisSessoes ? resumoGeralSessoes.qtdSessoes : resumoMes.qtdSessoes}
-                </p>
+            {/* Resumo GERAL */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-blue-400 mb-1">Sessões Totais</p>
+                <p className="text-xl sm:text-2xl font-bold">{resumoGeralSessoes.qtdSessoes}</p>
               </div>
               
-              <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
-                <p className="text-sm text-blue-400 mb-1">Total de Horas</p>
-                <p className="text-2xl font-bold">
-                  {formatarHoras(mostrarTotaisGeraisSessoes ? resumoGeralSessoes.totalHoras : resumoMes.totalHoras)}
-                </p>
+              <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-blue-400 mb-1">Total de Horas</p>
+                <p className="text-xl sm:text-2xl font-bold">{formatarHoras(resumoGeralSessoes.totalHoras)}</p>
               </div>
               
-              <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-4">
-                <p className="text-sm text-blue-400 mb-1">Valor Total</p>
-                <p className="text-2xl font-bold text-blue-400">
-                  {formatarMoeda(mostrarTotaisGeraisSessoes ? resumoGeralSessoes.totalValor : resumoMes.totalValor)}
-                </p>
+              <div className="bg-gray-900/50 rounded-xl border border-blue-500/30 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-blue-400 mb-1">Valor Total</p>
+                <p className="text-xl sm:text-2xl font-bold text-blue-400">{formatarMoeda(resumoGeralSessoes.totalValor)}</p>
               </div>
 
-              <div className={`bg-gray-900/50 rounded-xl border p-4 ${
-                (mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto) > 0 
-                  ? 'border-yellow-500/30' 
-                  : 'border-emerald-500/30'
+              <div className={`bg-gray-900/50 rounded-xl border p-3 sm:p-4 ${
+                resumoGeralSessoes.valorAberto > 0 ? 'border-yellow-500/30' : 'border-emerald-500/30'
               }`}>
-                <p className={`text-sm mb-1 ${
-                  (mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto) > 0 
-                    ? 'text-yellow-400' 
-                    : 'text-emerald-400'
+                <p className={`text-xs sm:text-sm mb-1 ${
+                  resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
                 }`}>
-                  Valor em Aberto
+                  Em Aberto
                 </p>
-                <p className={`text-2xl font-bold ${
-                  (mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto) > 0 
-                    ? 'text-yellow-400' 
-                    : 'text-emerald-400'
+                <p className={`text-xl sm:text-2xl font-bold ${
+                  resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
                 }`}>
-                  {formatarMoeda(mostrarTotaisGeraisSessoes ? resumoGeralSessoes.valorAberto : resumoMes.valorAberto)}
+                  {formatarMoeda(resumoGeralSessoes.valorAberto)}
                 </p>
               </div>
             </div>
 
-            {/* Lista de Sessões */}
-            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
-              <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Music size={20} className="text-blue-400" />
-                {mostrarTotaisGeraisSessoes 
-                  ? `Todas as Sessões (${sessoes.length})`
-                  : `Sessões (${sessoesFiltradas.length})`
-                }
-              </h2>
+            {/* Histórico por Mês */}
+            {mesesSessoesOrdenados.length > 0 && (
+              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4 sm:p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Calendar size={20} className="text-blue-400" />
+                  Histórico por Mês
+                </h3>
+                
+                {/* Mobile: Cards empilhados */}
+                <div className="sm:hidden space-y-2">
+                  {mesesSessoesOrdenados.map((mes) => {
+                    const dados = resumoSessoesPorMes[mes];
+                    const isMesSelecionado = mes === mesSessao;
+                    return (
+                      <div 
+                        key={mes}
+                        onClick={() => setMesSessao(mes)}
+                        className={`p-3 rounded-xl cursor-pointer transition-colors ${isMesSelecionado ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-gray-800/50 hover:bg-gray-800'}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`font-semibold ${isMesSelecionado ? 'text-blue-400' : ''}`}>
+                            {formatarMesAno(mes)}
+                          </span>
+                          <span className="text-sm text-gray-400">{dados.qtd} sessões • {formatarHoras(dados.horas)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-bold">{formatarMoeda(dados.total)}</span>
+                          <span className={dados.aberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}>
+                            Aberto: {formatarMoeda(dados.aberto)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-              {(mostrarTotaisGeraisSessoes ? sessoes : sessoesFiltradas).length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <Music size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>{mostrarTotaisGeraisSessoes ? 'Nenhuma sessão registrada' : 'Nenhuma sessão neste mês'}</p>
+                {/* Desktop: Tabela */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="text-left py-3 px-2 text-sm text-gray-400 font-medium">Mês</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Sessões</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Horas</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Total</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Em Aberto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mesesSessoesOrdenados.map((mes) => {
+                        const dados = resumoSessoesPorMes[mes];
+                        const isMesSelecionado = mes === mesSessao;
+                        return (
+                          <tr 
+                            key={mes} 
+                            className={`border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${isMesSelecionado ? 'bg-blue-500/10' : ''}`}
+                            onClick={() => setMesSessao(mes)}
+                          >
+                            <td className="py-3 px-2">
+                              <span className={`font-medium ${isMesSelecionado ? 'text-blue-400' : ''}`}>
+                                {formatarMesAno(mes)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 text-right">{dados.qtd}</td>
+                            <td className="py-3 px-2 text-right">{formatarHoras(dados.horas)}</td>
+                            <td className="py-3 px-2 text-right font-medium text-blue-400">{formatarMoeda(dados.total)}</td>
+                            <td className={`py-3 px-2 text-right ${dados.aberto > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                              {formatarMoeda(dados.aberto)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Lista de Sessões do Mês */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Music size={20} className="text-blue-400" />
+                  {formatarMesAno(mesSessao)} ({sessoesFiltradas.length})
+                </h3>
+                <input
+                  type="month"
+                  value={mesSessao}
+                  onChange={(e) => setMesSessao(e.target.value)}
+                  className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white text-sm"
+                />
+              </div>
+
+              {sessoesFiltradas.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Music size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>Nenhuma sessão neste mês</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {(mostrarTotaisGeraisSessoes ? sessoes : sessoesFiltradas).map((sessao) => {
+                  {sessoesFiltradas.map((sessao) => {
                     const horas = calcularHoras(sessao.hora_inicio, sessao.hora_fim);
                     const valor = horas * Number(sessao.valor_hora);
                     
                     return (
                       <div
                         key={sessao.id}
-                        className={`bg-gray-800/30 rounded-xl border p-4 hover:bg-gray-800/50 transition-colors ${
+                        className={`bg-gray-800/30 rounded-xl border p-3 sm:p-4 hover:bg-gray-800/50 transition-colors ${
                           sessao.pago ? 'border-emerald-500/30' : 'border-gray-700'
                         }`}
                       >
@@ -1780,8 +1852,8 @@ export default function ClienteDetalhesPage() {
                               {sessao.pago && <Check size={14} className="text-white" />}
                             </button>
 
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-1">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
                                 <span className={`font-semibold ${sessao.pago ? 'text-gray-400' : 'text-white'}`}>
                                   {formatarDataLocal(sessao.data)}
                                 </span>
@@ -1794,7 +1866,7 @@ export default function ClienteDetalhesPage() {
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-gray-400">
+                              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-400">
                                 <span className="flex items-center gap-1">
                                   <Clock size={14} />
                                   {sessao.hora_inicio} - {sessao.hora_fim}
@@ -1810,10 +1882,10 @@ export default function ClienteDetalhesPage() {
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center justify-between sm:justify-end gap-4 ml-8 sm:ml-0">
                             <div className="text-right">
                               <p className="text-sm text-gray-400">{formatarHoras(horas)}</p>
-                              <p className={`text-xl font-bold ${sessao.pago ? 'text-gray-500' : 'text-blue-400'}`}>
+                              <p className={`text-lg sm:text-xl font-bold ${sessao.pago ? 'text-gray-500' : 'text-blue-400'}`}>
                                 {formatarMoeda(valor)}
                               </p>
                             </div>
@@ -1972,40 +2044,64 @@ export default function ClienteDetalhesPage() {
               </button>
             </div>
 
-            {/* Resumo GERAL */}
-            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
-              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Wallet size={20} className="text-purple-400" />
-                Resumo Geral
-              </h3>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-gray-800/50 rounded-xl p-4 text-center">
-                  <p className="text-sm text-gray-400 mb-1">Total</p>
-                  <p className="text-2xl font-bold">{formatarMoeda(totalGeralFinanceiro)}</p>
-                </div>
-                
-                <div className="bg-emerald-500/10 rounded-xl p-4 text-center border border-emerald-500/30">
-                  <p className="text-sm text-emerald-400 mb-1">Pago</p>
-                  <p className="text-2xl font-bold text-emerald-400">{formatarMoeda(totalGeralPagoFinanceiro)}</p>
-                </div>
+            {/* Resumo GERAL - Grid 2x2 no mobile, 3 no desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3 sm:p-4 text-center">
+                <p className="text-xs sm:text-sm text-gray-400 mb-1">Total</p>
+                <p className="text-xl sm:text-2xl font-bold">{formatarMoeda(totalGeralFinanceiro)}</p>
+              </div>
+              
+              <div className="bg-emerald-500/10 rounded-xl p-3 sm:p-4 text-center border border-emerald-500/30">
+                <p className="text-xs sm:text-sm text-emerald-400 mb-1">Pago</p>
+                <p className="text-xl sm:text-2xl font-bold text-emerald-400">{formatarMoeda(totalGeralPagoFinanceiro)}</p>
+              </div>
 
-                <div className={`rounded-xl p-4 text-center border ${totalGeralAbertoFinanceiro > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-                  <p className={`text-sm mb-1 ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
-                  <p className={`text-2xl font-bold ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                    {formatarMoeda(totalGeralAbertoFinanceiro)}
-                  </p>
-                </div>
+              <div className={`col-span-2 sm:col-span-1 rounded-xl p-3 sm:p-4 text-center border ${totalGeralAbertoFinanceiro > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                <p className={`text-xs sm:text-sm mb-1 ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
+                <p className={`text-xl sm:text-2xl font-bold ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                  {formatarMoeda(totalGeralAbertoFinanceiro)}
+                </p>
               </div>
             </div>
 
-            {/* Histórico por Mês */}
+            {/* Histórico por Mês - Cards no mobile, tabela no desktop */}
             {mesesFinanceiroOrdenados.length > 0 && (
-              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
+              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4 sm:p-6">
                 <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
                   <Calendar size={20} className="text-blue-400" />
                   Histórico por Mês
                 </h3>
-                <div className="overflow-x-auto">
+                
+                {/* Mobile: Cards empilhados */}
+                <div className="sm:hidden space-y-2">
+                  {mesesFinanceiroOrdenados.map((mes) => {
+                    const dados = resumoFinanceiroPorMes[mes];
+                    const isMesSelecionado = mes === mesFinanceiro;
+                    return (
+                      <div 
+                        key={mes}
+                        onClick={() => setMesFinanceiro(mes)}
+                        className={`p-3 rounded-xl cursor-pointer transition-colors ${isMesSelecionado ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-gray-800/50 hover:bg-gray-800'}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`font-semibold ${isMesSelecionado ? 'text-purple-400' : ''}`}>
+                            {formatarMesAno(mes)}
+                          </span>
+                          <span className="font-bold">{formatarMoeda(dados.total)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-emerald-400">Pago: {formatarMoeda(dados.pago)}</span>
+                          <span className={dados.aberto > 0 ? 'text-yellow-400' : 'text-gray-500'}>
+                            Aberto: {formatarMoeda(dados.aberto)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop: Tabela */}
+                <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-gray-700">
@@ -2045,11 +2141,11 @@ export default function ClienteDetalhesPage() {
             )}
 
             {/* Itens do Mês Selecionado (Pagamentos + Sessões) */}
-            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                 <h3 className="font-semibold text-lg flex items-center gap-2">
                   <CreditCard size={20} className="text-emerald-400" />
-                  {formatarMesAno(mesFinanceiro)} ({itensFinanceiroFiltrados.length} itens)
+                  {formatarMesAno(mesFinanceiro)} ({itensFinanceiroFiltrados.length})
                 </h3>
                 <input
                   type="month"
@@ -2057,24 +2153,6 @@ export default function ClienteDetalhesPage() {
                   onChange={(e) => setMesFinanceiro(e.target.value)}
                   className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white text-sm"
                 />
-              </div>
-
-              {/* Cards do mês */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                  <p className="text-xs text-gray-400 mb-1">Total</p>
-                  <p className="text-lg font-bold">{formatarMoeda(totalMesFinanceiro)}</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                  <p className="text-xs text-emerald-400 mb-1">Pago</p>
-                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalPagoMesFinanceiro)}</p>
-                </div>
-                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                  <p className={`text-xs mb-1 ${totalAbertoMesFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Aberto</p>
-                  <p className={`text-lg font-bold ${totalAbertoMesFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                    {formatarMoeda(totalAbertoMesFinanceiro)}
-                  </p>
-                </div>
               </div>
 
               {itensFinanceiroFiltrados.length === 0 ? (
@@ -2093,13 +2171,13 @@ export default function ClienteDetalhesPage() {
                     return (
                       <div
                         key={`${item.tipo}-${item.id}`}
-                        className={`rounded-xl border p-4 transition-colors ${
+                        className={`rounded-xl border p-3 sm:p-4 transition-colors ${
                           item.pago 
                             ? 'bg-emerald-500/10 border-emerald-500/30' 
                             : 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50'
                         }`}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-start gap-3">
                           {/* Checkbox de Pago */}
                           <button
                             onClick={() => {
@@ -2109,7 +2187,7 @@ export default function ClienteDetalhesPage() {
                                 togglePagamentoPago(item.pagamentoOriginal);
                               }
                             }}
-                            className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+                            className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
                               item.pago
                                 ? 'bg-emerald-500 border-emerald-500'
                                 : 'border-gray-600 hover:border-emerald-500'
@@ -2123,7 +2201,7 @@ export default function ClienteDetalhesPage() {
                           </button>
 
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="font-medium">{formatarDataLocal(item.data)}</span>
                               {isSessao ? (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
@@ -2146,9 +2224,43 @@ export default function ClienteDetalhesPage() {
                             {item.observacoes && (
                               <p className="text-sm text-gray-500 mt-1">{item.observacoes}</p>
                             )}
+                            
+                            {/* Valor e ações - mobile friendly */}
+                            <div className="flex items-center justify-between mt-2 sm:hidden">
+                              <p className={`text-lg font-bold ${item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : 'text-emerald-400'}`}>
+                                {formatarMoeda(item.valor)}
+                              </p>
+                              <div className="flex gap-2">
+                                {!isSessao && item.pagamentoOriginal && (
+                                  <>
+                                    <button
+                                      onClick={() => openPagamentoModal(item.pagamentoOriginal)}
+                                      className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => deletePagamento(item.id)}
+                                      className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
+                                )}
+                                {isSessao && item.sessaoOriginal && (
+                                  <button
+                                    onClick={() => openSessaoModal(item.sessaoOriginal)}
+                                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
                           </div>
                           
-                          <div className="flex items-center gap-4">
+                          {/* Desktop: valor e ações à direita */}
+                          <div className="hidden sm:flex items-center gap-4">
                             <p className={`text-xl font-bold ${item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : 'text-emerald-400'}`}>
                               {formatarMoeda(item.valor)}
                             </p>

@@ -288,39 +288,105 @@ export default function ClientePublicoPage() {
     };
   }, { totalHoras: 0, totalValor: 0, valorAberto: 0, qtdSessoes: 0 });
 
+  // Calcular TOTAIS GERAIS das sessões (todos os meses)
+  const resumoGeralSessoes = sessoes.reduce((acc, s) => {
+    const horas = calcularHoras(s.hora_inicio, s.hora_fim);
+    const valor = horas * Number(s.valor_hora);
+    return {
+      totalHoras: acc.totalHoras + horas,
+      totalValor: acc.totalValor + valor,
+      valorAberto: acc.valorAberto + (s.pago ? 0 : valor),
+      valorPago: acc.valorPago + (s.pago ? valor : 0),
+      qtdSessoes: acc.qtdSessoes + 1
+    };
+  }, { totalHoras: 0, totalValor: 0, valorAberto: 0, valorPago: 0, qtdSessoes: 0 });
+
+  // Agrupar sessões por mês para histórico
+  const resumoSessoesPorMes = sessoes.reduce((acc, s) => {
+    const mes = s.data.substring(0, 7);
+    const horas = calcularHoras(s.hora_inicio, s.hora_fim);
+    const valor = horas * Number(s.valor_hora);
+    if (!acc[mes]) {
+      acc[mes] = { qtd: 0, horas: 0, total: 0, pago: 0, aberto: 0 };
+    }
+    acc[mes].qtd += 1;
+    acc[mes].horas += horas;
+    acc[mes].total += valor;
+    if (s.pago) {
+      acc[mes].pago += valor;
+    } else {
+      acc[mes].aberto += valor;
+    }
+    return acc;
+  }, {} as Record<string, { qtd: number; horas: number; total: number; pago: number; aberto: number }>);
+
+  // Ordenar meses de sessões do mais recente para o mais antigo
+  const mesesSessoesOrdenados = Object.keys(resumoSessoesPorMes).sort((a, b) => b.localeCompare(a));
+
   // Verificar se cliente é Studio
   const isStudio = cliente?.areas?.includes('studio') || false;
 
-  // Filtrar pagamentos por mês
-  const pagamentosFiltrados = pagamentos.filter(p => p.data.startsWith(mesFinanceiro));
+  // Converter sessões para itens do financeiro
+  const sessoesComoFinanceiro = sessoes.map(s => {
+    const horas = calcularHoras(s.hora_inicio, s.hora_fim);
+    const valor = horas * Number(s.valor_hora);
+    return {
+      id: s.id,
+      tipo: 'sessao' as const,
+      data: s.data,
+      valor: valor,
+      pago: s.pago,
+      referencia: `Sessão de ${formatarHoras(horas)} (${s.hora_inicio} - ${s.hora_fim})`,
+      observacoes: s.observacoes
+    };
+  });
+
+  // Converter pagamentos para itens do financeiro
+  const pagamentosComoFinanceiro = pagamentos.map(p => ({
+    id: p.id,
+    tipo: 'pagamento' as const,
+    data: p.data,
+    valor: Number(p.valor),
+    pago: p.pago,
+    referencia: p.referencia,
+    observacoes: p.observacoes,
+    forma_pagamento: p.forma_pagamento
+  }));
+
+  // Combinar e ordenar por data (mais recente primeiro)
+  const todosItensFinanceiro = [...sessoesComoFinanceiro, ...pagamentosComoFinanceiro]
+    .sort((a, b) => b.data.localeCompare(a.data));
+
+  // Filtrar por mês
+  const itensFinanceiroFiltrados = todosItensFinanceiro.filter(i => i.data.startsWith(mesFinanceiro));
   
-  // Calcular totais do mês selecionado
-  const totalMesPagamentos = pagamentosFiltrados.reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalPagoMes = pagamentosFiltrados.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalAbertoMes = pagamentosFiltrados.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  // Calcular totais do mês selecionado (pagamentos + sessões)
+  const totalMesFinanceiro = itensFinanceiroFiltrados.reduce((acc, i) => acc + i.valor, 0);
+  const totalPagoMesFinanceiro = itensFinanceiroFiltrados.filter(i => i.pago).reduce((acc, i) => acc + i.valor, 0);
+  const totalAbertoMesFinanceiro = itensFinanceiroFiltrados.filter(i => !i.pago).reduce((acc, i) => acc + i.valor, 0);
 
-  // Calcular totais GERAIS (todos os pagamentos)
-  const totalGeralPagamentos = pagamentos.reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalGeralPago = pagamentos.filter(p => p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
-  const totalGeralAberto = pagamentos.filter(p => !p.pago).reduce((acc, p) => acc + Number(p.valor), 0);
+  // Calcular totais GERAIS (todos)
+  const totalGeralFinanceiro = todosItensFinanceiro.reduce((acc, i) => acc + i.valor, 0);
+  const totalGeralPagoFinanceiro = todosItensFinanceiro.filter(i => i.pago).reduce((acc, i) => acc + i.valor, 0);
+  const totalGeralAbertoFinanceiro = todosItensFinanceiro.filter(i => !i.pago).reduce((acc, i) => acc + i.valor, 0);
 
-  // Agrupar pagamentos por mês para resumo
-  const resumoPorMes = pagamentos.reduce((acc, p) => {
-    const mes = p.data.substring(0, 7); // "2024-01"
+  // Agrupar por mês para resumo (pagamentos + sessões)
+  const resumoFinanceiroPorMes = todosItensFinanceiro.reduce((acc, item) => {
+    const mes = item.data.substring(0, 7);
     if (!acc[mes]) {
       acc[mes] = { total: 0, pago: 0, aberto: 0 };
     }
-    acc[mes].total += Number(p.valor);
-    if (p.pago) {
-      acc[mes].pago += Number(p.valor);
+    acc[mes].total += item.valor;
+    if (item.pago) {
+      acc[mes].pago += item.valor;
     } else {
-      acc[mes].aberto += Number(p.valor);
+      acc[mes].aberto += item.valor;
     }
     return acc;
   }, {} as Record<string, { total: number; pago: number; aberto: number }>);
 
   // Ordenar meses do mais recente para o mais antigo
-  const mesesOrdenados = Object.keys(resumoPorMes).sort((a, b) => b.localeCompare(a));
+  const mesesFinanceiroOrdenados = Object.keys(resumoFinanceiroPorMes).sort((a, b) => b.localeCompare(a));
 
   // Função para formatar mês/ano
   function formatarMesAno(mesAno: string): string {
@@ -521,49 +587,91 @@ export default function ClientePublicoPage() {
         {/* Tab: Sessões */}
         {activeTab === 'sessoes' && mostrarSessoes && (
           <div className="space-y-6">
-            {/* Filtro de Mês */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Suas Sessões</h2>
-              <input
-                type="month"
-                value={mesSessao}
-                onChange={(e) => setMesSessao(e.target.value)}
-                className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-blue-500 text-white text-sm"
-              />
-            </div>
+            <h2 className="text-xl font-semibold">Suas Sessões</h2>
 
-            {/* Resumo do Mês */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
-                <p className="text-xs text-gray-400 mb-1">Sessões</p>
-                <p className="text-xl font-bold">{resumoMes.qtdSessoes}</p>
+            {/* Resumo GERAL */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
+                <p className="text-xs text-gray-400 mb-1">Sessões Totais</p>
+                <p className="text-xl font-bold">{resumoGeralSessoes.qtdSessoes}</p>
               </div>
               
-              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
-                <p className="text-xs text-gray-400 mb-1">Horas</p>
-                <p className="text-xl font-bold">{formatarHoras(resumoMes.totalHoras)}</p>
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
+                <p className="text-xs text-gray-400 mb-1">Total de Horas</p>
+                <p className="text-xl font-bold">{formatarHoras(resumoGeralSessoes.totalHoras)}</p>
               </div>
               
-              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-4">
-                <p className="text-xs text-gray-400 mb-1">Total</p>
-                <p className="text-xl font-bold text-blue-400">{formatarMoeda(resumoMes.totalValor)}</p>
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
+                <p className="text-xs text-gray-400 mb-1">Valor Total</p>
+                <p className="text-xl font-bold text-blue-400">{formatarMoeda(resumoGeralSessoes.totalValor)}</p>
               </div>
 
-              <div className={`bg-gray-900/50 rounded-xl border p-4 ${resumoMes.valorAberto > 0 ? 'border-yellow-500/30' : 'border-emerald-500/30'}`}>
-                <p className={`text-xs mb-1 ${resumoMes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+              <div className={`bg-gray-900/50 rounded-xl border p-3 ${
+                resumoGeralSessoes.valorAberto > 0 ? 'border-yellow-500/30' : 'border-emerald-500/30'
+              }`}>
+                <p className={`text-xs mb-1 ${
+                  resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
+                }`}>
                   Em Aberto
                 </p>
-                <p className={`text-xl font-bold ${resumoMes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                  {formatarMoeda(resumoMes.valorAberto)}
+                <p className={`text-xl font-bold ${
+                  resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
+                }`}>
+                  {formatarMoeda(resumoGeralSessoes.valorAberto)}
                 </p>
               </div>
             </div>
 
-            {/* Lista de Sessões */}
+            {/* Histórico por Mês */}
+            {mesesSessoesOrdenados.length > 0 && (
+              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4">
+                <h3 className="font-medium text-sm text-gray-400 mb-3">Histórico por Mês</h3>
+                
+                {/* Cards clicáveis */}
+                <div className="space-y-2">
+                  {mesesSessoesOrdenados.map((mes) => {
+                    const dados = resumoSessoesPorMes[mes];
+                    const isMesSelecionado = mes === mesSessao;
+                    return (
+                      <div 
+                        key={mes}
+                        onClick={() => setMesSessao(mes)}
+                        className={`p-3 rounded-xl cursor-pointer transition-colors ${isMesSelecionado ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-gray-800/50'}`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`font-semibold ${isMesSelecionado ? 'text-blue-400' : ''}`}>
+                            {formatarMesAno(mes)}
+                          </span>
+                          <span className="text-sm text-gray-400">{dados.qtd} sessões • {formatarHoras(dados.horas)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-bold text-blue-400">{formatarMoeda(dados.total)}</span>
+                          <span className={dados.aberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}>
+                            Aberto: {formatarMoeda(dados.aberto)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Lista de Sessões do Mês */}
             <div className="bg-gray-900/50 rounded-2xl border border-gray-800 overflow-hidden">
+              <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+                <h3 className="font-medium">{formatarMesAno(mesSessao)}</h3>
+                <input
+                  type="month"
+                  value={mesSessao}
+                  onChange={(e) => setMesSessao(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-blue-500 text-white text-sm"
+                />
+              </div>
+
               {sessoesFiltradas.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
-                  <Music size={48} className="mx-auto mb-4 opacity-50" />
+                <div className="text-center py-8 text-gray-400">
+                  <Music size={40} className="mx-auto mb-3 opacity-50" />
                   <p>Nenhuma sessão neste mês</p>
                 </div>
               ) : (
@@ -575,11 +683,11 @@ export default function ClientePublicoPage() {
                     return (
                       <div
                         key={sessao.id}
-                        className={`p-4 ${sessao.pago ? 'bg-emerald-500/5' : ''}`}
+                        className={`p-3 sm:p-4 ${sessao.pago ? 'bg-emerald-500/5' : ''}`}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="font-medium">{formatarDataLocal(sessao.data)}</span>
                               <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
                                 {getDiaSemana(sessao.data)}
@@ -723,34 +831,61 @@ export default function ClientePublicoPage() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold">Seu Financeiro</h2>
 
-            {/* Resumo GERAL */}
-            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4">
-              <h3 className="font-medium text-sm text-gray-400 mb-3">Resumo Geral</h3>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-gray-800/50 rounded-xl p-3 text-center">
-                  <p className="text-xs text-gray-400 mb-1">Total</p>
-                  <p className="text-lg font-bold">{formatarMoeda(totalGeralPagamentos)}</p>
-                </div>
-                
-                <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/30">
-                  <p className="text-xs text-emerald-400 mb-1">Pago</p>
-                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalGeralPago)}</p>
-                </div>
+            {/* Resumo GERAL - Grid 2x2 no mobile */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3 text-center">
+                <p className="text-xs text-gray-400 mb-1">Total</p>
+                <p className="text-xl font-bold">{formatarMoeda(totalGeralFinanceiro)}</p>
+              </div>
+              
+              <div className="bg-emerald-500/10 rounded-xl p-3 text-center border border-emerald-500/30">
+                <p className="text-xs text-emerald-400 mb-1">Pago</p>
+                <p className="text-xl font-bold text-emerald-400">{formatarMoeda(totalGeralPagoFinanceiro)}</p>
+              </div>
 
-                <div className={`rounded-xl p-3 text-center border ${totalGeralAberto > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-                  <p className={`text-xs mb-1 ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
-                  <p className={`text-lg font-bold ${totalGeralAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                    {formatarMoeda(totalGeralAberto)}
-                  </p>
-                </div>
+              <div className={`col-span-2 rounded-xl p-3 text-center border ${totalGeralAbertoFinanceiro > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                <p className={`text-xs mb-1 ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
+                <p className={`text-xl font-bold ${totalGeralAbertoFinanceiro > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                  {formatarMoeda(totalGeralAbertoFinanceiro)}
+                </p>
               </div>
             </div>
 
-            {/* Histórico por Mês */}
-            {mesesOrdenados.length > 0 && (
+            {/* Histórico por Mês - Cards no mobile */}
+            {mesesFinanceiroOrdenados.length > 0 && (
               <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4">
                 <h3 className="font-medium text-sm text-gray-400 mb-3">Histórico por Mês</h3>
-                <div className="overflow-x-auto">
+                
+                {/* Mobile: Cards */}
+                <div className="sm:hidden space-y-2">
+                  {mesesFinanceiroOrdenados.map((mes) => {
+                    const dados = resumoFinanceiroPorMes[mes];
+                    const isMesSelecionado = mes === mesFinanceiro;
+                    return (
+                      <div 
+                        key={mes}
+                        onClick={() => setMesFinanceiro(mes)}
+                        className={`p-3 rounded-xl cursor-pointer transition-colors ${isMesSelecionado ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-gray-800/50'}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`font-semibold ${isMesSelecionado ? 'text-blue-400' : ''}`}>
+                            {formatarMesAno(mes)}
+                          </span>
+                          <span className="font-bold">{formatarMoeda(dados.total)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-emerald-400">Pago: {formatarMoeda(dados.pago)}</span>
+                          <span className={dados.aberto > 0 ? 'text-yellow-400' : 'text-gray-500'}>
+                            Aberto: {formatarMoeda(dados.aberto)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop: Tabela */}
+                <div className="hidden sm:block overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-700">
@@ -761,8 +896,8 @@ export default function ClientePublicoPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mesesOrdenados.map((mes) => {
-                        const dados = resumoPorMes[mes];
+                      {mesesFinanceiroOrdenados.map((mes) => {
+                        const dados = resumoFinanceiroPorMes[mes];
                         const isMesSelecionado = mes === mesFinanceiro;
                         return (
                           <tr 
@@ -789,10 +924,10 @@ export default function ClientePublicoPage() {
               </div>
             )}
 
-            {/* Pagamentos do Mês Selecionado */}
+            {/* Itens do Mês Selecionado (Pagamentos + Sessões) */}
             <div className="bg-gray-900/50 rounded-2xl border border-gray-800 overflow-hidden">
               <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                <h3 className="font-medium">Pagamentos de {formatarMesAno(mesFinanceiro)}</h3>
+                <h3 className="font-medium">{formatarMesAno(mesFinanceiro)}</h3>
                 <input
                   type="month"
                   value={mesFinanceiro}
@@ -801,44 +936,53 @@ export default function ClientePublicoPage() {
                 />
               </div>
 
-              {pagamentosFiltrados.length === 0 ? (
-                <div className="text-center py-12 text-gray-400">
+              {itensFinanceiroFiltrados.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
                   <Wallet size={40} className="mx-auto mb-3 opacity-50" />
-                  <p>Nenhum pagamento neste mês</p>
+                  <p>Nenhum item neste mês</p>
                 </div>
               ) : (
                 <div className="divide-y divide-gray-800">
-                  {pagamentosFiltrados.map((pagamento) => {
-                    const forma = formasPagamento.find(f => f.value === pagamento.forma_pagamento);
+                  {itensFinanceiroFiltrados.map((item) => {
+                    const isSessao = item.tipo === 'sessao';
+                    const forma = !isSessao && item.forma_pagamento 
+                      ? formasPagamento.find(f => f.value === item.forma_pagamento)
+                      : null;
                     
                     return (
                       <div 
-                        key={pagamento.id} 
-                        className={`p-4 ${pagamento.pago ? 'bg-emerald-500/5' : ''}`}
+                        key={`${item.tipo}-${item.id}`} 
+                        className={`p-3 sm:p-4 ${item.pago ? 'bg-emerald-500/5' : ''}`}
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <span className="font-medium">{formatarDataLocal(pagamento.data)}</span>
-                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
-                                {forma?.label || pagamento.forma_pagamento}
-                              </span>
-                              {pagamento.pago && (
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-medium">{formatarDataLocal(item.data)}</span>
+                              {isSessao ? (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+                                  Sessão
+                                </span>
+                              ) : forma && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+                                  {forma.label}
+                                </span>
+                              )}
+                              {item.pago && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
                                   Pago
                                 </span>
                               )}
                             </div>
-                            {pagamento.referencia && (
-                              <p className="text-sm text-gray-400">{pagamento.referencia}</p>
+                            {item.referencia && (
+                              <p className="text-sm text-gray-400">{item.referencia}</p>
                             )}
-                            {pagamento.observacoes && (
-                              <p className="text-sm text-gray-500 mt-1">{pagamento.observacoes}</p>
+                            {item.observacoes && (
+                              <p className="text-sm text-gray-500 mt-1">{item.observacoes}</p>
                             )}
                           </div>
                           
-                          <p className={`text-lg font-bold ${pagamento.pago ? 'text-gray-500' : 'text-emerald-400'}`}>
-                            {formatarMoeda(Number(pagamento.valor))}
+                          <p className={`text-lg font-bold ${item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : 'text-emerald-400'}`}>
+                            {formatarMoeda(item.valor)}
                           </p>
                         </div>
                       </div>
