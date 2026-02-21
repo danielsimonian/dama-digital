@@ -66,7 +66,7 @@ export type OrcamentoItem = {
   descricao: string | null;
   valor: number;
   quantidade: number;
-  detalhes: string[] | null;
+  detalhes: { texto: string; valor: number | null }[] | null;
   ordem: number;
 };
 

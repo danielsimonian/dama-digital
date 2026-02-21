@@ -31,7 +31,7 @@ type ItemForm = {
   descricao: string;
   valor: string;
   quantidade: string;
-  detalhes: string[];
+  detalhes: { texto: string; valor: string }[];
 };
 
 type OrcamentoForm = {
@@ -78,8 +78,8 @@ export default function OrcamentoFormPage() {
   });
 
   const [itens, setItens] = useState<ItemForm[]>([
-    { categoria: 'DAMA Tech', nome: '', descricao: '', valor: '', quantidade: '1', detalhes: [''] }
-  ]);
+  { categoria: 'DAMA Tech', nome: '', descricao: '', valor: '', quantidade: '1', detalhes: [{ texto: '', valor: '' }] }
+]);
 
   useEffect(() => {
     initialize();
@@ -158,18 +158,22 @@ export default function OrcamentoFormPage() {
       });
     }
 
-    if (itensData?.length) {
-      setItens(itensData.map(item => ({
-        id: item.id,
-        categoria: item.categoria,
-        nome: item.nome,
-        descricao: item.descricao || '',
-        valor: String(item.valor),
-        quantidade: String(item.quantidade),
-        detalhes: item.detalhes || ['']
-      })));
-    }
+if (itensData?.length) {
+  setItens(itensData.map(item => ({
+    id: item.id,
+    categoria: item.categoria,
+    nome: item.nome,
+    descricao: item.descricao || '',
+    valor: String(item.valor),
+    quantidade: String(item.quantidade),
+    detalhes: item.detalhes?.length 
+      ? item.detalhes.map((d: any) => ({ texto: d.texto || '', valor: d.valor ? String(d.valor) : '' }))
+: [{ texto: '', valor: '' }]
+  })));
+}
   }
+
+  // Auto-gerar slug
 
   // Auto-gerar slug
   useEffect(() => {
@@ -179,18 +183,18 @@ export default function OrcamentoFormPage() {
   }, [form.projeto_titulo, isEditing]);
 
   // Handlers de itens
-  const addItem = () => {
-    const newItem = { 
-      categoria: `DAMA ${form.divisao.charAt(0).toUpperCase() + form.divisao.slice(1)}`, 
-      nome: '', 
-      descricao: '', 
-      valor: '', 
-      quantidade: '1', 
-      detalhes: [''] 
-    };
-    setItens([...itens, newItem]);
-    setExpandedItem(itens.length);
+const addItem = () => {
+  const newItem = { 
+    categoria: `DAMA ${form.divisao.charAt(0).toUpperCase() + form.divisao.slice(1)}`, 
+    nome: '', 
+    descricao: '', 
+    valor: '', 
+    quantidade: '1', 
+    detalhes: [{ texto: '', valor: '' }] 
   };
+  setItens([...itens, newItem]);
+  setExpandedItem(itens.length);
+};
 
   const removeItem = (index: number) => {
     if (itens.length === 1) return;
@@ -203,19 +207,19 @@ export default function OrcamentoFormPage() {
   };
 
   const addDetalhe = (itemIndex: number) => {
-    setItens(itens.map((item, i) => 
-      i === itemIndex ? { ...item, detalhes: [...item.detalhes, ''] } : item
-    ));
-  };
+  setItens(itens.map((item, i) => 
+    i === itemIndex ? { ...item, detalhes: [...item.detalhes, { texto: '', valor: '' }] } : item
+  ));
+};
 
-  const updateDetalhe = (itemIndex: number, detalheIndex: number, value: string) => {
-    setItens(itens.map((item, i) => {
-      if (i !== itemIndex) return item;
-      const newDetalhes = [...item.detalhes];
-      newDetalhes[detalheIndex] = value;
-      return { ...item, detalhes: newDetalhes };
-    }));
-  };
+  const updateDetalhe = (itemIndex: number, detalheIndex: number, field: 'texto' | 'valor', value: string) => {
+  setItens(itens.map((item, i) => {
+    if (i !== itemIndex) return item;
+    const newDetalhes = [...item.detalhes];
+    newDetalhes[detalheIndex] = { ...newDetalhes[detalheIndex], [field]: value };
+    return { ...item, detalhes: newDetalhes };
+  }));
+};
 
   const removeDetalhe = (itemIndex: number, detalheIndex: number) => {
     setItens(itens.map((item, i) => {
@@ -317,17 +321,19 @@ export default function OrcamentoFormPage() {
 
       // Inserir itens
       const itensToInsert = itens
-        .filter(item => item.nome && item.valor)
-        .map((item, index) => ({
-          orcamento_id: orcamentoId,
-          categoria: item.categoria,
-          nome: item.nome,
-          descricao: item.descricao || null,
-          valor: Number(item.valor),
-          quantidade: Number(item.quantidade) || 1,
-          detalhes: item.detalhes.filter(d => d.trim()),
-          ordem: index
-        }));
+  .filter(item => item.nome && item.valor)
+  .map((item, index) => ({
+    orcamento_id: orcamentoId,
+    categoria: item.categoria,
+    nome: item.nome,
+    descricao: item.descricao || null,
+    valor: Number(item.valor),
+    quantidade: Number(item.quantidade) || 1,
+    detalhes: item.detalhes
+      .filter(d => d.texto.trim())
+      .map(d => ({ texto: d.texto, valor: d.valor ? Number(d.valor) : null })),
+    ordem: index
+  }));
 
       console.log('Itens a inserir:', itensToInsert);
 
@@ -619,31 +625,55 @@ export default function OrcamentoFormPage() {
                     <div>
                       <label className="block text-sm text-gray-400 mb-2">O que está incluso:</label>
                       <div className="space-y-2">
-                        {item.detalhes.map((detalhe, detalheIndex) => (
-                          <div key={detalheIndex} className="flex gap-2">
-                            <input
-                              type="text"
-                              value={detalhe}
-                              onChange={(e) => updateDetalhe(itemIndex, detalheIndex, e.target.value)}
-                              placeholder="Ex: Design responsivo"
-                              className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeDetalhe(itemIndex, detalheIndex)}
-                              className="p-2 text-gray-500 hover:text-red-400 transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        ))}
+                       {item.detalhes.map((detalhe, detalheIndex) => (
+  <div key={detalheIndex} className="flex gap-2">
+    <input
+      type="text"
+      value={detalhe.texto}
+      onChange={(e) => updateDetalhe(itemIndex, detalheIndex, 'texto', e.target.value)}
+      placeholder="Ex: Coordenador Geral, Ambulância..."
+      className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white"
+    />
+    <input
+      type="number"
+      value={detalhe.valor}
+      onChange={(e) => updateDetalhe(itemIndex, detalheIndex, 'valor', e.target.value)}
+      placeholder="Valor (opcional)"
+      className="w-28 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white"
+    />
+    <button
+      type="button"
+      onClick={() => removeDetalhe(itemIndex, detalheIndex)}
+      className="p-2 text-gray-500 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
+    >
+      <Trash2 size={16} />
+    </button>
+  </div>
+))}
                         <button
-                          type="button"
-                          onClick={() => addDetalhe(itemIndex)}
-                          className="text-sm text-purple-400 hover:text-purple-300"
-                        >
-                          + Adicionar item
-                        </button>
+  type="button"
+  onClick={() => addDetalhe(itemIndex)}
+  className="text-sm text-purple-400 hover:text-purple-300"
+>
+  + Adicionar item
+</button>
+
+{/* Subtotal dos detalhes */}
+{item.detalhes.some(d => d.valor && Number(d.valor) > 0) && (
+  <div className="mt-3 pt-3 border-t border-gray-700">
+    <div className="flex justify-between items-center text-sm">
+      <span className="text-gray-400">Subtotal dos itens:</span>
+      <span className="font-medium">
+        {item.detalhes.reduce((acc, d) => acc + (Number(d.valor) || 0), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+      </span>
+    </div>
+    {Math.abs(item.detalhes.reduce((acc, d) => acc + (Number(d.valor) || 0), 0) - Number(item.valor)) > 0.01 && Number(item.valor) > 0 && (
+      <p className="text-xs text-yellow-400 mt-1">
+        ⚠️ Subtotal diferente do valor do item ({Number(item.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})
+      </p>
+    )}
+  </div>
+)}
                       </div>
                     </div>
 

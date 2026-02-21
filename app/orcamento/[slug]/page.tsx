@@ -422,19 +422,30 @@ export default function OrcamentoPublicoPage() {
                     </div>
                     
                     {/* Detalhes - sempre visível no print, toggle na tela */}
-                    {item.detalhes?.length > 0 && (
-                      <div className={`details-content px-5 pb-5 pt-2 border-t border-gray-800/50 ${isExpanded ? 'block' : 'hidden'}`}>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">O que está incluso:</p>
-                        <ul className="grid sm:grid-cols-2 gap-2">
-                          {item.detalhes.map((detalhe: string, i: number) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                              <Check className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                              {detalhe}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+{item.detalhes?.length > 0 && (
+  <div className={`details-content px-5 pb-5 pt-2 border-t border-gray-800/50 ${isExpanded ? 'block' : 'hidden'}`}>
+    <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">O que está incluso:</p>
+    <ul className="space-y-2">
+      {item.detalhes.map((detalhe: any, i: number) => (
+        <li key={i} className="flex items-center justify-between text-sm text-gray-300">
+          <span className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            {detalhe.texto || detalhe}
+          </span>
+          {detalhe.valor && (
+            <span className="text-gray-400">{formatarMoeda(Number(detalhe.valor))}</span>
+          )}
+        </li>
+      ))}
+    </ul>
+    {item.detalhes.some((d: any) => d.valor) && (
+      <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between items-center">
+        <span className="text-sm text-gray-400">Subtotal</span>
+        <span className="font-semibold">{formatarMoeda(item.detalhes.reduce((acc: number, d: any) => acc + (Number(d.valor) || 0), 0))}</span>
+      </div>
+    )}
+  </div>
+)}
                   </div>
                 );
               })}
