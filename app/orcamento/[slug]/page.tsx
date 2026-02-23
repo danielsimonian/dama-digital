@@ -8,8 +8,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { Download, Check, MessageCircle, ChevronDown, ChevronUp, Loader2, Lock, Heart, Sparkles } from 'lucide-react';
-import { supabase, formatarMoeda, formatarData, DIVISAO_CONFIG } from '@/lib/supabase';
+import { Download, Check, MessageCircle, ChevronDown, ChevronUp, Loader2, Lock, Heart, Sparkles, Sun, Moon } from 'lucide-react';import { supabase, formatarMoeda, formatarData, DIVISAO_CONFIG } from '@/lib/supabase';
 
 export default function OrcamentoPublicoPage() {
   const params = useParams();
@@ -22,6 +21,7 @@ export default function OrcamentoPublicoPage() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [aprovando, setAprovando] = useState(false);
   const [justApproved, setJustApproved] = useState(false);
+  const [temaClaro, setTemaClaro] = useState(false);
   const viewRegistered = useRef(false);
 
   const whatsappNumber = '5513997434878';
@@ -152,21 +152,30 @@ export default function OrcamentoPublicoPage() {
     });
   }
 
-  // Função para imprimir/salvar PDF
-  function gerarPDF() {
-    // Expande todos os itens antes de imprimir
-    if (orcamento?.itens) {
-      const todosIds = orcamento.itens
-        .filter((item: any) => item.detalhes?.length > 0)
-        .map((item: any) => item.id);
-      setExpandedItems(todosIds);
-    }
-    
-    // Aguarda renderização e imprime
-    setTimeout(() => {
-      window.print();
-    }, 300);
+ // Função para imprimir/salvar PDF
+function gerarPDF() {
+  const temaAnterior = temaClaro;
+  
+  // Força tema claro para impressão
+  setTemaClaro(true);
+  
+  // Expande todos os itens antes de imprimir
+  if (orcamento?.itens) {
+    const todosIds = orcamento.itens
+      .filter((item: any) => item.detalhes?.length > 0)
+      .map((item: any) => item.id);
+    setExpandedItems(todosIds);
   }
+  
+  // Aguarda renderização e imprime
+  setTimeout(() => {
+    window.print();
+    // Volta para o tema anterior após imprimir
+    setTimeout(() => {
+      setTemaClaro(temaAnterior);
+    }, 500);
+  }, 300);
+}
 
   // Loading
   if (loading) {
@@ -230,116 +239,134 @@ export default function OrcamentoPublicoPage() {
   return (
     <>
       {/* CSS para impressão */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4;
-            margin: 0;
-          }
-          
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            color-adjust: exact !important;
-          }
-          
-          html, body {
-            background: #030712 !important;
-            background-color: #030712 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          
-          .print-container {
-            background: #030712 !important;
-            padding: 10mm !important;
-            min-height: 100vh !important;
-          }
-          
-          .no-print {
-            display: none !important;
-          }
-          
-          .print-only {
-            display: block !important;
-          }
-          
-          .print-break-avoid {
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
-          
-          .print-break-before {
-            break-before: page !important;
-            page-break-before: always !important;
-          }
-          
-          /* Força todos os detalhes a ficarem visíveis */
-          .details-content {
-            display: block !important;
-            max-height: none !important;
-            overflow: visible !important;
-          }
-          
-          /* Esconde botões de expandir */
-          .expand-button {
-            display: none !important;
-          }
-        }
-        
-        @media screen {
-          .print-only {
-            display: none !important;
-          }
-        }
-      `}</style>
+ <style jsx global>{`
+  @media print {
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+    
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    
+    html, body {
+      background: white !important;
+      background-color: white !important;
+    }
+    
+    .print-container {
+      background: white !important;
+      color: #111 !important;
+    }
+    
+    .no-print {
+      display: none !important;
+    }
+    
+    .print-only {
+      display: block !important;
+    }
+    
+    .print-break-avoid {
+      break-inside: avoid !important;
+      page-break-inside: avoid !important;
+    }
+    
+    .print-break-before {
+      break-before: page !important;
+      page-break-before: always !important;
+    }
+    
+    /* Força todos os detalhes a ficarem visíveis */
+    .details-content {
+      display: block !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+    
+    /* Esconde botões de expandir */
+    .expand-button {
+      display: none !important;
+    }
+  }
+  
+  @media screen {
+    .print-only {
+      display: none !important;
+    }
+  }
+`}</style>
 
-      <div className="print-container min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white">
-        
-        {/* Header para impressão */}
-        <div className="print-only px-4 py-6 border-b border-gray-800 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img 
-                src="/images/logo.png" 
-                alt="DAMA Digital" 
-                className="h-12"
-              />
-              <div className="flex flex-col">
-                <span className="text-white font-bold text-lg">DAMA</span>
-                <span className="text-gray-400 text-xs -mt-1">Digital Criativa</span>
-              </div>
-            </div>
-            <div className="text-right text-xs text-gray-400">
-              <p>damadigitalcriativa@gmail.com</p>
-              <p>(13) 99743-4878</p>
-            </div>
-          </div>
-        </div>
+        <div className={`print-container min-h-screen transition-colors duration-300 ${
+          temaClaro 
+            ? 'bg-gray-100 text-gray-900' 
+            : 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white'
+        }`}>        
+{/* Header para impressão */}
+<div className="print-only px-4 py-6 border-b border-gray-300 mb-6">
+  <div className="flex items-center justify-between">
+    <div className="flex flex-col items-center">
+      <img 
+        src="/images/logo.png" 
+        alt="DAMA Digital" 
+        className="h-12 invert"
+      />
+      <span className="text-gray-500 text-[12px] -mt-3">Digital Criativa</span>
+    </div>
+    <div className="text-right text-xs text-gray-600">
+      <p>damadigitalcriativa@gmail.com</p>
+      <p>(13) 99743-4878</p>
+    </div>
+  </div>
+</div>
 
         {/* Header fixo (tela) */}
-        <header className="no-print sticky top-0 z-50 bg-gray-900/80 backdrop-blur-md border-b border-gray-800">
+        <header className={`no-print sticky top-0 z-50 backdrop-blur-md border-b transition-colors duration-300 ${
+  temaClaro 
+    ? 'bg-white/80 border-gray-200' 
+    : 'bg-gray-900/80 border-gray-800'
+}`}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
             <Link href="/" className="flex flex-col items-center justify-center">
-              <img 
-                src="/images/logo.png" 
-                alt="DAMA Digital" 
-                className="h-12"
-              />            
+<img 
+  src="/images/logo.png" 
+  alt="DAMA Digital" 
+  className={`h-12 ${temaClaro ? 'invert' : ''}`}
+/>
               <div className="hidden sm:block -mt-3">
-                <span className="text-gray-400 text-[12px]">
-                  Digital Criativa
-                </span>
+   <span className={`text-[12px] ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>
+  Digital Criativa
+</span>
               </div>
             </Link>
             
-            <button
-              onClick={gerarPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
-            >
-              <Download size={18} />
-              <span className="hidden sm:inline">Baixar PDF</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTemaClaro(!temaClaro)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
+                  temaClaro 
+                    ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' 
+                    : 'bg-gray-800 hover:bg-gray-700 text-white'
+                }`}
+                title={temaClaro ? 'Versão escura' : 'Versão para impressão'}
+              >
+                {temaClaro ? <Moon size={18} /> : <Sun size={18} />}
+              </button>
+              <button
+                onClick={gerarPDF}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
+                  temaClaro 
+                    ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' 
+                    : 'bg-gray-800 hover:bg-gray-700 text-white'
+                }`}
+              >
+                <Download size={18} />
+                <span className="hidden sm:inline">Baixar PDF</span>
+              </button>
+            </div>
           </div>
         </header>
 
@@ -347,33 +374,37 @@ export default function OrcamentoPublicoPage() {
         <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           {/* Saudação */}
           <div className="mb-10 print-break-avoid">
-            <p className="text-gray-400 mb-2">
-              Olá{orcamento.cliente?.nome ? `, ${orcamento.cliente.nome}` : ''} ✨
-            </p>
+<p className={`mb-2 ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>
+  Olá{orcamento.cliente?.nome ? `, ${orcamento.cliente.nome}` : ''} ✨
+</p>
             <h1 className="text-3xl sm:text-4xl font-bold mb-4">
               Proposta para{' '}
               <span className={`bg-gradient-to-r ${divisaoConfig.gradiente} bg-clip-text text-transparent`}>
                 {orcamento.projeto_titulo}
               </span>
             </h1>
-            {orcamento.projeto_descricao && (
-              <p className="text-gray-400 text-lg">{orcamento.projeto_descricao}</p>
-            )}
+{orcamento.projeto_descricao && (
+  <p className={`text-lg ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>{orcamento.projeto_descricao}</p>
+)}
           </div>
 
           {/* Meta Info */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-10 print-break-avoid">
-            {[
-              { label: 'Número', value: orcamento.numero },
-              { label: 'Data', value: formatarData(orcamento.data_emissao) },
-              { label: 'Válido até', value: orcamento.validade ? formatarData(orcamento.validade) : '-' },
-              { label: 'Status', value: isAprovado ? '✓ Aprovado' : 'Aguardando' }
-            ].map((item, i) => (
-              <div key={i} className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">{item.label}</p>
-                <p className="font-medium text-sm sm:text-base">{item.value}</p>
-              </div>
-            ))}
+ {[
+  { label: 'Número', value: orcamento.numero },
+  { label: 'Data', value: formatarData(orcamento.data_emissao) },
+  { label: 'Válido até', value: orcamento.validade ? formatarData(orcamento.validade) : '-' },
+  { label: 'Status', value: isAprovado ? '✓ Aprovado' : 'Aguardando' }
+].map((item, i) => (
+  <div key={i} className={`rounded-xl p-4 border ${
+    temaClaro 
+      ? 'bg-gray-200/50 border-gray-300' 
+      : 'bg-gray-800/50 border-gray-700/50'
+  }`}>
+    <p className={`text-xs uppercase tracking-wider mb-1 ${temaClaro ? 'text-gray-500' : 'text-gray-500'}`}>{item.label}</p>
+    <p className="font-medium text-sm sm:text-base">{item.value}</p>
+  </div>
+))}
           </div>
 
           {/* Itens */}
@@ -389,10 +420,12 @@ export default function OrcamentoPublicoPage() {
                 const itemConfig = getItemConfig(item.categoria);
                 
                 return (
-                  <div 
-                    key={item.id}
-                    className={`print-break-avoid rounded-2xl border overflow-hidden transition-colors ${itemConfig.borderColor} bg-gray-800/30`}
-                  >
+<div 
+  key={item.id}
+  className={`print-break-avoid rounded-2xl border overflow-hidden transition-colors ${itemConfig.borderColor} ${
+    temaClaro ? 'bg-gray-200/50' : 'bg-gray-800/30'
+  }`}
+>
                     <div 
                       className="p-5 cursor-pointer no-print-cursor"
                       onClick={() => toggleItem(item.id)}
@@ -403,9 +436,9 @@ export default function OrcamentoPublicoPage() {
                             {item.categoria}
                           </span>
                           <h3 className="font-semibold text-lg mb-1">{item.nome}</h3>
-                          {item.descricao && (
-                            <p className="text-gray-400 text-sm">{item.descricao}</p>
-                          )}
+{item.descricao && (
+  <p className={`text-sm ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>{item.descricao}</p>
+)}
                         </div>
                         <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2">
                           <p className="text-xl font-semibold">
@@ -424,23 +457,23 @@ export default function OrcamentoPublicoPage() {
                     {/* Detalhes - sempre visível no print, toggle na tela */}
 {item.detalhes?.length > 0 && (
   <div className={`details-content px-5 pb-5 pt-2 border-t border-gray-800/50 ${isExpanded ? 'block' : 'hidden'}`}>
-    <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">O que está incluso:</p>
-    <ul className="space-y-2">
-      {item.detalhes.map((detalhe: any, i: number) => (
-        <li key={i} className="flex items-center justify-between text-sm text-gray-300">
+    <p className={`text-xs uppercase tracking-wider mb-3 ${temaClaro ? 'text-gray-500' : 'text-gray-500'}`}>O que está incluso:</p>
+<ul className="space-y-2">
+  {item.detalhes.map((detalhe: any, i: number) => (
+    <li key={i} className={`flex items-center justify-between text-sm ${temaClaro ? 'text-gray-700' : 'text-gray-300'}`}>
           <span className="flex items-center gap-2">
             <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             {detalhe.texto || detalhe}
           </span>
-          {detalhe.valor && (
-            <span className="text-gray-400">{formatarMoeda(Number(detalhe.valor))}</span>
-          )}
+{detalhe.valor && (
+  <span className={temaClaro ? 'text-gray-500' : 'text-gray-400'}>{formatarMoeda(Number(detalhe.valor))}</span>
+)}
         </li>
       ))}
     </ul>
     {item.detalhes.some((d: any) => d.valor) && (
-      <div className="mt-3 pt-3 border-t border-gray-700 flex justify-between items-center">
-        <span className="text-sm text-gray-400">Subtotal</span>
+  <div className={`mt-3 pt-3 border-t flex justify-between items-center ${temaClaro ? 'border-gray-300' : 'border-gray-700'}`}>
+    <span className={`text-sm ${temaClaro ? 'text-gray-500' : 'text-gray-400'}`}>Subtotal</span>
         <span className="font-semibold">{formatarMoeda(item.detalhes.reduce((acc: number, d: any) => acc + (Number(d.valor) || 0), 0))}</span>
       </div>
     )}
@@ -453,9 +486,9 @@ export default function OrcamentoPublicoPage() {
           </div>
 
           {/* Total */}
-          <div className={`print-break-avoid bg-gray-800/40 rounded-2xl p-6 border ${divisaoConfig.borderColor} mb-10`}>
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-gray-400">Subtotal</span>
+          <div className={`print-break-avoid rounded-2xl p-6 border ${divisaoConfig.borderColor} mb-10 ${temaClaro ? 'bg-gray-200/50' : 'bg-gray-800/40'}`}>
+  <div className="flex justify-between items-center mb-3">
+    <span className={temaClaro ? 'text-gray-500' : 'text-gray-400'}>Subtotal</span>
               <span>{formatarMoeda(subtotal)}</span>
             </div>
             {Number(orcamento.desconto) > 0 && (
@@ -464,8 +497,7 @@ export default function OrcamentoPublicoPage() {
                 <span>- {formatarMoeda(Number(orcamento.desconto))}</span>
               </div>
             )}
-            <div className="h-px bg-gray-700 my-4" />
-            <div className="flex justify-between items-center">
+<div className={`h-px my-4 ${temaClaro ? 'bg-gray-300' : 'bg-gray-700'}`} />            <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total</span>
               <span className={`text-3xl font-bold bg-gradient-to-r ${divisaoConfig.gradiente} bg-clip-text text-transparent`}>
                 {formatarMoeda(total)}
@@ -475,23 +507,26 @@ export default function OrcamentoPublicoPage() {
 
           {/* Condições */}
           {(orcamento.prazo_entrega || orcamento.condicoes_pagamento || orcamento.observacoes) && (
-            <div className="print-break-avoid mb-10 p-5 bg-gray-800/30 rounded-xl border border-gray-700/50 space-y-3">
-              {orcamento.prazo_entrega && (
+<div className={`print-break-avoid mb-10 p-5 rounded-xl border space-y-3 ${
+  temaClaro 
+    ? 'bg-gray-200/50 border-gray-300' 
+    : 'bg-gray-800/30 border-gray-700/50'
+}`}>              {orcamento.prazo_entrega && (
                 <p className="text-sm">
-                  <span className="text-gray-500">Prazo de entrega:</span>{' '}
-                  <span className="text-gray-300">{orcamento.prazo_entrega}</span>
+                  <span className={temaClaro ? 'text-gray-500' : 'text-gray-500'}>Prazo de entrega:</span>{' '}
+<span className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>{orcamento.prazo_entrega}</span>
                 </p>
               )}
               {orcamento.condicoes_pagamento && (
                 <p className="text-sm">
-                  <span className="text-gray-500">Pagamento:</span>{' '}
-                  <span className="text-gray-300">{orcamento.condicoes_pagamento}</span>
+                  <span className={temaClaro ? 'text-gray-500' : 'text-gray-500'}>Pagamento:</span>{' '}
+                  <span className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>{orcamento.condicoes_pagamento}</span>
                 </p>
               )}
               {orcamento.observacoes && (
                 <p className="text-sm">
-                  <span className="text-gray-500">Observações:</span>{' '}
-                  <span className="text-gray-300">{orcamento.observacoes}</span>
+                  <span className={temaClaro ? 'text-gray-500' : 'text-gray-500'}>Observações:</span>{' '}
+                  <span className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>{orcamento.observacoes}</span>
                 </p>
               )}
             </div>
@@ -504,16 +539,16 @@ export default function OrcamentoPublicoPage() {
                 <Check size={28} />
               </div>
               <div>
-                <p className="font-semibold text-emerald-400 text-lg">
-                  {justApproved ? '🎉 Orçamento Aprovado com Sucesso!' : 'Orçamento Aprovado!'}
-                </p>
-                <p className="text-gray-300">
-                  {justApproved 
-                    ? 'Obrigado pela confiança! Nossa equipe entrará em contato em breve para alinhar os próximos passos.'
-                    : 'Entraremos em contato em breve para alinhar os próximos passos.'
-                  }
-                </p>
-              </div>
+  <p className={`font-semibold text-lg ${temaClaro ? 'text-emerald-600' : 'text-emerald-400'}`}>
+    {justApproved ? '🎉 Orçamento Aprovado com Sucesso!' : 'Orçamento Aprovado!'}
+  </p>
+  <p className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>
+    {justApproved 
+      ? 'Obrigado pela confiança! Nossa equipe entrará em contato em breve para alinhar os próximos passos.'
+      : 'Entraremos em contato em breve para alinhar os próximos passos.'
+    }
+  </p>
+</div>
             </div>
           )}
 
@@ -529,11 +564,15 @@ export default function OrcamentoPublicoPage() {
                   Aprovar Orçamento
                 </button>
                 <a
-                  href={`https://wa.me/${whatsappNumber}?text=Olá! Gostaria de falar sobre o orçamento ${orcamento.numero}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 py-4 px-6 bg-gray-800 hover:bg-gray-700 rounded-xl font-semibold text-lg transition-all border border-gray-700 flex items-center justify-center gap-2"
-                >
+href={`https://wa.me/${whatsappNumber}?text=Olá! Gostaria de falar sobre o orçamento ${orcamento.numero}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  className={`flex-1 py-4 px-6 rounded-xl font-semibold text-lg transition-all border flex items-center justify-center gap-2 ${
+    temaClaro 
+      ? 'bg-gray-200 hover:bg-gray-300 border-gray-300 text-gray-800' 
+      : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'
+  }`}
+>
                   <MessageCircle size={24} />
                   Falar no WhatsApp
                 </a>
@@ -564,15 +603,14 @@ export default function OrcamentoPublicoPage() {
         </main>
 
         {/* Footer (tela) */}
-        <footer className="no-print border-t border-gray-800 mt-8">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 text-center">
+<footer className={`no-print border-t mt-8 ${temaClaro ? 'border-gray-300' : 'border-gray-800'}`}>          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 text-center">
             <div className="flex justify-center mb-4">
               <Link href="/" className="flex flex-col items-center justify-center">
-                <img 
-                  src="/images/logo.png" 
-                  alt="DAMA Digital" 
-                  className="h-15"
-                />            
+<img 
+  src="/images/logo.png" 
+  alt="DAMA Digital" 
+  className={`h-12 ${temaClaro ? 'invert' : ''}`}
+/>
                 <div className="hidden sm:block -mt-3">
                   <span className="text-gray-300 font-bold text-xl">
                     Digital Criativa
@@ -605,25 +643,24 @@ export default function OrcamentoPublicoPage() {
           </div>
         </footer>
 
-        {/* Footer (print) */}
-        <div className="print-only mt-10 pt-6 border-t border-gray-800 text-center">
-          <div className="flex justify-center mb-3">
-            <img 
-              src="/images/logo.png" 
-              alt="DAMA Digital" 
-              className="h-10"
-            />
-          </div>
-          <p className="text-gray-300 font-bold">DAMA Digital Criativa</p>
-          <p className="text-gray-500 text-xs mb-2">Criando experiências digitais únicas</p>
-          <div className="flex justify-center gap-4 text-xs text-gray-400 mb-2">
-            <span>📱 (13) 99743-4878</span>
-            <span>✉️ damadigitalcriativa@gmail.com</span>
-          </div>
-          <p className="text-gray-600 text-xs">
-            Feito com ❤️ pela DAMA • {new Date().getFullYear()}
-          </p>
-        </div>
+{/* Footer (print) */}
+<div className="print-only mt-10 pt-6 border-t border-gray-300 text-center">
+  <div className="flex flex-col items-center mb-3">
+    <img 
+      src="/images/logo.png" 
+      alt="DAMA Digital" 
+      className="h-10 invert"
+    />
+    <span className="text-gray-500 text-[12px] -mt-3">Digital Criativa</span>
+  </div>
+  <div className="flex justify-center gap-4 text-xs text-gray-500 mb-2">
+    <span>📱 (13) 99743-4878</span>
+    <span>✉️ damadigitalcriativa@gmail.com</span>
+  </div>
+  <p className="text-gray-400 text-xs">
+    Feito com ❤️ pela DAMA • {new Date().getFullYear()}
+  </p>
+</div>
 
         {/* Modal de Confirmação */}
         {showConfirmModal && (
