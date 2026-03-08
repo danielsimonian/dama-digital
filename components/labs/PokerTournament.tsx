@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   Users, DollarSign, Trophy, Plus, Minus,
-  Check, X, Settings, ChevronDown, ChevronUp, ArrowLeft,
+  Check, X, Settings, ChevronDown, ChevronUp, ArrowLeft, TrendingDown,
 } from 'lucide-react';
 
 interface Player {
@@ -90,7 +90,7 @@ export default function TournamentApp({ onBack }: Props) {
         {/* Header */}
         <div className="bg-gray-800 rounded-xl p-4 mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg">
+            <button onClick={onBack} className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg cursor-pointer transition-colors duration-200">
               <ArrowLeft className="w-5 h-5 text-gray-300" />
             </button>
             <div>
@@ -125,16 +125,18 @@ export default function TournamentApp({ onBack }: Props) {
         {/* Resumo rápido */}
         {players.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {[
-              { label: 'Pote Total', value: `R$ ${totalPot.toFixed(0)}`, color: 'text-green-400' },
-              { label: 'Jogadores', value: `${players.length}/9`, color: 'text-white' },
-              { label: 'Pagaram', value: `${players.filter(p => p.paid).length}/${players.length}`, color: 'text-white' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-gray-800 rounded-lg p-3 text-center">
-                <div className="text-xs text-gray-400 mb-1">{label}</div>
-                <div className={`text-lg font-bold ${color}`}>{value}</div>
-              </div>
-            ))}
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center shadow-sm shadow-green-500/10">
+              <div className="text-xs text-green-400/70 mb-1">Pote Total</div>
+              <div className="text-lg font-bold text-green-400">R$ {totalPot.toFixed(0)}</div>
+            </div>
+            <div className="bg-gray-800/60 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-400 mb-1">Jogadores</div>
+              <div className="text-lg font-bold text-white">{players.length}/9</div>
+            </div>
+            <div className="bg-gray-800/60 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-400 mb-1">Pagaram</div>
+              <div className="text-lg font-bold text-white">{players.filter(p => p.paid).length}/{players.length}</div>
+            </div>
           </div>
         )}
 
@@ -163,7 +165,7 @@ export default function TournamentApp({ onBack }: Props) {
                     <div className="font-bold text-white">{player.name}</div>
                     <div className="text-xs text-gray-400">
                       {player.rebuys} rebuy{player.rebuys !== 1 ? 's' : ''} •
-                      {player.addOn ? ' Add-on ✓' : ' Sem add-on'} •
+                      {player.addOn ? ' Add-on' : ' Sem add-on'} •
                       R$ {calculateTotal(player).toFixed(2)}
                     </div>
                   </div>
@@ -192,8 +194,8 @@ export default function TournamentApp({ onBack }: Props) {
                     <div>
                       <label className="block text-xs text-gray-400 mb-2">Add-on</label>
                       <button onClick={() => updatePlayer(player.id, 'addOn', !player.addOn)}
-                        className={`w-full py-3 rounded-lg font-bold ${player.addOn ? 'bg-green-600' : 'bg-gray-600'}`}>
-                        {player.addOn ? '✓ Fez Add-on' : 'Sem Add-on'}
+                        className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors duration-200 ${player.addOn ? 'bg-green-600 hover:bg-green-500' : 'bg-gray-600 hover:bg-gray-500'}`}>
+                        {player.addOn ? <><Check className="w-4 h-4" /> Fez Add-on</> : 'Sem Add-on'}
                       </button>
                     </div>
                     <button onClick={() => removePlayer(player.id)}
@@ -306,7 +308,7 @@ export default function TournamentApp({ onBack }: Props) {
 
               {winners.length > 0 && (
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h2 className="text-base font-bold text-green-400 mb-3">🏆 Ganhadores</h2>
+                  <h2 className="text-base font-bold text-green-400 mb-3 flex items-center gap-2"><Trophy className="w-4 h-4" /> Ganhadores</h2>
                   <div className="space-y-2">
                     {winners.map(w => (
                       <div key={w.id} className="bg-green-900/30 border border-green-700 rounded-lg p-3 flex justify-between">
@@ -320,7 +322,7 @@ export default function TournamentApp({ onBack }: Props) {
 
               {losers.length > 0 && (
                 <div className="bg-gray-800 rounded-xl p-4">
-                  <h2 className="text-base font-bold text-red-400 mb-3">💸 Perdedores</h2>
+                  <h2 className="text-base font-bold text-red-400 mb-3 flex items-center gap-2"><TrendingDown className="w-4 h-4" /> Perdedores</h2>
                   <div className="space-y-2">
                     {losers.map(l => (
                       <div key={l.id} className="bg-red-900/30 border border-red-700 rounded-lg p-3 flex justify-between">

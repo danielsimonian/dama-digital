@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Users, DollarSign, Plus, Minus, Check, X,
   Settings, ChevronDown, ChevronUp, LogIn, LogOut, ArrowLeft,
+  ClipboardList, Play, Trash2, ToggleLeft, ToggleRight, Link2,
+  Trophy, Save, Loader2, Info, AlertTriangle, CheckCircle2,
+  TrendingDown, CreditCard, Share2, Eye, Cloud, CloudOff, ShieldCheck,
 } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
-interface HistoricoItem { tipo: string; valor: number }
+/* ─── tipos ────────────────────────────────────────────── */
+
+interface HistoricoItem { tipo: string; valor: number; mult?: number; histId?: string }
 interface Player {
   id: number; name: string; buyIns: number; rebuys: number;
   fichasFinais: number; ativo: boolean; historico: HistoricoItem[];
@@ -15,15 +21,250 @@ interface Config { buyIn: number; chipValue: number; chipsPerBuyIn: number; maxR
 
 type Tab = 'jogadores' | 'mesa' | 'acerto';
 
-interface Props { onBack: () => void }
+interface Props {
+  onBack?: () => void;
+  sessionId?: string;
+  isAdmin?: boolean;
+  initialConfig?: Config;
+  initialPlayers?: Player[];
+  initialDealerChips?: number;
+}
 
-export default function CashGameApp({ onBack }: Props) {
-  const [config, setConfig] = useState<Config>({ buyIn: 100, chipValue: 1, chipsPerBuyIn: 100, maxRebuys: 3 });
-  const [players, setPlayers] = useState<Player[]>([]);
+interface Inscrito { id: string; nome: string; criadoEm: string; }
+interface Sessao { status: 'aberta' | 'fechada'; inscritos: Inscrito[]; data: string; }
+
+const MAX_PLAYERS = 9;
+const LINK_INSCRICOES = 'https://damadigitalcriativa.com.br/labs/poker-pay/inscricoes';
+
+/* ─── componente ───────────────────────────────────────── */
+
+export default function CashGameApp({
+  onBack,
+  sessionId,
+  isAdmin,
+  initialConfig,
+  initialPlayers,
+  initialDealerChips,
+}: Props) {
+  // — jogo —
+  const [config, setConfig] = useState<Config>(
+    initialConfig ?? { buyIn: 100, chipValue: 1, chipsPerBuyIn: 100, maxRebuys: 3 }
+  );
+  const [fichasDealer, setFichasDealer] = useState<number>(initialDealerChips ?? 0);
+  const [players, setPlayers] = useState<Player[]>(initialPlayers ?? []);
   const [playerName, setPlayerName] = useState('');
   const [showConfig, setShowConfig] = useState(false);
   const [expandedPlayer, setExpandedPlayer] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('jogadores');
+
+  // — inscrições admin —
+  const [showInscricoes, setShowInscricoes] = useState(false);
+  const [sessao, setSessao] = useState<Sessao | null>(null);
+  const [inscricoesLoading, setInscricoesLoading] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  // — salvar sessão no ranking —
+  const [salvandoSessao, setSalvandoSessao] = useState(false);
+  const [sessaoSalva, setSessaoSalva] = useState(false);
+
+  // — sessão Redis: auto-save e share —
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'error'>('idle');
+  const [showShareModal, setShowShareModal] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMountedRef = useRef(false);
+
+  /* ── helpers ─────────────────────────────────────────── */
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  /* ── auto-save no Redis ──────────────────────────────── */
+
+  const scheduleAutoSave = useCallback((payload: { config: Config; players: Player[]; dealerChips: number }) => {
+    if (!sessionId || !isAdmin) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSaveStatus('saving');
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/poker/session/${sessionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        setSaveStatus(r.ok ? 'idle' : 'error');
+      } catch {
+        setSaveStatus('error');
+      }
+    }, 1000);
+  }, [sessionId, isAdmin]);
+
+  // Dispara auto-save a cada mudança relevante (pula mount inicial)
+  useEffect(() => {
+    if (!isMountedRef.current) { isMountedRef.current = true; return; }
+    scheduleAutoSave({ config, players, dealerChips: fichasDealer });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config, players, fichasDealer]);
+
+  // Polling para espectadores (a cada 5s)
+  useEffect(() => {
+    if (!sessionId || isAdmin !== false) return;
+    const poll = async () => {
+      try {
+        const r = await fetch(`/api/poker/session/${sessionId}`, { cache: 'no-store' });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.config) setConfig(d.config);
+        if (d.players) setPlayers(d.players);
+        if (typeof d.dealerChips === 'number') setFichasDealer(d.dealerChips);
+      } catch {}
+    };
+    const interval = setInterval(poll, 5000);
+    return () => clearInterval(interval);
+  }, [sessionId, isAdmin]);
+
+  /* ── share helpers ───────────────────────────────────── */
+
+  const shareUrl = typeof window !== 'undefined' && sessionId
+    ? `${window.location.origin}/labs/poker-pay/cash/${sessionId}`
+    : '';
+
+  const copyShareLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast('Link copiado! Envie para os jogadores acompanharem.');
+    } catch {
+      showToast('Não foi possível copiar o link');
+    }
+  };
+
+  const assumirControle = () => {
+    if (!sessionId) return;
+    localStorage.setItem(`poker-admin-${sessionId}`, 'true');
+    window.location.reload();
+  };
+
+  /* ── inscrições ──────────────────────────────────────── */
+
+  const fetchSessao = useCallback(async () => {
+    try {
+      const res = await fetch('/api/poker/inscricoes', { cache: 'no-store' });
+      if (res.ok) setSessao(await res.json());
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (!showInscricoes) return;
+    fetchSessao();
+    const id = setInterval(fetchSessao, 8000);
+    return () => clearInterval(id);
+  }, [showInscricoes, fetchSessao]);
+
+  /* ── inscrições: ações ───────────────────────────────── */
+
+  const toggleStatus = async () => {
+    if (!sessao) return;
+    setInscricoesLoading(true);
+    try {
+      const novoStatus = sessao.status === 'aberta' ? 'fechada' : 'aberta';
+      const res = await fetch('/api/poker/inscricoes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: novoStatus }),
+      });
+      if (res.ok) setSessao(await res.json());
+    } finally {
+      setInscricoesLoading(false);
+    }
+  };
+
+  const removerInscrito = async (id: string) => {
+    setInscricoesLoading(true);
+    try {
+      const res = await fetch('/api/poker/inscricoes', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) setSessao(await res.json());
+    } finally {
+      setInscricoesLoading(false);
+    }
+  };
+
+  const importarInscritos = () => {
+    if (!sessao || sessao.inscritos.length === 0) return;
+    const jaExistentes = new Set(players.map(p => p.name.toLowerCase()));
+    const novos = sessao.inscritos
+      .filter(i => !jaExistentes.has(i.nome.toLowerCase()))
+      .slice(0, MAX_PLAYERS - players.length)
+      .map((i, idx) => ({
+        id: Date.now() + idx,
+        name: i.nome,
+        buyIns: 1, rebuys: 0,
+        fichasFinais: config.chipsPerBuyIn,
+        ativo: true,
+        historico: [{ tipo: 'Buy-in', valor: config.buyIn }],
+      }));
+    setPlayers(prev => [...prev, ...novos]);
+    setShowInscricoes(false);
+    showToast(`${novos.length} jogador(es) importado(s) ✓`);
+  };
+
+  const copiarLink = async () => {
+    try {
+      await navigator.clipboard.writeText(LINK_INSCRICOES);
+      showToast('Link copiado! 🔗');
+    } catch {
+      showToast('Não foi possível copiar o link');
+    }
+  };
+
+  const salvarSessao = async () => {
+    if (players.length === 0) return;
+    setSalvandoSessao(true);
+    try {
+      // Ordenar por fichasFinais desc para determinar posição
+      const sorted = [...players].sort((a, b) => b.fichasFinais - a.fichasFinais);
+
+      const jogadores = sorted.map((p, idx) => {
+        const { spent, won, balance } = calcBalance(p);
+        return {
+          nome:         p.name,
+          fichasFinais: p.fichasFinais,
+          investido:    spent,
+          ganho:        won,
+          balanco:      balance,
+          posicao:      idx + 1,
+          pontos:       10 - (idx + 1), // 1º=9, 2º=8, ..., 9º=1
+        };
+      });
+
+      const br = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      const data = `${br.getFullYear()}-${String(br.getMonth() + 1).padStart(2, '0')}-${String(br.getDate()).padStart(2, '0')}`;
+
+      const res = await fetch('/api/poker/historico', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data, totalPot, jogadores }),
+      });
+
+      if (res.ok) {
+        setSessaoSalva(true);
+        showToast('Sessão salva no ranking! 🏆');
+      } else {
+        showToast('Erro ao salvar sessão.');
+      }
+    } catch {
+      showToast('Erro de conexão.');
+    } finally {
+      setSalvandoSessao(false);
+    }
+  };
+
+  /* ── jogo: helpers ───────────────────────────────────── */
 
   const totalPot = players.reduce((s, p) => s + (p.buyIns + p.rebuys) * config.buyIn, 0);
 
@@ -51,7 +292,7 @@ export default function CashGameApp({ onBack }: Props) {
   };
 
   const addPlayer = () => {
-    if (!playerName.trim() || players.length >= 9) return;
+    if (!playerName.trim() || players.length >= MAX_PLAYERS) return;
     setPlayers([...players, {
       id: Date.now(), name: playerName.trim(), buyIns: 1, rebuys: 0,
       fichasFinais: config.chipsPerBuyIn, ativo: true,
@@ -66,7 +307,23 @@ export default function CashGameApp({ onBack }: Props) {
       return {
         ...p, rebuys: p.rebuys + 1,
         fichasFinais: p.fichasFinais + mult * config.chipsPerBuyIn,
-        historico: [...p.historico, { tipo: `Rebuy ${mult}x`, valor: mult * config.buyIn }],
+        historico: [...p.historico, {
+          tipo: `Rebuy ${mult}x`, valor: mult * config.buyIn,
+          mult, histId: `${Date.now()}-${Math.random()}`,
+        }],
+      };
+    }));
+
+  const undoRebuy = (playerId: number, histIndex: number) =>
+    setPlayers(players.map(p => {
+      if (p.id !== playerId) return p;
+      const item = p.historico[histIndex];
+      const mult = item.mult ?? 1;
+      return {
+        ...p,
+        rebuys: Math.max(0, p.rebuys - 1),
+        fichasFinais: Math.max(0, p.fichasFinais - mult * config.chipsPerBuyIn),
+        historico: p.historico.filter((_, i) => i !== histIndex),
       };
     }));
 
@@ -83,32 +340,250 @@ export default function CashGameApp({ onBack }: Props) {
   const removePlayer = (id: number) => setPlayers(players.filter(p => p.id !== id));
 
   const TabBtn = ({ id, label }: { id: Tab; label: string }) => (
-    <button onClick={() => setTab(id)}
-      className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all ${tab === id ? 'bg-yellow-600 text-white' : 'text-gray-400'}`}>
+    <button
+      onClick={() => setTab(id)}
+      className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all duration-200 cursor-pointer ${
+        tab === id
+          ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+          : 'text-slate-500 hover:text-slate-300 border border-transparent'
+      }`}
+    >
       {label}
     </button>
   );
+
+  /* ── painel admin inscrições ─────────────────────────── */
+
+  if (showInscricoes) {
+    const qtd = sessao?.inscritos.length ?? 0;
+    const aberta = sessao?.status === 'aberta';
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-orange-900 to-gray-900 p-3 pb-24">
+        <div className="max-w-2xl mx-auto space-y-4">
+
+          {/* Header admin */}
+          <div className="bg-gray-800 rounded-xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowInscricoes(false)} className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg">
+                <ArrowLeft className="w-5 h-5 text-gray-300" />
+              </button>
+              <div>
+                <h1 className="text-lg font-bold text-yellow-400 flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5" /> Gerenciar Inscrições
+                </h1>
+                <p className="text-xs text-gray-400">{qtd}/{MAX_PLAYERS} inscritos</p>
+              </div>
+            </div>
+            {/* Recarregar */}
+            <button onClick={fetchSessao} className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg text-gray-300 text-xs font-medium px-3">
+              ↺
+            </button>
+          </div>
+
+          {/* Status + controles */}
+          <div className="bg-gray-800 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-bold text-gray-300 mb-0.5">Status das inscrições</div>
+                <div className={`text-xs font-bold flex items-center gap-1.5 ${aberta ? 'text-green-400' : 'text-red-400'}`}>
+                  <div className={`w-2 h-2 rounded-full ${aberta ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+                  {aberta ? 'Abertas' : 'Encerradas'}
+                </div>
+              </div>
+              <button
+                onClick={toggleStatus}
+                disabled={inscricoesLoading}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors disabled:opacity-50 ${
+                  aberta ? 'bg-red-700 hover:bg-red-600 text-white' : 'bg-green-700 hover:bg-green-600 text-white'
+                }`}
+              >
+                {aberta
+                  ? <><ToggleRight className="w-4 h-4" /> Fechar</>
+                  : <><ToggleLeft className="w-4 h-4" /> Abrir</>}
+              </button>
+            </div>
+
+            {/* Copiar link */}
+            <button
+              onClick={copiarLink}
+              className="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-300 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            >
+              <Link2 className="w-4 h-4" />
+              Copiar link de inscrição
+            </button>
+          </div>
+
+          {/* Lista de inscritos */}
+          <div className="bg-gray-800 rounded-xl p-4">
+            <h2 className="text-sm font-bold text-yellow-400 mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4" /> Inscritos ({qtd}/{MAX_PLAYERS})
+            </h2>
+
+            {sessao === null && (
+              <div className="text-center text-gray-500 py-6 text-sm">Carregando...</div>
+            )}
+
+            {sessao !== null && qtd === 0 && (
+              <div className="text-center text-gray-500 py-6">
+                <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <div className="text-sm">Nenhum inscrito ainda</div>
+                <div className="text-xs mt-1 opacity-60">Compartilhe o link para receber inscrições</div>
+              </div>
+            )}
+
+            {qtd > 0 && (
+              <div className="space-y-2">
+                {sessao?.inscritos.map((inscrito, idx) => (
+                  <div key={inscrito.id} className="flex items-center gap-3 bg-gray-700 rounded-lg px-3 py-2.5">
+                    <div className="w-7 h-7 rounded-full bg-yellow-600/30 border border-yellow-600/50 flex items-center justify-center text-yellow-400 text-sm font-bold shrink-0">
+                      {idx + 1}
+                    </div>
+                    <span className="text-white font-medium flex-1">{inscrito.nome}</span>
+                    <button
+                      onClick={() => removerInscrito(inscrito.id)}
+                      disabled={inscricoesLoading}
+                      className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-900/30 transition-colors disabled:opacity-40"
+                      title="Remover inscrito"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Barra progress */}
+          {sessao && (
+            <div className="bg-gray-700 rounded-full h-2 overflow-hidden">
+              <div
+                className={`h-2 rounded-full transition-all duration-500 ${qtd >= MAX_PLAYERS ? 'bg-red-500' : 'bg-yellow-500'}`}
+                style={{ width: `${(qtd / MAX_PLAYERS) * 100}%` }}
+              />
+            </div>
+          )}
+
+          {/* Importar jogadores */}
+          <button
+            onClick={importarInscritos}
+            disabled={!sessao || qtd === 0}
+            className="w-full bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+          >
+            <Play className="w-5 h-5" />
+            Iniciar Jogo com Inscritos ({qtd})
+          </button>
+
+          <p className="text-center text-gray-600 text-xs pb-4">
+            Jogadores já adicionados ao jogo não serão duplicados.
+          </p>
+        </div>
+
+        {/* Toast */}
+        {toast && (
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm border border-yellow-500/40 text-yellow-300 font-semibold text-sm px-5 py-3 rounded-xl shadow-2xl shadow-black/50 z-50 whitespace-nowrap">
+            {toast}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ── tela principal do Cash Game ─────────────────────── */
+
+  const ro = isAdmin === false; // read-only (espectador)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-orange-900 to-gray-900 p-3 pb-24">
       <div className="max-w-2xl mx-auto">
 
+        {/* Banner espectador */}
+        {ro && (
+          <div className="bg-yellow-900/60 border border-yellow-600/30 rounded-xl px-4 py-2.5 mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-yellow-300 text-sm font-medium">
+              <Eye className="w-4 h-4 shrink-0" />
+              Modo Espectador — Acompanhando ao vivo
+            </div>
+            <button
+              onClick={assumirControle}
+              className="flex items-center gap-1.5 text-xs font-bold bg-yellow-600/30 hover:bg-yellow-600/50 text-yellow-200 px-3 py-1.5 rounded-lg transition-colors duration-200 cursor-pointer shrink-0"
+              title="Assumir o controle da mesa neste dispositivo"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Assumir Controle
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="bg-gray-800 rounded-xl p-4 mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg">
+            <button
+              onClick={() => {
+                if (sessionId) window.location.href = '/labs/poker-pay/cash';
+                else if (onBack) onBack();
+              }}
+              className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg cursor-pointer transition-colors duration-200"
+            >
               <ArrowLeft className="w-5 h-5 text-gray-300" />
             </button>
             <div>
               <h1 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
                 <DollarSign className="w-5 h-5" /> Cash Game
               </h1>
-              <p className="text-xs text-gray-400">Texas Hold'em</p>
+              <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                {sessionId
+                  ? <><span className="font-mono tracking-widest">{sessionId}</span> · {ro ? 'Espectador' : 'Admin'}</>
+                  : "Texas Hold'em"
+                }
+              </p>
             </div>
           </div>
-          <button onClick={() => setShowConfig(!showConfig)} className="bg-gray-700 p-3 rounded-lg">
-            <Settings className="w-5 h-5 text-yellow-400" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Save status — só quando em sessão admin */}
+            {sessionId && isAdmin && (
+              <div className="flex items-center" title={saveStatus === 'error' ? 'Erro ao salvar' : saveStatus === 'saving' ? 'Salvando...' : 'Salvo'}>
+                {saveStatus === 'saving' && <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />}
+                {saveStatus === 'error'  && <CloudOff className="w-4 h-4 text-red-400" />}
+                {saveStatus === 'idle'   && <Cloud className="w-4 h-4 text-gray-600" />}
+              </div>
+            )}
+            {/* Compartilhar — só quando em sessão */}
+            {sessionId && (
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="bg-yellow-700/50 hover:bg-yellow-700 p-2.5 rounded-lg cursor-pointer transition-colors duration-200"
+                title="Compartilhar sessão"
+              >
+                <Share2 className="w-4 h-4 text-yellow-300" />
+              </button>
+            )}
+            <a
+              href="/labs/poker-pay/ranking"
+              className="bg-gray-700 hover:bg-gray-600 p-3 rounded-lg"
+              title="Ver Ranking"
+            >
+              <Trophy className="w-5 h-5 text-yellow-400" />
+            </a>
+            {/* Botões admin-only */}
+            {isAdmin !== false && (
+              <>
+                <button
+                  onClick={() => setShowInscricoes(true)}
+                  className="bg-yellow-700 hover:bg-yellow-600 p-3 rounded-lg cursor-pointer transition-colors duration-200"
+                  title="Gerenciar Inscrições"
+                >
+                  <ClipboardList className="w-5 h-5 text-yellow-200" />
+                </button>
+                <button
+                  onClick={() => setShowConfig(!showConfig)}
+                  className="bg-gray-700 hover:bg-gray-600 p-3 rounded-lg cursor-pointer transition-colors duration-200"
+                >
+                  <Settings className="w-5 h-5 text-yellow-400" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Config */}
@@ -121,12 +596,32 @@ export default function CashGameApp({ onBack }: Props) {
                   <label className="block text-gray-400 text-xs mb-1">{label}</label>
                   <input type="number" value={config[key]}
                     onChange={e => setConfig({ ...config, [key]: Number(e.target.value) })}
-                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 text-sm" />
+                    disabled={ro}
+                    className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 text-sm disabled:opacity-60 disabled:cursor-not-allowed" />
                 </div>
               ))}
             </div>
-            <div className="mt-3 bg-gray-700 rounded-lg p-3 text-xs text-gray-400">
-              💡 {config.chipsPerBuyIn} fichas = R$ {config.buyIn} → cada ficha vale R$ {config.chipValue}
+
+            {/* Fichas da Dealer */}
+            <div className="mt-3">
+              <label className="block text-gray-400 text-xs mb-1">Fichas da Dealer (doação)</label>
+              <input
+                type="number"
+                value={fichasDealer}
+                min={0}
+                onChange={e => setFichasDealer(Math.max(0, Number(e.target.value)))}
+                className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-yellow-600 text-sm"
+              />
+            </div>
+
+            <div className="mt-3 bg-gray-700/60 rounded-lg p-3 text-xs text-gray-400 flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0 text-yellow-500/70" />
+              <div>
+                {config.chipsPerBuyIn} fichas = R$ {config.buyIn} → cada ficha vale R$ {config.chipValue}
+                {fichasDealer > 0 && (
+                  <div className="mt-1 text-yellow-400">{fichasDealer} fichas reservadas para a dealer</div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -134,16 +629,18 @@ export default function CashGameApp({ onBack }: Props) {
         {/* Resumo */}
         {players.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-4">
-            {[
-              { label: 'Pote Total', value: `R$ ${totalPot.toFixed(0)}`, color: 'text-yellow-400' },
-              { label: 'Na Mesa', value: `${players.filter(p => p.ativo).length}/${players.length}`, color: 'text-white' },
-              { label: 'Rebuys', value: `${players.reduce((s, p) => s + p.rebuys, 0)}`, color: 'text-orange-400' },
-            ].map(({ label, value, color }) => (
-              <div key={label} className="bg-gray-800 rounded-lg p-3 text-center">
-                <div className="text-xs text-gray-400 mb-1">{label}</div>
-                <div className={`text-lg font-bold ${color}`}>{value}</div>
-              </div>
-            ))}
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-center shadow-sm shadow-yellow-500/10">
+              <div className="text-xs text-yellow-400/70 mb-1">Pote Total</div>
+              <div className="text-lg font-bold text-yellow-400">R$ {totalPot.toFixed(0)}</div>
+            </div>
+            <div className="bg-gray-800/60 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-400 mb-1">Na Mesa</div>
+              <div className="text-lg font-bold text-white">{players.filter(p => p.ativo).length}/{players.length}</div>
+            </div>
+            <div className="bg-gray-800/60 rounded-lg p-3 text-center">
+              <div className="text-xs text-gray-400 mb-1">Rebuys</div>
+              <div className="text-lg font-bold text-orange-400">{players.reduce((s, p) => s + p.rebuys, 0)}</div>
+            </div>
           </div>
         )}
 
@@ -159,15 +656,15 @@ export default function CashGameApp({ onBack }: Props) {
           <div className="space-y-4">
             <div className="bg-gray-800 rounded-xl p-4">
               <h2 className="text-base font-bold text-yellow-400 mb-3 flex items-center gap-2">
-                <Users className="w-5 h-5" /> Adicionar Jogador ({players.length}/9)
+                <Users className="w-5 h-5" /> Adicionar Jogador ({players.length}/{MAX_PLAYERS})
               </h2>
               <div className="flex gap-2">
                 <input type="text" value={playerName} onChange={e => setPlayerName(e.target.value)}
                   onKeyPress={e => e.key === 'Enter' && addPlayer()} placeholder="Nome do jogador"
-                  className="flex-1 bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600"
-                  disabled={players.length >= 9} />
-                <button onClick={addPlayer} disabled={players.length >= 9 || !playerName.trim()}
-                  className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 text-white px-4 rounded-lg">
+                  className="flex-1 bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-3 border border-gray-600"
+                  disabled={ro || players.length >= MAX_PLAYERS} />
+                <button onClick={addPlayer} disabled={ro || players.length >= MAX_PLAYERS || !playerName.trim()}
+                  className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 rounded-lg cursor-pointer">
                   <Plus className="w-5 h-5" />
                 </button>
               </div>
@@ -194,7 +691,8 @@ export default function CashGameApp({ onBack }: Props) {
                 {expandedPlayer === player.id && (
                   <div className="px-4 pb-4 border-t border-gray-700 pt-3 space-y-3">
                     <button onClick={() => toggleAtivo(player.id)}
-                      className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 ${player.ativo ? 'bg-orange-600' : 'bg-yellow-600'}`}>
+                      disabled={ro}
+                      className={`w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors ${player.ativo ? 'bg-orange-600 hover:bg-orange-500' : 'bg-yellow-600 hover:bg-yellow-500'}`}>
                       {player.ativo ? <><LogOut className="w-4 h-4" /> Sair da Mesa</> : <><LogIn className="w-4 h-4" /> Voltar à Mesa</>}
                     </button>
 
@@ -203,8 +701,8 @@ export default function CashGameApp({ onBack }: Props) {
                       <div className="grid grid-cols-3 gap-2">
                         {[1, 2, 3].map(mult => (
                           <button key={mult} onClick={() => doRebuy(player.id, mult)}
-                            disabled={player.rebuys >= config.maxRebuys}
-                            className="bg-blue-700 hover:bg-blue-600 disabled:bg-gray-600 disabled:opacity-50 py-3 rounded-lg font-bold text-sm flex flex-col items-center">
+                            disabled={ro || player.rebuys >= config.maxRebuys}
+                            className="bg-blue-700 hover:bg-blue-600 disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer py-3 rounded-lg font-bold text-sm flex flex-col items-center transition-colors">
                             <span>{mult}x</span>
                             <span className="text-xs font-normal text-blue-200">R$ {mult * config.buyIn}</span>
                           </button>
@@ -215,17 +713,32 @@ export default function CashGameApp({ onBack }: Props) {
                     <div>
                       <label className="block text-xs text-gray-400 mb-2">Histórico</label>
                       <div className="space-y-1">
-                        {player.historico.map((h, i) => (
-                          <div key={i} className="flex justify-between text-xs bg-gray-700 rounded px-3 py-2">
-                            <span className="text-gray-300">{h.tipo}</span>
-                            {h.valor > 0 && <span className="text-red-400">-R$ {h.valor}</span>}
-                          </div>
-                        ))}
+                        {player.historico.map((h, i) => {
+                          const isRebuy = h.tipo.startsWith('Rebuy');
+                          return (
+                            <div key={h.histId ?? i} className="flex justify-between items-center text-xs bg-gray-700 rounded px-3 py-2">
+                              <span className="text-gray-300">{h.tipo}</span>
+                              <div className="flex items-center gap-2">
+                                {h.valor > 0 && <span className="text-red-400">-R$ {h.valor}</span>}
+                                {isRebuy && (
+                                  <button
+                                    onClick={e => { e.stopPropagation(); undoRebuy(player.id, i); }}
+                                    className="text-gray-500 hover:text-red-400 transition-colors p-0.5 rounded"
+                                    title="Desfazer rebuy"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
                     <button onClick={() => removePlayer(player.id)}
-                      className="w-full bg-red-700 hover:bg-red-600 py-3 rounded-lg font-bold flex items-center justify-center gap-2">
+                      disabled={ro}
+                      className="w-full bg-red-700 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors">
                       <X className="w-4 h-4" /> Remover Jogador
                     </button>
                   </div>
@@ -238,9 +751,43 @@ export default function CashGameApp({ onBack }: Props) {
         {/* ── TAB MESA ── */}
         {tab === 'mesa' && (
           <div className="space-y-3">
-            <div className="bg-gray-700 rounded-xl p-3 text-sm text-gray-300 text-center">
-              💡 Informe quantas fichas cada jogador tem no final
+            <div className="bg-gray-800/60 border border-white/[0.06] rounded-xl p-3 text-sm text-gray-400 flex items-center justify-center gap-2">
+              <Info className="w-4 h-4 text-yellow-500/70 shrink-0" />
+              Informe quantas fichas cada jogador tem no final
             </div>
+
+            {/* Card Fichas da Dealer */}
+            <div className="bg-gray-800 border border-yellow-600/50 rounded-xl p-4">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <div className="font-bold text-yellow-400 flex items-center gap-1.5">
+                    <CreditCard className="w-4 h-4" />
+                    Fichas da Dealer
+                  </div>
+                  <div className="text-xs text-gray-400">Doação livre — não entra no balanço</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-gray-400">Valor em R$</div>
+                  <div className="font-bold text-yellow-400">R$ {(fichasDealer * config.chipValue).toFixed(2)}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setFichasDealer(v => Math.max(0, v - 1))}
+                  disabled={ro}
+                  className="bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer p-3 rounded-lg transition-colors"><Minus className="w-5 h-5" /></button>
+                <input
+                  type="number" value={fichasDealer} min={0}
+                  onChange={e => setFichasDealer(Math.max(0, Number(e.target.value)))}
+                  disabled={ro}
+                  className="flex-1 bg-gray-700 text-white text-center rounded-lg px-3 py-3 border border-yellow-600 text-lg font-bold disabled:opacity-60"
+                />
+                <button onClick={() => setFichasDealer(v => v + 1)}
+                  disabled={ro}
+                  className="bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer p-3 rounded-lg transition-colors"><Plus className="w-5 h-5" /></button>
+              </div>
+              <div className="text-xs text-gray-400 text-center mt-2">fichas</div>
+            </div>
+
             {players.length === 0 && <div className="text-center text-gray-400 py-10">Nenhum jogador cadastrado ainda.</div>}
             {players.map(player => (
               <div key={player.id} className="bg-gray-800 rounded-xl p-4">
@@ -256,12 +803,15 @@ export default function CashGameApp({ onBack }: Props) {
                 </div>
                 <div className="flex items-center gap-3">
                   <button onClick={() => updateFichas(player.id, player.fichasFinais - 1)}
-                    className="bg-gray-600 hover:bg-gray-500 p-3 rounded-lg"><Minus className="w-5 h-5" /></button>
+                    disabled={ro}
+                    className="bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer p-3 rounded-lg transition-colors"><Minus className="w-5 h-5" /></button>
                   <input type="number" value={player.fichasFinais}
                     onChange={e => updateFichas(player.id, Number(e.target.value))}
-                    className="flex-1 bg-gray-700 text-white text-center rounded-lg px-3 py-3 border border-gray-600 text-lg font-bold" />
+                    disabled={ro}
+                    className="flex-1 bg-gray-700 text-white text-center rounded-lg px-3 py-3 border border-gray-600 text-lg font-bold disabled:opacity-60" />
                   <button onClick={() => updateFichas(player.id, player.fichasFinais + 1)}
-                    className="bg-gray-600 hover:bg-gray-500 p-3 rounded-lg"><Plus className="w-5 h-5" /></button>
+                    disabled={ro}
+                    className="bg-gray-600 hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer p-3 rounded-lg transition-colors"><Plus className="w-5 h-5" /></button>
                 </div>
                 <div className="text-xs text-gray-400 text-center mt-2">fichas</div>
               </div>
@@ -269,15 +819,18 @@ export default function CashGameApp({ onBack }: Props) {
 
             {players.length > 0 && (() => {
               const total = players.reduce((s, p) => s + p.fichasFinais, 0);
-              const esperado = players.reduce((s, p) => s + (p.buyIns + p.rebuys) * config.chipsPerBuyIn, 0);
+              const esperado = players.reduce((s, p) => s + (p.buyIns + p.rebuys) * config.chipsPerBuyIn, 0) - fichasDealer;
               const diff = total - esperado;
               return (
                 <div className={`rounded-xl p-4 text-center ${Math.abs(diff) < 1 ? 'bg-green-900 border border-green-600' : 'bg-red-900 border border-red-600'}`}>
                   <div className="text-sm font-bold text-white mb-1">Verificação de Fichas</div>
-                  <div className="text-xs text-gray-300">Contado: <strong>{total}</strong> | Esperado: <strong>{esperado}</strong></div>
+                  <div className="text-xs text-gray-300">
+                    Contado: <strong>{total}</strong> | Esperado: <strong>{esperado}</strong>
+                    {fichasDealer > 0 && <span className="text-yellow-300"> (−{fichasDealer} dealer)</span>}
+                  </div>
                   {Math.abs(diff) < 1
-                    ? <div className="text-green-400 font-bold mt-1">✓ Fichas conferem!</div>
-                    : <div className="text-red-400 font-bold mt-1">⚠ Diferença de {diff} fichas</div>}
+                    ? <div className="text-green-400 font-bold mt-1 flex items-center justify-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Fichas conferem!</div>
+                    : <div className="text-red-400 font-bold mt-1 flex items-center justify-center gap-1.5"><AlertTriangle className="w-4 h-4" /> Diferença de {diff} fichas</div>}
                 </div>
               );
             })()}
@@ -288,6 +841,35 @@ export default function CashGameApp({ onBack }: Props) {
         {tab === 'acerto' && (
           <div className="space-y-4">
             {players.length === 0 && <div className="text-center text-gray-400 py-10">Nenhum jogador cadastrado ainda.</div>}
+
+            {/* Salvar Sessão — oculto para espectadores */}
+            {!ro && players.length > 0 && (
+              <div className="bg-gray-800 rounded-xl p-4 flex items-center justify-between gap-3">
+                <div className="flex-1">
+                  <div className="font-bold text-white flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-yellow-400" /> Salvar no Ranking
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    {sessaoSalva ? 'Sessão registrada com sucesso!' : 'Registra posições e pontos desta sessão'}
+                  </div>
+                </div>
+                <button
+                  onClick={salvarSessao}
+                  disabled={salvandoSessao || sessaoSalva}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors shrink-0 ${
+                    sessaoSalva
+                      ? 'bg-green-700 text-green-200 cursor-default'
+                      : 'bg-yellow-600 hover:bg-yellow-500 disabled:opacity-50 text-white'
+                  }`}
+                >
+                  {salvandoSessao
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Salvando...</>
+                    : sessaoSalva
+                    ? <><Check className="w-4 h-4" /> Salvo!</>
+                    : <><Save className="w-4 h-4" /> Salvar</>}
+                </button>
+              </div>
+            )}
 
             {players.length > 0 && (
               <div className="bg-gray-800 rounded-xl p-4">
@@ -320,7 +902,7 @@ export default function CashGameApp({ onBack }: Props) {
                 <>
                   {winners.length > 0 && (
                     <div className="bg-gray-800 rounded-xl p-4">
-                      <h2 className="text-base font-bold text-green-400 mb-3">🏆 Ganhadores</h2>
+                      <h2 className="text-base font-bold text-green-400 mb-3 flex items-center gap-2"><Trophy className="w-4 h-4" /> Ganhadores</h2>
                       <div className="space-y-2">
                         {winners.map(w => (
                           <div key={w.id} className="bg-green-900/40 border border-green-700 rounded-lg p-3 flex justify-between">
@@ -333,7 +915,7 @@ export default function CashGameApp({ onBack }: Props) {
                   )}
                   {losers.length > 0 && (
                     <div className="bg-gray-800 rounded-xl p-4">
-                      <h2 className="text-base font-bold text-red-400 mb-3">💸 Perdedores</h2>
+                      <h2 className="text-base font-bold text-red-400 mb-3 flex items-center gap-2"><TrendingDown className="w-4 h-4" /> Perdedores</h2>
                       <div className="space-y-2">
                         {losers.map(l => (
                           <div key={l.id} className="bg-red-900/40 border border-red-700 rounded-lg p-3 flex justify-between">
@@ -369,6 +951,59 @@ export default function CashGameApp({ onBack }: Props) {
           </div>
         )}
       </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur-sm border border-yellow-500/40 text-yellow-300 font-semibold text-sm px-5 py-3 rounded-xl shadow-2xl shadow-black/50 z-50 whitespace-nowrap">
+          {toast}
+        </div>
+      )}
+
+      {/* Modal Compartilhar */}
+      {showShareModal && sessionId && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setShowShareModal(false)}
+        >
+          <div
+            className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-xs space-y-5"
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-white text-center">Compartilhar Mesa</h3>
+
+            {/* QR Code */}
+            <div className="flex justify-center bg-white p-4 rounded-xl">
+              <QRCodeSVG value={shareUrl} size={160} />
+            </div>
+
+            {/* Código */}
+            <div className="text-center">
+              <div className="text-xs text-gray-500 mb-1">Código da Mesa</div>
+              <div className="text-4xl font-black text-yellow-400 tracking-[0.2em] font-mono">{sessionId}</div>
+            </div>
+
+            {/* URL truncada */}
+            <div className="bg-white/[0.05] rounded-lg px-3 py-2 text-xs text-gray-400 font-mono truncate text-center">
+              {shareUrl}
+            </div>
+
+            {/* Botões */}
+            <button
+              onClick={copyShareLink}
+              className="w-full bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors duration-200"
+            >
+              <Link2 className="w-4 h-4" />
+              Copiar Link
+            </button>
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="w-full text-gray-500 hover:text-gray-300 text-sm cursor-pointer transition-colors py-1"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
