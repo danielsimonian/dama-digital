@@ -9,12 +9,13 @@ import {
   TrendingDown, CreditCard, Share2, Eye, Cloud, CloudOff, ShieldCheck,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import PlayerAutocomplete, { type JogadorBase } from './PlayerAutocomplete';
 
 /* ─── tipos ────────────────────────────────────────────── */
 
 interface HistoricoItem { tipo: string; valor: number; mult?: number; histId?: string }
 interface Player {
-  id: number; name: string; buyIns: number; rebuys: number;
+  id: number; name: string; jogadorId?: string; buyIns: number; rebuys: number;
   fichasFinais: number; ativo: boolean; historico: HistoricoItem[];
 }
 interface Config { buyIn: number; chipValue: number; chipsPerBuyIn: number; maxRebuys: number }
@@ -67,6 +68,10 @@ export default function CashGameApp({
   const [salvandoSessao, setSalvandoSessao] = useState(false);
   const [sessaoSalva, setSessaoSalva] = useState(false);
 
+  // — jogadores cadastrados (autocomplete) —
+  const [jogadores, setJogadores] = useState<JogadorBase[]>([]);
+  const [selectedJogador, setSelectedJogador] = useState<JogadorBase | null>(null);
+
   // — sessão Redis: auto-save e share —
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [showShareModal, setShowShareModal] = useState(false);
@@ -74,6 +79,16 @@ export default function CashGameApp({
   const isMountedRef = useRef(false);
 
   /* ── helpers ─────────────────────────────────────────── */
+
+  // Carrega jogadores cadastrados para o autocomplete
+  useEffect(() => {
+    fetch('/api/poker/jogadores')
+      .then(r => r.json())
+      .then((data: JogadorBase[]) => {
+        if (Array.isArray(data)) setJogadores(data.filter(j => (j as { ativo?: boolean }).ativo !== false));
+      })
+      .catch(() => {});
+  }, []);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -196,18 +211,27 @@ export default function CashGameApp({
 
   const importarInscritos = () => {
     if (!sessao || sessao.inscritos.length === 0) return;
-    const jaExistentes = new Set(players.map(p => p.name.toLowerCase()));
+    const jaExistentes = new Set(players.map(p => p.jogadorId ?? p.name.toLowerCase()));
+    // Mapa nome→jogador para enriquecer com jogadorId
+    const nomeParaJogador = new Map(jogadores.map(j => [j.nome.toLowerCase(), j]));
     const novos = sessao.inscritos
-      .filter(i => !jaExistentes.has(i.nome.toLowerCase()))
+      .filter(i => {
+        const jog = nomeParaJogador.get(i.nome.toLowerCase());
+        return !jaExistentes.has(jog?.id ?? i.nome.toLowerCase());
+      })
       .slice(0, MAX_PLAYERS - players.length)
-      .map((i, idx) => ({
-        id: Date.now() + idx,
-        name: i.nome,
-        buyIns: 1, rebuys: 0,
-        fichasFinais: config.chipsPerBuyIn,
-        ativo: true,
-        historico: [{ tipo: 'Buy-in', valor: config.buyIn }],
-      }));
+      .map((i, idx) => {
+        const jog = nomeParaJogador.get(i.nome.toLowerCase());
+        return {
+          id: Date.now() + idx,
+          jogadorId: jog?.id,
+          name: i.nome,
+          buyIns: 1, rebuys: 0,
+          fichasFinais: config.chipsPerBuyIn,
+          ativo: true,
+          historico: [{ tipo: 'Buy-in', valor: config.buyIn }],
+        };
+      });
     setPlayers(prev => [...prev, ...novos]);
     setShowInscricoes(false);
     showToast(`${novos.length} jogador(es) importado(s) ✓`);
@@ -233,6 +257,7 @@ export default function CashGameApp({
         const { spent, won, balance } = calcBalance(p);
         return {
           nome:         p.name,
+          jogadorId:    p.jogadorId,
           fichasFinais: p.fichasFinais,
           investido:    spent,
           ganho:        won,
@@ -292,13 +317,21 @@ export default function CashGameApp({
   };
 
   const addPlayer = () => {
-    if (!playerName.trim() || players.length >= MAX_PLAYERS) return;
+    if (!selectedJogador || players.length >= MAX_PLAYERS) return;
+    // Evitar duplicata na mesa
+    if (players.some(p => p.jogadorId === selectedJogador.id)) {
+      showToast(`${selectedJogador.nome} já está na mesa`);
+      return;
+    }
     setPlayers([...players, {
-      id: Date.now(), name: playerName.trim(), buyIns: 1, rebuys: 0,
+      id: Date.now(),
+      jogadorId: selectedJogador.id,
+      name: selectedJogador.nome,
+      buyIns: 1, rebuys: 0,
       fichasFinais: config.chipsPerBuyIn, ativo: true,
       historico: [{ tipo: 'Buy-in', valor: config.buyIn }],
     }]);
-    setPlayerName('');
+    setSelectedJogador(null);
   };
 
   const doRebuy = (id: number, mult: number) =>
@@ -659,12 +692,20 @@ export default function CashGameApp({
                 <Users className="w-5 h-5" /> Adicionar Jogador ({players.length}/{MAX_PLAYERS})
               </h2>
               <div className="flex gap-2">
-                <input type="text" value={playerName} onChange={e => setPlayerName(e.target.value)}
-                  onKeyPress={e => e.key === 'Enter' && addPlayer()} placeholder="Nome do jogador"
-                  className="flex-1 bg-gray-700 text-white placeholder-gray-400 rounded-lg px-4 py-3 border border-gray-600"
-                  disabled={ro || players.length >= MAX_PLAYERS} />
-                <button onClick={addPlayer} disabled={ro || players.length >= MAX_PLAYERS || !playerName.trim()}
-                  className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 rounded-lg cursor-pointer">
+                <div className="flex-1">
+                  <PlayerAutocomplete
+                    jogadores={jogadores}
+                    selected={selectedJogador}
+                    onSelect={setSelectedJogador}
+                    disabled={ro || players.length >= MAX_PLAYERS}
+                    placeholder="Buscar jogador cadastrado..."
+                  />
+                </div>
+                <button
+                  onClick={addPlayer}
+                  disabled={ro || players.length >= MAX_PLAYERS || !selectedJogador}
+                  className="bg-yellow-600 hover:bg-yellow-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 rounded-lg cursor-pointer transition-colors shrink-0"
+                >
                   <Plus className="w-5 h-5" />
                 </button>
               </div>

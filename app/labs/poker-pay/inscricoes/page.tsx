@@ -2,15 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { Users, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import PlayerAutocomplete, { type JogadorBase } from '@/components/labs/PlayerAutocomplete';
 
-interface Inscrito { id: string; nome: string; criadoEm: string; }
-interface Sessao { status: 'aberta' | 'fechada'; inscritos: Inscrito[]; data: string; }
+interface Sessao { status: 'aberta' | 'fechada'; inscritos: { id: string; nome: string; criadoEm: string }[]; data: string; }
 
 const MAX = 9;
 
 export default function InscricoesPage() {
   const [sessao, setSessao] = useState<Sessao | null>(null);
-  const [nome, setNome] = useState('');
+  const [jogadores, setJogadores] = useState<JogadorBase[]>([]);
+  const [selected, setSelected] = useState<JogadorBase | null>(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [inscritoNome, setInscritoNome] = useState<string | null>(null);
@@ -28,25 +29,33 @@ export default function InscricoesPage() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    fetch('/api/poker/jogadores')
+      .then(r => r.json())
+      .then((data: JogadorBase[]) => {
+        if (Array.isArray(data)) setJogadores(data.filter(j => (j as { ativo?: boolean }).ativo !== false));
+      })
+      .catch(() => {});
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const n = nome.trim();
-    if (!n) return;
+    if (!selected) return;
     setLoading(true);
     setErro(null);
     try {
       const res = await fetch('/api/poker/inscricoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome: n }),
+        body: JSON.stringify({ nome: selected.nome }),
       });
       const data = await res.json();
       if (!res.ok) {
         setErro(data.erro ?? 'Erro ao realizar inscrição');
       } else {
         setSessao(data);
-        setInscritoNome(n);
-        setNome('');
+        setInscritoNome(selected.nome);
+        setSelected(null);
       }
     } catch {
       setErro('Erro de conexão. Tente novamente.');
@@ -71,9 +80,11 @@ export default function InscricoesPage() {
 
         {/* Header */}
         <div className="text-center pt-8 pb-6">
-          <div className="text-5xl mb-3">🎰</div>
+          <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-yellow-600/20 border border-yellow-600/30 flex items-center justify-center">
+            <Users className="w-8 h-8 text-yellow-400" />
+          </div>
           <h1 className="text-3xl font-bold text-yellow-400">Poker Pay</h1>
-          <p className="text-gray-300 mt-1 capitalize">{dataFormatada || 'Segunda-Feira'}</p>
+          <p className="text-gray-300 mt-1 capitalize">{dataFormatada || 'Inscrições'}</p>
           <p className="text-xs text-gray-500 mt-0.5">by DAMA Digital</p>
         </div>
 
@@ -106,37 +117,44 @@ export default function InscricoesPage() {
             <CheckCircle className="w-6 h-6 text-green-400 shrink-0" />
             <div>
               <div className="font-bold text-white">Presença confirmada!</div>
-              <div className="text-sm text-gray-300">{inscritoNome} está na lista ✓</div>
+              <div className="text-sm text-gray-300">{inscritoNome} está na lista</div>
             </div>
           </div>
         )}
 
         {/* Form */}
         {aberta && !inscritoNome && (
-          <form onSubmit={handleSubmit} className="bg-gray-800 rounded-xl p-4 mb-4">
-            <label className="block text-gray-400 text-sm mb-2 font-medium">Seu nome</label>
-            <input
-              type="text"
-              value={nome}
-              onChange={e => setNome(e.target.value)}
-              placeholder="Como te chamam na mesa?"
-              className="w-full bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 mb-3 text-base focus:border-yellow-500 focus:outline-none"
+          <form onSubmit={handleSubmit} className="bg-gray-800 rounded-xl p-4 mb-4 space-y-3">
+            <label className="block text-gray-400 text-sm font-medium">Selecione seu nome</label>
+
+            <PlayerAutocomplete
+              jogadores={jogadores}
+              selected={selected}
+              onSelect={setSelected}
               disabled={loading}
-              maxLength={30}
-              autoComplete="off"
+              placeholder="Buscar seu nome..."
             />
+
+            {jogadores.length === 0 && (
+              <p className="text-xs text-yellow-500/80 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                Nenhum jogador cadastrado ainda. Aguarde o organizador.
+              </p>
+            )}
+
             {erro && (
-              <div className="flex items-center gap-2 text-red-400 text-sm mb-3">
+              <div className="flex items-center gap-2 text-red-400 text-sm">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 {erro}
               </div>
             )}
+
             <button
               type="submit"
-              disabled={loading || !nome.trim()}
-              className="w-full bg-yellow-600 hover:bg-yellow-500 active:bg-yellow-700 disabled:bg-gray-600 disabled:opacity-50 text-white py-3 rounded-lg font-bold transition-colors text-base"
+              disabled={loading || !selected}
+              className="w-full bg-yellow-600 hover:bg-yellow-500 active:bg-yellow-700 disabled:bg-gray-600 disabled:opacity-50 text-white py-3 rounded-lg font-bold transition-colors text-base cursor-pointer"
             >
-              {loading ? 'Confirmando...' : '🃏 Confirmar Presença'}
+              {loading ? 'Confirmando...' : 'Confirmar Presença'}
             </button>
           </form>
         )}
@@ -144,7 +162,7 @@ export default function InscricoesPage() {
         {/* Encerradas - não inscrito */}
         {!aberta && !inscritoNome && sessao && (
           <div className="bg-gray-800 rounded-xl p-6 mb-4 text-center">
-            <div className="text-3xl mb-2">🔒</div>
+            <Clock className="w-10 h-10 mx-auto mb-2 text-gray-600" />
             <div className="font-bold text-white mb-1">Inscrições encerradas</div>
             <div className="text-sm text-gray-400">
               {cheio ? 'A mesa está completa (9/9 vagas).' : 'As inscrições foram fechadas pelo organizador.'}
@@ -175,8 +193,8 @@ export default function InscricoesPage() {
                 </div>
               ))}
               {cheio && (
-                <div className="text-center text-orange-400 font-bold text-sm pt-2">
-                  🏆 Mesa completa!
+                <div className="text-center text-orange-400 font-bold text-sm pt-2 flex items-center justify-center gap-1.5">
+                  <Users className="w-4 h-4" /> Mesa completa!
                 </div>
               )}
             </div>

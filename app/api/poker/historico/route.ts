@@ -1,10 +1,12 @@
 import { redis } from '@/lib/redis';
 import { NextRequest, NextResponse } from 'next/server';
+import { getAll as getJogadores } from '../jogadores/route';
 
 export const runtime = 'nodejs';
 
 export interface JogadorSessao {
   nome: string;
+  jogadorId?: string; // referência ao jogador cadastrado (opcional, backward compat)
   fichasFinais: number;
   investido: number;
   ganho: number;
@@ -22,6 +24,7 @@ export interface SessaoHistorico {
 
 export interface RankingEntry {
   nome: string;
+  jogadorId?: string;
   pontos: number;
   lucroTotal: number;
   sessoes: number;
@@ -52,26 +55,52 @@ function filterDates(dates: string[], filtro: string): string[] {
   return dates; // todas
 }
 
-function buildRanking(sessoes: SessaoHistorico[]): RankingEntry[] {
-  const map = new Map<string, { pontos: number; lucroTotal: number; sessoes: number; melhorPosicao: number }>();
+interface RankingAcc {
+  nome: string;
+  jogadorId?: string;
+  pontos: number;
+  lucroTotal: number;
+  sessoes: number;
+  melhorPosicao: number;
+}
+
+function buildRanking(sessoes: SessaoHistorico[], nomeParaId: Map<string, string>): RankingEntry[] {
+  // Agrupa por jogadorId quando disponível, senão por nome.
+  // nomeParaId permite unificar sessões antigas (só nome) com o ID cadastrado.
+  const map = new Map<string, RankingAcc>();
 
   for (const s of sessoes) {
     for (const j of s.jogadores) {
-      const e = map.get(j.nome) ?? { pontos: 0, lucroTotal: 0, sessoes: 0, melhorPosicao: 99 };
-      e.pontos       += j.pontos;
-      e.lucroTotal   += j.balanco;
-      e.sessoes      += 1;
-      e.melhorPosicao = Math.min(e.melhorPosicao, j.posicao);
-      map.set(j.nome, e);
+      // Resolve a chave de agrupamento
+      const resolvedId = j.jogadorId ?? nomeParaId.get(j.nome.toLowerCase());
+      const key = resolvedId ?? j.nome;
+
+      const e: RankingAcc = map.get(key) ?? {
+        nome: j.nome,
+        jogadorId: resolvedId,
+        pontos: 0,
+        lucroTotal: 0,
+        sessoes: 0,
+        melhorPosicao: 99,
+      };
+      e.pontos        += j.pontos;
+      e.lucroTotal    += j.balanco;
+      e.sessoes       += 1;
+      e.melhorPosicao  = Math.min(e.melhorPosicao, j.posicao);
+      // Sempre usa o nome mais recente da sessão
+      e.nome = j.nome;
+      if (resolvedId) e.jogadorId = resolvedId;
+      map.set(key, e);
     }
   }
 
-  return [...map.entries()]
-    .map(([nome, e]) => ({
-      nome,
-      pontos:       e.pontos,
-      lucroTotal:   e.lucroTotal,
-      sessoes:      e.sessoes,
+  return [...map.values()]
+    .map(e => ({
+      nome:          e.nome,
+      jogadorId:     e.jogadorId,
+      pontos:        e.pontos,
+      lucroTotal:    e.lucroTotal,
+      sessoes:       e.sessoes,
       melhorPosicao: e.melhorPosicao === 99 ? 1 : e.melhorPosicao,
     }))
     .sort((a, b) => b.pontos - a.pontos || b.lucroTotal - a.lucroTotal);
@@ -93,7 +122,11 @@ export async function GET(req: NextRequest) {
     // Mais recente primeiro
     sessoes.sort((a, b) => b.data.localeCompare(a.data));
 
-    return NextResponse.json({ ranking: buildRanking(sessoes), sessoes, filtro });
+    // Mapa nome→jogadorId para unificar sessões legadas (sem jogadorId) com cadastro
+    const jogadores = await getJogadores();
+    const nomeParaId = new Map(jogadores.map(j => [j.nome.toLowerCase(), j.id]));
+
+    return NextResponse.json({ ranking: buildRanking(sessoes, nomeParaId), sessoes, filtro });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ erro: 'Erro interno' }, { status: 500 });

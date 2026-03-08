@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Trophy, DollarSign, ArrowLeft, Crown, ChevronRight } from 'lucide-react';
+import { Trophy, DollarSign, ArrowLeft, Crown, ChevronRight, Users } from 'lucide-react';
 import TournamentApp from './PokerTournament';
 
 type Mode = null | 'tournament';
@@ -47,17 +47,29 @@ export default function PokerPay() {
         {/* Cards de modo */}
         <div className="w-full max-w-sm space-y-3">
 
-          {/* Ranking link */}
-          <a
-            href="/labs/poker-pay/ranking"
-            className="w-full flex items-center justify-between gap-2 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] hover:border-yellow-500/30 rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer group"
-          >
-            <div className="flex items-center gap-2 text-yellow-400 group-hover:text-yellow-300 text-sm font-medium transition-colors duration-200">
-              <Trophy className="w-4 h-4" />
-              Ver Ranking Semanal
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-yellow-500/60 transition-colors duration-200" />
-          </a>
+          {/* Links rápidos */}
+          <div className="grid grid-cols-2 gap-2">
+            <a
+              href="/labs/poker-pay/ranking"
+              className="flex items-center justify-between gap-2 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] hover:border-yellow-500/30 rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer group"
+            >
+              <div className="flex items-center gap-2 text-yellow-400 group-hover:text-yellow-300 text-sm font-medium transition-colors duration-200">
+                <Trophy className="w-4 h-4" />
+                Ranking
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-yellow-500/60 transition-colors duration-200" />
+            </a>
+            <a
+              href="/labs/poker-pay/jogadores"
+              className="flex items-center justify-between gap-2 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] hover:border-purple-500/30 rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer group"
+            >
+              <div className="flex items-center gap-2 text-purple-400 group-hover:text-purple-300 text-sm font-medium transition-colors duration-200">
+                <Users className="w-4 h-4" />
+                Jogadores
+              </div>
+              <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-purple-500/60 transition-colors duration-200" />
+            </a>
+          </div>
 
           {/* Torneio */}
           <button
