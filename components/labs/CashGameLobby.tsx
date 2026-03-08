@@ -19,10 +19,34 @@ export default function CashGameLobby() {
   const [recent, setRecent] = useState<RecentSession[]>([]);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('poker-recent-sessions');
-      if (stored) setRecent(JSON.parse(stored));
-    } catch {}
+    async function loadAndValidate() {
+      try {
+        const stored = localStorage.getItem('poker-recent-sessions');
+        if (!stored) return;
+        const parsed: RecentSession[] = JSON.parse(stored);
+        if (!parsed.length) return;
+
+        // Verificar quais sessões ainda existem no Redis
+        const checks = await Promise.all(
+          parsed.map(s =>
+            fetch(`/api/poker/session/${s.id}`, { cache: 'no-store' })
+              .then(r => ({ id: s.id, ok: r.ok }))
+              .catch(() => ({ id: s.id, ok: false }))
+          )
+        );
+
+        const validas = parsed.filter(s => checks.find(c => c.id === s.id)?.ok);
+
+        // Limpa localStorage se alguma sessão expirou
+        if (validas.length !== parsed.length) {
+          localStorage.setItem('poker-recent-sessions', JSON.stringify(validas));
+        }
+
+        setRecent(validas);
+      } catch {}
+    }
+
+    loadAndValidate();
   }, []);
 
   function saveToRecent(id: string, isAdmin: boolean) {
