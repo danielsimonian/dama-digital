@@ -436,7 +436,7 @@ function RankingInner() {
 
             {sessoes.map(s => {
               const isOpen  = expanded === s.data;
-              const ordered = [...s.jogadores].sort((a, b) => a.posicao - b.posicao);
+              const ordered = [...s.jogadores].sort((a, b) => (b.balanco ?? 0) - (a.balanco ?? 0));
               const gAtivo  = s.grupoId ? grupos.find(g => g.id === s.grupoId) : null;
 
               return (
@@ -476,18 +476,22 @@ function RankingInner() {
                         <span className="col-span-3 text-right">Resultado</span>
                         <span className="col-span-3 text-right">Pts</span>
                       </div>
-                      {ordered.map(j => (
-                        <div key={j.nome} className="grid grid-cols-12 items-center bg-gray-700/50 rounded-lg px-3 py-2">
-                          <span className="col-span-1 text-gray-500 text-xs font-bold">{j.posicao}</span>
-                          <span className="col-span-5 text-white text-sm font-medium truncate">{j.nome}</span>
-                          <span className={`col-span-3 text-right text-xs font-bold ${lucroColor(j.balanco ?? 0)}`}>
-                            {(j.balanco ?? 0) >= 0 ? '+' : ''}R$ {(j.balanco ?? 0).toFixed(0)}
-                          </span>
-                          <span className="col-span-3 text-right text-yellow-400 text-sm font-bold">
-                            {j.pontos} pts
-                          </span>
-                        </div>
-                      ))}
+                      {ordered.map((j, idx) => {
+                        const pos = idx + 1;
+                        const pts = Math.max(0, 10 - pos);
+                        return (
+                          <div key={j.nome} className="grid grid-cols-12 items-center bg-gray-700/50 rounded-lg px-3 py-2">
+                            <span className="col-span-1 text-gray-500 text-xs font-bold">{pos}</span>
+                            <span className="col-span-5 text-white text-sm font-medium truncate">{j.nome}</span>
+                            <span className={`col-span-3 text-right text-xs font-bold ${lucroColor(j.balanco ?? 0)}`}>
+                              {(j.balanco ?? 0) >= 0 ? '+' : ''}R$ {(j.balanco ?? 0).toFixed(0)}
+                            </span>
+                            <span className="col-span-3 text-right text-yellow-400 text-sm font-bold">
+                              {pts} pts
+                            </span>
+                          </div>
+                        );
+                      })}
                       <div className="text-xs text-gray-600 text-right pt-1">
                         Salvo em {new Date(s.savedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                       </div>

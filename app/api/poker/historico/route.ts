@@ -80,8 +80,14 @@ function buildRanking(sessoes: SessaoHistorico[], nomeParaId: Map<string, string
   const map = new Map<string, RankingAcc>();
 
   for (const s of sessoes) {
-    for (const j of s.jogadores) {
-      // Resolve a chave de agrupamento
+    // Recalcula posição pela ordem de balanco (maior lucro = melhor posição),
+    // ignorando posicao/pontos armazenados que podem estar errados em sessões importadas.
+    const ordenados = [...s.jogadores].sort((a, b) => (b.balanco ?? 0) - (a.balanco ?? 0));
+
+    ordenados.forEach((j, idx) => {
+      const posicaoCorreta = idx + 1;
+      const pontosCorretos = Math.max(0, 10 - posicaoCorreta);
+
       const resolvedId = j.jogadorId ?? nomeParaId.get(j.nome.toLowerCase());
       const key = resolvedId ?? j.nome;
 
@@ -93,15 +99,14 @@ function buildRanking(sessoes: SessaoHistorico[], nomeParaId: Map<string, string
         sessoes: 0,
         melhorPosicao: 99,
       };
-      e.pontos        += j.pontos;
+      e.pontos        += pontosCorretos;
       e.lucroTotal    += (j.balanco ?? 0);
       e.sessoes       += 1;
-      e.melhorPosicao  = Math.min(e.melhorPosicao, j.posicao);
-      // Sempre usa o nome mais recente da sessão
+      e.melhorPosicao  = Math.min(e.melhorPosicao, posicaoCorreta);
       e.nome = j.nome;
       if (resolvedId) e.jogadorId = resolvedId;
       map.set(key, e);
-    }
+    });
   }
 
   return [...map.values()]
