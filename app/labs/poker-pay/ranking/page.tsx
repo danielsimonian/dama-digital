@@ -10,7 +10,7 @@ import {
 /* ─── tipos ──────────────────────────────────────────────── */
 
 interface JogadorSessao {
-  nome: string; fichasFinais: number; investido: number;
+  nome: string; jogadorId?: string; fichasFinais: number; investido: number;
   ganho: number; balanco: number; posicao: number; pontos: number;
 }
 interface SessaoHistorico {
