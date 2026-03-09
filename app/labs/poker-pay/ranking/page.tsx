@@ -477,8 +477,8 @@ function RankingInner() {
                         <div key={j.nome} className="grid grid-cols-12 items-center bg-gray-700/50 rounded-lg px-3 py-2">
                           <span className="col-span-1 text-gray-500 text-xs font-bold">{j.posicao}</span>
                           <span className="col-span-5 text-white text-sm font-medium truncate">{j.nome}</span>
-                          <span className={`col-span-3 text-right text-xs font-bold ${lucroColor(j.balanco)}`}>
-                            {j.balanco >= 0 ? '+' : ''}R$ {j.balanco.toFixed(0)}
+                          <span className={`col-span-3 text-right text-xs font-bold ${lucroColor(j.balanco ?? 0)}`}>
+                            {(j.balanco ?? 0) >= 0 ? '+' : ''}R$ {(j.balanco ?? 0).toFixed(0)}
                           </span>
                           <span className="col-span-3 text-right text-yellow-400 text-sm font-bold">
                             {j.pontos} pts
