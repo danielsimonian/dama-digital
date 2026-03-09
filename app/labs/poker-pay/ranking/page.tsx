@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
-  Trophy, ArrowLeft, TrendingUp, TrendingDown, DollarSign,
+  Trophy, ArrowLeft, TrendingUp, TrendingDown,
   Calendar, ChevronDown, ChevronUp, Star, Loader2, Flag,
 } from 'lucide-react';
 
@@ -21,18 +21,16 @@ interface RankingEntry {
   nome: string; pontos: number; lucroTotal: number; sessoes: number; melhorPosicao: number;
 }
 interface HistoricoData {
-  ranking:      RankingEntry[];
-  rankingLucro: RankingEntry[];
-  sessoes:      SessaoHistorico[];
-  filtro:       string;
-  grupoId?:     string;
+  ranking:  RankingEntry[];
+  sessoes:  SessaoHistorico[];
+  filtro:   string;
+  grupoId?: string;
 }
 interface Grupo {
   id: string; nome: string; icone: string; cor: string; ativo: boolean;
 }
 
-type Filtro      = '4semanas' | 'mes' | 'todas';
-type ModoRanking = 'lucro' | 'pontos';
+type Filtro = '4semanas' | 'mes' | 'todas';
 
 /* ─── cor dos grupos ─────────────────────────────────────── */
 
@@ -128,46 +126,6 @@ function TabelaPontos({ ranking }: { ranking: RankingEntry[] }) {
   );
 }
 
-function TabelaLucro({ ranking }: { ranking: RankingEntry[] }) {
-  return (
-    <div className="bg-gray-800 rounded-xl overflow-hidden">
-      {/* cabeçalho */}
-      <div className="px-3 py-2.5 border-b border-gray-700 grid grid-cols-12 text-xs text-gray-500 font-medium">
-        <span className="col-span-1">#</span>
-        <span className="col-span-5">Jogador</span>
-        <span className="col-span-4 text-right">Lucro</span>
-        <span className="col-span-2 text-center">Pts</span>
-      </div>
-      <div className="divide-y divide-gray-700/60">
-        {ranking.map((e, idx) => {
-          const pos = idx + 1;
-          return (
-            <div key={e.nome + '-luc'} className={`px-3 py-2.5 grid grid-cols-12 items-center gap-1 ${positionRow(pos)}`}>
-              <div className="col-span-1">
-                <span className={`inline-flex w-5 h-5 rounded-full items-center justify-center text-xs ${positionBadge(pos)}`}>
-                  {pos}
-                </span>
-              </div>
-              <div className="col-span-5">
-                <div className="font-bold text-white text-xs truncate">{e.nome}</div>
-                <div className="text-xs text-gray-600">{e.sessoes}x · #{e.melhorPosicao}</div>
-              </div>
-              <div className={`col-span-4 text-right font-bold text-xs ${lucroColor(e.lucroTotal)}`}>
-                {e.lucroTotal >= 0
-                  ? <span className="flex items-center justify-end gap-0.5"><TrendingUp className="w-3 h-3" />{fmtLucro(e.lucroTotal)}</span>
-                  : <span className="flex items-center justify-end gap-0.5"><TrendingDown className="w-3 h-3" />R$ {Math.abs(e.lucroTotal).toFixed(0)}</span>}
-              </div>
-              <div className="col-span-2 text-center text-gray-500 text-xs font-medium">
-                {e.pontos}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /* ─── inner component ────────────────────────────────────── */
 
 function RankingInner() {
@@ -182,8 +140,7 @@ function RankingInner() {
   const [data, setData]             = useState<HistoricoData | null>(null);
   const [loading, setLoading]       = useState(true);
   const [erro, setErro]             = useState(false);
-  const [expanded, setExpanded]       = useState<string | null>(null);
-  const [modoRanking, setModoRanking] = useState<ModoRanking>('lucro');
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   // Carrega grupos
   useEffect(() => {
@@ -216,12 +173,9 @@ function RankingInner() {
 
   const grupoAtivo = grupos.find(g => g.id === grupoId);
 
-  const rankingPontos = data?.ranking      ?? [];
-  const rankingLucro  = data?.rankingLucro ?? [];
-
-  const pogPontos = rankingPontos[0] ?? null;
-  const pogLucro  = rankingLucro[0]  ?? null;
-  const sessoes   = data?.sessoes ?? [];
+  const rankingPontos = data?.ranking ?? [];
+  const pogPontos     = rankingPontos[0] ?? null;
+  const sessoes       = data?.sessoes ?? [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-orange-900 to-gray-900 p-3 pb-24">
@@ -326,105 +280,40 @@ function RankingInner() {
           </div>
         )}
 
-        {/* ── RANKINGS ─────────────────────────────────────────── */}
+        {/* ── RANKING POR PONTOS ───────────────────────────────── */}
         {!loading && rankingPontos.length > 0 && (
-          <>
-            {/* Toggle segmented control */}
-            <div className="bg-gray-800 rounded-xl p-1 flex gap-1">
-              <button
-                onClick={() => setModoRanking('lucro')}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 ${
-                  modoRanking === 'lucro'
-                    ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-600/30'
-                    : 'bg-gray-700 text-gray-400 hover:text-gray-200'
-                }`}
-              >
-                <DollarSign className="w-4 h-4" /> Lucro
-              </button>
-              <button
-                onClick={() => setModoRanking('pontos')}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 ${
-                  modoRanking === 'pontos'
-                    ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
-                    : 'bg-gray-700 text-gray-400 hover:text-gray-200'
-                }`}
-              >
-                <Trophy className="w-4 h-4" /> Pontos
-              </button>
-            </div>
-
-            {/* Ranking por Lucro */}
-            {modoRanking === 'lucro' && (
-              <div className="space-y-3">
-                {pogLucro && (
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-700 via-yellow-600 to-orange-600 p-5 shadow-xl shadow-yellow-600/20">
-                    <div className="absolute -top-8 -right-8 w-40 h-40 bg-yellow-300/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-orange-400/15 rounded-full blur-2xl pointer-events-none" />
-                    <div className="relative">
-                      <div className="flex items-center gap-2 text-yellow-200 text-xs font-bold mb-3 uppercase tracking-widest">
-                        <Star className="w-3.5 h-3.5 fill-yellow-200" />
-                        💰 Líder em Lucro
-                        {grupoAtivo && <span className="ml-1 opacity-70">· {grupoAtivo.icone} {grupoAtivo.nome}</span>}
-                      </div>
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <div className="text-3xl font-black text-white leading-none">{pogLucro.nome}</div>
-                          <div className="text-yellow-200 text-sm mt-1">{pogLucro.sessoes} sessão{pogLucro.sessoes > 1 ? 'ões' : ''} · melhor #{pogLucro.melhorPosicao}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className={`text-3xl font-black ${pogLucro.lucroTotal >= 0 ? 'text-white' : 'text-red-200'}`}>
-                            {fmtLucro(pogLucro.lucroTotal)}
-                          </div>
-                          <div className="text-yellow-200 text-xs">lucro total</div>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-yellow-500/40 flex items-center justify-between">
-                        <span className="text-yellow-100 text-sm">Pontos acumulados</span>
-                        <span className="font-bold text-lg text-white">{pogLucro.pontos} pts</span>
-                      </div>
+          <div className="space-y-3">
+            {pogPontos && (
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-700 via-green-600 to-emerald-600 p-5 shadow-xl shadow-green-600/20">
+                <div className="absolute -top-8 -right-8 w-40 h-40 bg-green-300/20 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-emerald-400/15 rounded-full blur-2xl pointer-events-none" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 text-green-200 text-xs font-bold mb-3 uppercase tracking-widest">
+                    <Star className="w-3.5 h-3.5 fill-green-200" />
+                    🏆 Líder em Pontos
+                    {grupoAtivo && <span className="ml-1 opacity-70">· {grupoAtivo.icone} {grupoAtivo.nome}</span>}
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="text-3xl font-black text-white leading-none">{pogPontos.nome}</div>
+                      <div className="text-green-200 text-sm mt-1">{pogPontos.sessoes} sessão{pogPontos.sessoes > 1 ? 'ões' : ''} · melhor #{pogPontos.melhorPosicao}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-4xl font-black text-white">{pogPontos.pontos}</div>
+                      <div className="text-green-200 text-xs">pontos</div>
                     </div>
                   </div>
-                )}
-                <TabelaLucro ranking={rankingLucro} />
-              </div>
-            )}
-
-            {/* Ranking por Pontos */}
-            {modoRanking === 'pontos' && (
-              <div className="space-y-3">
-                {pogPontos && (
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-700 via-green-600 to-emerald-600 p-5 shadow-xl shadow-green-600/20">
-                    <div className="absolute -top-8 -right-8 w-40 h-40 bg-green-300/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-emerald-400/15 rounded-full blur-2xl pointer-events-none" />
-                    <div className="relative">
-                      <div className="flex items-center gap-2 text-green-200 text-xs font-bold mb-3 uppercase tracking-widest">
-                        <Star className="w-3.5 h-3.5 fill-green-200" />
-                        🏆 Líder em Pontos
-                        {grupoAtivo && <span className="ml-1 opacity-70">· {grupoAtivo.icone} {grupoAtivo.nome}</span>}
-                      </div>
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <div className="text-3xl font-black text-white leading-none">{pogPontos.nome}</div>
-                          <div className="text-green-200 text-sm mt-1">{pogPontos.sessoes} sessão{pogPontos.sessoes > 1 ? 'ões' : ''} · melhor #{pogPontos.melhorPosicao}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-4xl font-black text-white">{pogPontos.pontos}</div>
-                          <div className="text-green-200 text-xs">pontos</div>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-green-500/40 flex items-center justify-between">
-                        <span className="text-green-100 text-sm">Lucro acumulado</span>
-                        <span className={`font-bold text-lg ${pogPontos.lucroTotal >= 0 ? 'text-white' : 'text-red-200'}`}>
-                          {fmtLucro(pogPontos.lucroTotal)}
-                        </span>
-                      </div>
-                    </div>
+                  <div className="mt-3 pt-3 border-t border-green-500/40 flex items-center justify-between">
+                    <span className="text-green-100 text-sm">Lucro acumulado</span>
+                    <span className={`font-bold text-lg ${pogPontos.lucroTotal >= 0 ? 'text-white' : 'text-red-200'}`}>
+                      {fmtLucro(pogPontos.lucroTotal)}
+                    </span>
                   </div>
-                )}
-                <TabelaPontos ranking={rankingPontos} />
+                </div>
               </div>
             )}
-          </>
+            <TabelaPontos ranking={rankingPontos} />
+          </div>
         )}
 
         {/* ── Histórico de Sessões ─────────────────────────── */}
