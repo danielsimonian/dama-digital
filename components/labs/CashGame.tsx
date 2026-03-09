@@ -34,6 +34,8 @@ interface Props {
 interface Inscrito { id: string; nome: string; criadoEm: string; }
 interface Sessao { status: 'aberta' | 'fechada'; inscritos: Inscrito[]; data: string; }
 
+interface GrupoOpt { id: string; nome: string; icone: string; cor: string; }
+
 const MAX_PLAYERS = 9;
 const LINK_INSCRICOES = 'https://damadigitalcriativa.com.br/labs/poker-pay/inscricoes';
 
@@ -68,6 +70,11 @@ export default function CashGameApp({
   const [salvandoSessao, setSalvandoSessao] = useState(false);
   const [sessaoSalva, setSessaoSalva] = useState(false);
 
+  // — grupos —
+  const [grupos, setGrupos]             = useState<GrupoOpt[]>([]);
+  const [showGrupoModal, setShowGrupoModal] = useState(false);
+  const [grupoSelecionado, setGrupoSelecionado] = useState<GrupoOpt | null>(null);
+
   // — jogadores cadastrados (autocomplete) —
   const [jogadores, setJogadores] = useState<JogadorBase[]>([]);
   const [selectedJogador, setSelectedJogador] = useState<JogadorBase | null>(null);
@@ -86,6 +93,16 @@ export default function CashGameApp({
       .then(r => r.json())
       .then((data: JogadorBase[]) => {
         if (Array.isArray(data)) setJogadores(data.filter(j => (j as { ativo?: boolean }).ativo !== false));
+      })
+      .catch(() => {});
+  }, []);
+
+  // Carrega grupos ativos
+  useEffect(() => {
+    fetch('/api/poker/grupos')
+      .then(r => r.json())
+      .then((data: (GrupoOpt & { ativo?: boolean })[]) => {
+        if (Array.isArray(data)) setGrupos(data.filter(g => g.ativo !== false));
       })
       .catch(() => {});
   }, []);
@@ -246,14 +263,15 @@ export default function CashGameApp({
     }
   };
 
-  const salvarSessao = async () => {
+  const salvarSessao = async (grupo: GrupoOpt | null) => {
     if (players.length === 0) return;
+    setShowGrupoModal(false);
     setSalvandoSessao(true);
     try {
       // Ordenar por fichasFinais desc para determinar posição
       const sorted = [...players].sort((a, b) => b.fichasFinais - a.fichasFinais);
 
-      const jogadores = sorted.map((p, idx) => {
+      const jogadoresSessao = sorted.map((p, idx) => {
         const { spent, won, balance } = calcBalance(p);
         return {
           nome:         p.name,
@@ -273,12 +291,18 @@ export default function CashGameApp({
       const res = await fetch('/api/poker/historico', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data, totalPot, jogadores }),
+        body: JSON.stringify({
+          data,
+          totalPot,
+          jogadores: jogadoresSessao,
+          grupoId:   grupo?.id,
+          grupoNome: grupo?.nome,
+        }),
       });
 
       if (res.ok) {
         setSessaoSalva(true);
-        showToast('Sessão salva no ranking! 🏆');
+        showToast(grupo ? `Sessão salva no grupo "${grupo.nome}"! 🏆` : 'Sessão salva no ranking! 🏆');
       } else {
         showToast('Erro ao salvar sessão.');
       }
@@ -895,7 +919,14 @@ export default function CashGameApp({
                   </div>
                 </div>
                 <button
-                  onClick={salvarSessao}
+                  onClick={() => {
+                    if (grupos.length > 0) {
+                      setGrupoSelecionado(null);
+                      setShowGrupoModal(true);
+                    } else {
+                      salvarSessao(null);
+                    }
+                  }}
                   disabled={salvandoSessao || sessaoSalva}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-bold text-sm transition-colors shrink-0 ${
                     sessaoSalva
@@ -992,6 +1023,73 @@ export default function CashGameApp({
           </div>
         )}
       </div>
+
+      {/* Modal: Escolher grupo ao salvar */}
+      {showGrupoModal && (
+        <div
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+          onClick={() => setShowGrupoModal(false)}
+        >
+          <div
+            className="bg-gray-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-400" /> Salvar sessão
+              </h3>
+              <button onClick={() => setShowGrupoModal(false)} className="text-gray-500 hover:text-gray-300 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-400">Escolha em qual grupo esta sessão será registrada:</p>
+
+            {/* Opção: sem grupo */}
+            <button
+              onClick={() => setGrupoSelecionado(null)}
+              className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer text-left ${
+                grupoSelecionado === null
+                  ? 'border-gray-400 bg-gray-700/60 text-white'
+                  : 'border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600'
+              }`}
+            >
+              <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-xl shrink-0">📋</div>
+              <div>
+                <div className="font-semibold text-sm">Sem grupo</div>
+                <div className="text-xs opacity-60">Salvo só no histórico geral</div>
+              </div>
+              {grupoSelecionado === null && <Check className="w-4 h-4 ml-auto text-white shrink-0" />}
+            </button>
+
+            {/* Grupos disponíveis */}
+            {grupos.map(g => (
+              <button
+                key={g.id}
+                onClick={() => setGrupoSelecionado(g)}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer text-left ${
+                  grupoSelecionado?.id === g.id
+                    ? 'border-yellow-500/60 bg-yellow-900/20 text-white'
+                    : 'border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-xl shrink-0">
+                  {g.icone}
+                </div>
+                <div className="font-semibold text-sm">{g.nome}</div>
+                {grupoSelecionado?.id === g.id && <Check className="w-4 h-4 ml-auto text-yellow-400 shrink-0" />}
+              </button>
+            ))}
+
+            <button
+              onClick={() => salvarSessao(grupoSelecionado)}
+              className="w-full bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              {grupoSelecionado ? `Salvar em "${grupoSelecionado.nome}"` : 'Salvar sem grupo'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (

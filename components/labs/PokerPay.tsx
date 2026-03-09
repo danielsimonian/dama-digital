@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Trophy, DollarSign, ArrowLeft, Crown, ChevronRight, Users } from 'lucide-react';
+import { Trophy, DollarSign, ArrowLeft, Crown, ChevronRight, Users, Flag } from 'lucide-react';
 import TournamentApp from './PokerTournament';
 
 type Mode = null | 'tournament';
@@ -70,6 +70,18 @@ export default function PokerPay() {
               <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-purple-500/60 transition-colors duration-200" />
             </a>
           </div>
+
+          {/* Grupos */}
+          <a
+            href="/labs/poker-pay/grupos"
+            className="flex items-center justify-between gap-2 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] hover:border-purple-500/30 rounded-xl px-4 py-3 transition-all duration-200 cursor-pointer group"
+          >
+            <div className="flex items-center gap-2 text-purple-400 group-hover:text-purple-300 text-sm font-medium transition-colors duration-200">
+              <Flag className="w-4 h-4" />
+              Grupos / Ligas
+            </div>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-purple-500/60 transition-colors duration-200" />
+          </a>
 
           {/* Torneio */}
           <button

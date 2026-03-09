@@ -20,6 +20,8 @@ export interface SessaoHistorico {
   totalPot: number;
   jogadores: JogadorSessao[];
   savedAt: string;    // ISO timestamp
+  grupoId?: string;   // referência ao grupo (opcional)
+  grupoNome?: string; // nome do grupo no momento do salvamento
 }
 
 export interface RankingEntry {
@@ -110,7 +112,8 @@ function buildRanking(sessoes: SessaoHistorico[], nomeParaId: Map<string, string
 
 export async function GET(req: NextRequest) {
   try {
-    const filtro = req.nextUrl.searchParams.get('filtro') ?? '4semanas';
+    const filtro  = req.nextUrl.searchParams.get('filtro') ?? '4semanas';
+    const grupoId = req.nextUrl.searchParams.get('grupo') ?? null;
 
     const allDates = (await redis.get<string[]>('poker-sessoes')) ?? [];
     const filtered = filterDates([...allDates].sort(), filtro);
@@ -119,14 +122,19 @@ export async function GET(req: NextRequest) {
       await Promise.all(filtered.map(d => redis.get<SessaoHistorico>(`poker-historico:${d}`)))
     ).filter((s): s is SessaoHistorico => s !== null);
 
+    // Filtra por grupo quando especificado
+    const sessoesFiltradas = grupoId
+      ? sessoes.filter(s => s.grupoId === grupoId)
+      : sessoes;
+
     // Mais recente primeiro
-    sessoes.sort((a, b) => b.data.localeCompare(a.data));
+    sessoesFiltradas.sort((a, b) => b.data.localeCompare(a.data));
 
     // Mapa nome→jogadorId para unificar sessões legadas (sem jogadorId) com cadastro
     const jogadores = await getJogadores();
     const nomeParaId = new Map(jogadores.map(j => [j.nome.toLowerCase(), j.id]));
 
-    return NextResponse.json({ ranking: buildRanking(sessoes, nomeParaId), sessoes, filtro });
+    return NextResponse.json({ ranking: buildRanking(sessoesFiltradas, nomeParaId), sessoes: sessoesFiltradas, filtro, grupoId });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ erro: 'Erro interno' }, { status: 500 });
@@ -137,7 +145,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body: { data: string; totalPot: number; jogadores: JogadorSessao[] } = await req.json();
+    const body: { data: string; totalPot: number; jogadores: JogadorSessao[]; grupoId?: string; grupoNome?: string } = await req.json();
 
     if (!body.data || !Array.isArray(body.jogadores) || body.jogadores.length === 0) {
       return NextResponse.json({ erro: 'Dados inválidos' }, { status: 400 });
@@ -148,6 +156,8 @@ export async function POST(req: NextRequest) {
       totalPot: body.totalPot,
       jogadores: body.jogadores,
       savedAt: new Date().toISOString(),
+      grupoId: body.grupoId,
+      grupoNome: body.grupoNome,
     };
 
     await redis.set(`poker-historico:${body.data}`, sessao);
