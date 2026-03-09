@@ -99,7 +99,7 @@ function TabelaPontos({ ranking, ultimaPos }: { ranking: RankingEntry[]; ultimaP
         <span className="col-span-4">Jogador</span>
         <span className="col-span-2 text-center">Pts</span>
         <span className="col-span-2 text-center">Últ.</span>
-        <span className="col-span-1 text-center">Sx</span>
+        <span className="col-span-1 text-center">Jogos</span>
         <span className="col-span-2 text-center">Melhor</span>
       </div>
       <div className="divide-y divide-gray-700/60">
@@ -317,18 +317,12 @@ function RankingInner() {
                   <div className="flex items-end justify-between">
                     <div>
                       <div className="text-3xl font-black text-white leading-none">{pogPontos.nome}</div>
-                      <div className="text-green-200 text-sm mt-1">{pogPontos.sessoes} sessão{pogPontos.sessoes > 1 ? 'ões' : ''} · melhor #{pogPontos.melhorPosicao}</div>
+                      <div className="text-green-200 text-sm mt-1">{pogPontos.sessoes} jogo{pogPontos.sessoes > 1 ? 's' : ''} · melhor #{pogPontos.melhorPosicao}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-4xl font-black text-white">{pogPontos.pontos}</div>
                       <div className="text-green-200 text-xs">pontos</div>
                     </div>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-green-500/40 flex items-center justify-between">
-                    <span className="text-green-100 text-sm">Lucro acumulado</span>
-                    <span className={`font-bold text-lg ${pogPontos.lucroTotal >= 0 ? 'text-white' : 'text-red-200'}`}>
-                      {fmtLucro(pogPontos.lucroTotal)}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -341,7 +335,7 @@ function RankingInner() {
         {!loading && sessoes.length > 0 && (
           <div className="space-y-2">
             <h2 className="text-sm font-bold text-gray-400 px-1 flex items-center gap-2">
-              <Calendar className="w-4 h-4" /> Histórico de Sessões ({sessoes.length})
+              <Calendar className="w-4 h-4" /> Histórico de Jogos ({sessoes.length})
             </h2>
 
             {sessoes.map(s => {
