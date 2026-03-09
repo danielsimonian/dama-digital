@@ -214,7 +214,7 @@ function RankingInner() {
 
   const rankingPontos = data?.ranking ?? [];
   // ranking por lucro: mesmos dados, ordenação diferente (client-side)
-  const rankingLucro  = [...rankingPontos].sort((a, b) => b.lucroTotal - a.lucroTotal || b.pontos - a.pontos);
+  const rankingLucro  = [...rankingPontos].sort((a, b) => Number(b.lucroTotal) - Number(a.lucroTotal) || Number(b.pontos) - Number(a.pontos));
 
   const pogPontos = rankingPontos[0] ?? null;
   const pogLucro  = rankingLucro[0]  ?? null;
