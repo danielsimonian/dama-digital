@@ -50,6 +50,8 @@ export type Orcamento = {
   condicoes_pagamento: string | null;
   prazo_entrega: string | null;
   status: 'rascunho' | 'enviado' | 'visualizado' | 'aprovado' | 'recusado' | 'expirado';
+  tipo: 'simples' | 'pacotes';
+  pacote_escolhido: string | null;
   visualizado_em: string | null;
   aprovado_em: string | null;
   created_at: string;
@@ -68,6 +70,10 @@ export type OrcamentoItem = {
   quantidade: number;
   detalhes: { texto: string; valor: number | null }[] | null;
   ordem: number;
+  pacote: string | null;
+  pacote_destaque: boolean;
+  valor_mensal: number | null;
+  descricao_mensal: string | null;
 };
 
 // ============================================
