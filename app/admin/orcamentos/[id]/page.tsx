@@ -101,7 +101,7 @@ export default function OrcamentoFormPage() {
 
   // State para modo simples
   const [itens, setItens] = useState<ItemForm[]>([
-    { categoria: 'DAMA Tech', nome: '', descricao: '', valor: '', quantidade: '1', detalhes: [{ texto: '', valor: '' }] }
+    { categoria: 'DAMA Tech', nome: '', descricao: '', valor: '', quantidade: '1', detalhes: [{ texto: '', valor: '' }], valor_mensal: '', descricao_mensal: '' }
   ]);
 
   // State para modo pacotes
