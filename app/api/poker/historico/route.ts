@@ -86,7 +86,7 @@ function buildRanking(sessoes: SessaoHistorico[], nomeParaId: Map<string, string
         melhorPosicao: 99,
       };
       e.pontos        += j.pontos;
-      e.lucroTotal    += j.balanco;
+      e.lucroTotal    += (j.balanco ?? 0);
       e.sessoes       += 1;
       e.melhorPosicao  = Math.min(e.melhorPosicao, j.posicao);
       // Sempre usa o nome mais recente da sessão
@@ -105,7 +105,7 @@ function buildRanking(sessoes: SessaoHistorico[], nomeParaId: Map<string, string
       sessoes:       e.sessoes,
       melhorPosicao: e.melhorPosicao === 99 ? 1 : e.melhorPosicao,
     }))
-    .sort((a, b) => b.pontos - a.pontos || b.lucroTotal - a.lucroTotal);
+    .sort((a, b) => b.pontos - a.pontos || (b.lucroTotal ?? 0) - (a.lucroTotal ?? 0));
 }
 
 /* ─── GET — ranking + histórico de sessões ─────────────── */
