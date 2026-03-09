@@ -21,7 +21,11 @@ interface RankingEntry {
   nome: string; pontos: number; lucroTotal: number; sessoes: number; melhorPosicao: number;
 }
 interface HistoricoData {
-  ranking: RankingEntry[]; sessoes: SessaoHistorico[]; filtro: string; grupoId?: string;
+  ranking:      RankingEntry[];
+  rankingLucro: RankingEntry[];
+  sessoes:      SessaoHistorico[];
+  filtro:       string;
+  grupoId?:     string;
 }
 interface Grupo {
   id: string; nome: string; icone: string; cor: string; ativo: boolean;
@@ -212,9 +216,8 @@ function RankingInner() {
 
   const grupoAtivo = grupos.find(g => g.id === grupoId);
 
-  const rankingPontos = data?.ranking ?? [];
-  // ranking por lucro: mesmos dados, ordenação diferente (client-side)
-  const rankingLucro  = [...rankingPontos].sort((a, b) => Number(b.lucroTotal) - Number(a.lucroTotal) || Number(b.pontos) - Number(a.pontos));
+  const rankingPontos = data?.ranking      ?? [];
+  const rankingLucro  = data?.rankingLucro ?? [];
 
   const pogPontos = rankingPontos[0] ?? null;
   const pogLucro  = rankingLucro[0]  ?? null;

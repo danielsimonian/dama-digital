@@ -33,6 +33,14 @@ export interface RankingEntry {
   melhorPosicao: number;
 }
 
+export interface RankingResponse {
+  ranking:      RankingEntry[]; // ordenado por pontos
+  rankingLucro: RankingEntry[]; // ordenado por lucroTotal
+  sessoes:      SessaoHistorico[];
+  filtro:       string;
+  grupoId:      string | null;
+}
+
 /* ─── helpers ──────────────────────────────────────────── */
 
 function brToday(): string {
@@ -134,7 +142,18 @@ export async function GET(req: NextRequest) {
     const jogadores = await getJogadores();
     const nomeParaId = new Map(jogadores.map(j => [j.nome.toLowerCase(), j.id]));
 
-    return NextResponse.json({ ranking: buildRanking(sessoesFiltradas, nomeParaId), sessoes: sessoesFiltradas, filtro, grupoId });
+    const ranking = buildRanking(sessoesFiltradas, nomeParaId);
+
+    // Ordenação por lucro feita no servidor — evita ambiguidades client-side
+    const rankingLucro = [...ranking].sort((a, b) => {
+      const la = a.lucroTotal ?? 0;
+      const lb = b.lucroTotal ?? 0;
+      if (lb > la) return 1;
+      if (lb < la) return -1;
+      return (b.pontos ?? 0) - (a.pontos ?? 0);
+    });
+
+    return NextResponse.json({ ranking, rankingLucro, sessoes: sessoesFiltradas, filtro, grupoId });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ erro: 'Erro interno' }, { status: 500 });
