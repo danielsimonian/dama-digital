@@ -18,7 +18,7 @@ interface SessaoHistorico {
   grupoId?: string; grupoNome?: string;
 }
 interface RankingEntry {
-  nome: string; pontos: number; lucroTotal: number; sessoes: number; melhorPosicao: number;
+  nome: string; jogadorId?: string; pontos: number; lucroTotal: number; sessoes: number; melhorPosicao: number;
 }
 interface HistoricoData {
   ranking:  RankingEntry[];
@@ -86,19 +86,27 @@ function fmtLucro(v: number) {
 
 /* ─── sub-componente: tabela de ranking ──────────────────── */
 
-function TabelaPontos({ ranking }: { ranking: RankingEntry[] }) {
+function ordinal(n: number) {
+  return `${n}º`;
+}
+
+function TabelaPontos({ ranking, ultimaPos }: { ranking: RankingEntry[]; ultimaPos: Map<string, number> }) {
   return (
     <div className="bg-gray-800 rounded-xl overflow-hidden">
-      {/* cabeçalho */}
+      {/* cabeçalho — cols: 1 | 4 | 2 | 2 | 1 | 2 = 12 */}
       <div className="px-3 py-2.5 border-b border-gray-700 grid grid-cols-12 text-xs text-gray-500 font-medium">
         <span className="col-span-1">#</span>
-        <span className="col-span-5">Jogador</span>
+        <span className="col-span-4">Jogador</span>
         <span className="col-span-2 text-center">Pts</span>
-        <span className="col-span-4 text-right">Lucro</span>
+        <span className="col-span-2 text-center">Últ.</span>
+        <span className="col-span-1 text-center">Sx</span>
+        <span className="col-span-2 text-center">Melhor</span>
       </div>
       <div className="divide-y divide-gray-700/60">
         {ranking.map((e, idx) => {
           const pos = idx + 1;
+          const key = e.jogadorId ?? e.nome;
+          const ult = ultimaPos.get(key) ?? null;
           return (
             <div key={e.nome + '-pts'} className={`px-3 py-2.5 grid grid-cols-12 items-center gap-1 ${positionRow(pos)}`}>
               <div className="col-span-1">
@@ -106,17 +114,20 @@ function TabelaPontos({ ranking }: { ranking: RankingEntry[] }) {
                   {pos}
                 </span>
               </div>
-              <div className="col-span-5">
+              <div className="col-span-4">
                 <div className="font-bold text-white text-xs truncate">{e.nome}</div>
-                <div className="text-xs text-gray-600">{e.sessoes}x · #{e.melhorPosicao}</div>
               </div>
               <div className="col-span-2 text-center">
-                <span className="font-black text-yellow-400 text-base whitespace-nowrap">{e.pontos} pts</span>
+                <span className="font-black text-yellow-400 text-sm whitespace-nowrap">{e.pontos} pts</span>
               </div>
-              <div className={`col-span-4 text-right font-bold text-xs ${lucroColor(e.lucroTotal)}`}>
-                {e.lucroTotal >= 0
-                  ? <span className="flex items-center justify-end gap-0.5"><TrendingUp className="w-3 h-3" />{fmtLucro(e.lucroTotal)}</span>
-                  : <span className="flex items-center justify-end gap-0.5"><TrendingDown className="w-3 h-3" />R$ {Math.abs(e.lucroTotal).toFixed(0)}</span>}
+              <div className="col-span-2 text-center text-gray-400 text-xs font-semibold">
+                {ult !== null ? ordinal(ult) : <span className="text-gray-600">—</span>}
+              </div>
+              <div className="col-span-1 text-center text-gray-500 text-xs">
+                {e.sessoes}
+              </div>
+              <div className="col-span-2 text-center text-gray-500 text-xs font-medium">
+                #{e.melhorPosicao}
               </div>
             </div>
           );
@@ -176,6 +187,16 @@ function RankingInner() {
   const rankingPontos = data?.ranking ?? [];
   const pogPontos     = rankingPontos[0] ?? null;
   const sessoes       = data?.sessoes ?? [];
+
+  // Última posição de cada jogador (sessões já chegam ordenadas desc por data)
+  const ultimaPos = new Map<string, number>();
+  for (const s of sessoes) {
+    const ordered = [...s.jogadores].sort((a, b) => (b.balanco ?? 0) - (a.balanco ?? 0));
+    ordered.forEach((j, idx) => {
+      const key = j.jogadorId ?? j.nome;
+      if (!ultimaPos.has(key)) ultimaPos.set(key, idx + 1);
+    });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-orange-900 to-gray-900 p-3 pb-24">
@@ -312,7 +333,7 @@ function RankingInner() {
                 </div>
               </div>
             )}
-            <TabelaPontos ranking={rankingPontos} />
+            <TabelaPontos ranking={rankingPontos} ultimaPos={ultimaPos} />
           </div>
         )}
 
