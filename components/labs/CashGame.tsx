@@ -350,7 +350,7 @@ export default function CashGameApp({
     const credits = winners.map(w => ({ ...w, rem: w.balance }));
     const dealerValue = fichasDealer * config.chipValue;
     if (dealerValue > 0) {
-      credits.push({ id: 'dealer', name: 'Dealer', balance: dealerValue, rem: dealerValue } as typeof credits[0]);
+      credits.push({ id: 'dealer', name: 'Dealer', balance: dealerValue, rem: dealerValue } as unknown as typeof credits[0]);
     }
     debts.forEach(l => credits.forEach(w => {
       if (l.rem > 0.01 && w.rem > 0.01) {
