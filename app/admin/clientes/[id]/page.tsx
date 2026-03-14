@@ -43,7 +43,9 @@ import {
   Lock,
   LockOpen,
   Wallet,
-  CreditCard
+  CreditCard,
+  Wrench,
+  LayoutGrid
 } from 'lucide-react';
 import {
   DndContext,
@@ -74,7 +76,7 @@ function formatarDataLocal(dataString: string): string {
 
 type Divisao = 'tech' | 'sports' | 'studio';
 type Area = 'tech' | 'sports' | 'studio';
-type Tab = 'sobre' | 'orcamentos' | 'sessoes' | 'conteudo' | 'financeiro';
+type Tab = 'sobre' | 'orcamentos' | 'sessoes' | 'conteudo' | 'financeiro' | 'servicos';
 type TipoConteudo = 'video' | 'pdf' | 'exercicio' | 'link' | 'texto';
 
 interface Cliente {
@@ -93,6 +95,12 @@ interface Cliente {
   sessoes_visiveis: boolean;
   conteudo_visivel: boolean;
   financeiro_visivel: boolean;
+  servicos_visivel: boolean;
+  aba_orcamentos: boolean;
+  aba_sessoes: boolean;
+  aba_servicos: boolean;
+  aba_conteudo: boolean;
+  aba_financeiro: boolean;
 }
 
 interface Orcamento {
@@ -149,6 +157,18 @@ interface Pagamento {
   observacoes: string;
   pago: boolean;
   pago_em: string | null;
+}
+
+interface Servico {
+  id: string;
+  cliente_id: string;
+  nome: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  pago: boolean;
+  pago_em: string | null;
+  observacoes: string;
 }
 
 // Componente Sortable para Módulo
@@ -401,6 +421,23 @@ export default function ClienteDetalhesPage() {
     conteudo: ''
   });
 
+  // Estados para Serviços
+  const [servicos, setServicos] = useState<Servico[]>([]);
+  const [mesServico, setMesServico] = useState(() => {
+    const hoje = new Date();
+    return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [showServicoModal, setShowServicoModal] = useState(false);
+  const [editingServico, setEditingServico] = useState<Servico | null>(null);
+  const [savingServico, setSavingServico] = useState(false);
+  const [servicoForm, setServicoForm] = useState({
+    nome: '',
+    descricao: '',
+    valor: '',
+    data: '',
+    observacoes: ''
+  });
+
   // Estados para Financeiro
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
   const [mesFinanceiro, setMesFinanceiro] = useState(() => {
@@ -437,6 +474,7 @@ export default function ClienteDetalhesPage() {
       fetchSessoes();
       fetchModulos();
       fetchPagamentos();
+      fetchServicos();
     }
   }, [clienteId]);
 
@@ -552,6 +590,25 @@ export default function ClienteDetalhesPage() {
       }
 
       setPagamentos(data || []);
+    } catch (err) {
+      console.error('Erro:', err);
+    }
+  }
+
+  async function fetchServicos() {
+    try {
+      const { data, error } = await supabase
+        .from('servicos')
+        .select('*')
+        .eq('cliente_id', clienteId)
+        .order('data', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao buscar serviços:', error);
+        return;
+      }
+
+      setServicos(data || []);
     } catch (err) {
       console.error('Erro:', err);
     }
@@ -1183,9 +1240,115 @@ export default function ClienteDetalhesPage() {
     ));
   }
 
+  // ========== FUNÇÕES DE SERVIÇOS ==========
+
+  function openServicoModal(servico?: Servico) {
+    if (servico) {
+      setEditingServico(servico);
+      setServicoForm({
+        nome: servico.nome,
+        descricao: servico.descricao || '',
+        valor: String(servico.valor),
+        data: servico.data,
+        observacoes: servico.observacoes || ''
+      });
+    } else {
+      setEditingServico(null);
+      setServicoForm({
+        nome: '',
+        descricao: '',
+        valor: '',
+        data: new Date().toISOString().split('T')[0],
+        observacoes: ''
+      });
+    }
+    setShowServicoModal(true);
+  }
+
+  function closeServicoModal() {
+    setShowServicoModal(false);
+    setEditingServico(null);
+    setServicoForm({ nome: '', descricao: '', valor: '', data: '', observacoes: '' });
+  }
+
+  async function handleServicoSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingServico(true);
+
+    try {
+      const servicoData = {
+        cliente_id: clienteId,
+        nome: servicoForm.nome,
+        descricao: servicoForm.descricao || null,
+        valor: Number(servicoForm.valor),
+        data: servicoForm.data,
+        observacoes: servicoForm.observacoes || null
+      };
+
+      if (editingServico) {
+        const { error } = await supabase
+          .from('servicos')
+          .update(servicoData)
+          .eq('id', editingServico.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('servicos')
+          .insert(servicoData);
+
+        if (error) throw error;
+      }
+
+      await fetchServicos();
+      closeServicoModal();
+    } catch (err: any) {
+      alert('Erro ao salvar: ' + err.message);
+    } finally {
+      setSavingServico(false);
+    }
+  }
+
+  async function deleteServico(id: string) {
+    if (!confirm('Tem certeza que deseja excluir este serviço?')) return;
+
+    const { error } = await supabase
+      .from('servicos')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      alert('Erro ao excluir: ' + error.message);
+      return;
+    }
+
+    setServicos(servicos.filter(s => s.id !== id));
+  }
+
+  async function toggleServicoPago(servico: Servico) {
+    const novoPago = !servico.pago;
+    const pagoEm = novoPago ? new Date().toISOString() : null;
+
+    const { error } = await supabase
+      .from('servicos')
+      .update({ pago: novoPago, pago_em: pagoEm })
+      .eq('id', servico.id);
+
+    if (error) {
+      alert('Erro ao atualizar: ' + error.message);
+      return;
+    }
+
+    setServicos(servicos.map(s =>
+      s.id === servico.id
+        ? { ...s, pago: novoPago, pago_em: pagoEm }
+        : s
+    ));
+  }
+
   // ========== TOGGLE VISIBILIDADE ==========
 
-  async function toggleVisibilidade(campo: 'sessoes_visiveis' | 'conteudo_visivel' | 'financeiro_visivel') {
+  async function toggleVisibilidade(campo: 'sessoes_visiveis' | 'conteudo_visivel' | 'financeiro_visivel' | 'servicos_visivel') {
     if (!cliente) return;
 
     const novoValor = !cliente[campo];
@@ -1201,6 +1364,50 @@ export default function ClienteDetalhesPage() {
     }
 
     setCliente({ ...cliente, [campo]: novoValor });
+  }
+
+  // Toggle aba ativa/inativa
+  async function toggleAba(campo: 'aba_orcamentos' | 'aba_sessoes' | 'aba_servicos' | 'aba_conteudo' | 'aba_financeiro') {
+    if (!cliente) return;
+
+    const novoValor = !cliente[campo];
+
+    if (!novoValor) {
+      const nomes: Record<typeof campo, string> = {
+        aba_orcamentos: 'Orçamentos',
+        aba_sessoes: 'Sessões',
+        aba_servicos: 'Serviços',
+        aba_conteudo: 'Conteúdo',
+        aba_financeiro: 'Financeiro',
+      };
+      const temDados = {
+        aba_orcamentos: orcamentos.length > 0,
+        aba_sessoes: sessoes.length > 0,
+        aba_servicos: servicos.length > 0,
+        aba_conteudo: modulos.length > 0,
+        aba_financeiro: pagamentos.length > 0,
+      }[campo];
+
+      if (temDados && !confirm(`A aba "${nomes[campo]}" possui dados. Deseja desativá-la mesmo assim?`)) return;
+    }
+
+    const { error } = await supabase
+      .from('clientes')
+      .update({ [campo]: novoValor })
+      .eq('id', cliente.id);
+
+    if (error) {
+      alert('Erro ao atualizar: ' + error.message);
+      return;
+    }
+
+    setCliente({ ...cliente, [campo]: novoValor });
+
+    // Se desativou a aba que está ativa, voltar para Sobre
+    const tabId = campo.replace('aba_', '') as Tab;
+    if (!novoValor && activeTab === tabId) {
+      setActiveTab('sobre');
+    }
   }
 
   // Copiar link de acesso
@@ -1237,6 +1444,19 @@ export default function ClienteDetalhesPage() {
     };
   });
 
+  // Converter serviços para itens do financeiro
+  const servicosComoFinanceiro = servicos.map(s => ({
+    id: s.id,
+    tipo: 'servico' as const,
+    data: s.data,
+    valor: Number(s.valor),
+    pago: s.pago,
+    pago_em: s.pago_em,
+    referencia: s.nome,
+    observacoes: s.observacoes,
+    servicoOriginal: s
+  }));
+
   // Converter pagamentos para itens do financeiro
   const pagamentosComoFinanceiro = pagamentos.map(p => ({
     id: p.id,
@@ -1252,7 +1472,7 @@ export default function ClienteDetalhesPage() {
   }));
 
   // Combinar e ordenar por data (mais recente primeiro)
-  const todosItensFinanceiro = [...sessoesComoFinanceiro, ...pagamentosComoFinanceiro]
+  const todosItensFinanceiro = [...sessoesComoFinanceiro, ...servicosComoFinanceiro, ...pagamentosComoFinanceiro]
     .sort((a, b) => b.data.localeCompare(a.data));
 
   // Filtrar por mês
@@ -1286,6 +1506,40 @@ export default function ClienteDetalhesPage() {
   // Ordenar meses do mais recente para o mais antigo
   const mesesFinanceiroOrdenados = Object.keys(resumoFinanceiroPorMes).sort((a, b) => b.localeCompare(a));
 
+  // Filtrar serviços por mês
+  const servicosFiltrados = servicos.filter(s => s.data.startsWith(mesServico));
+
+  // Totais gerais de serviços
+  const resumoGeralServicos = servicos.reduce((acc, s) => {
+    const valor = Number(s.valor);
+    return {
+      totalValor: acc.totalValor + valor,
+      valorAberto: acc.valorAberto + (s.pago ? 0 : valor),
+      valorPago: acc.valorPago + (s.pago ? valor : 0),
+      qtdServicos: acc.qtdServicos + 1
+    };
+  }, { totalValor: 0, valorAberto: 0, valorPago: 0, qtdServicos: 0 });
+
+  // Agrupar serviços por mês para histórico
+  const resumoServicoPorMes = servicos.reduce((acc, s) => {
+    const mes = s.data.substring(0, 7);
+    const valor = Number(s.valor);
+    if (!acc[mes]) {
+      acc[mes] = { qtd: 0, total: 0, pago: 0, aberto: 0 };
+    }
+    acc[mes].qtd += 1;
+    acc[mes].total += valor;
+    if (s.pago) {
+      acc[mes].pago += valor;
+    } else {
+      acc[mes].aberto += valor;
+    }
+    return acc;
+  }, {} as Record<string, { qtd: number; total: number; pago: number; aberto: number }>);
+
+  // Ordenar meses de serviços do mais recente para o mais antigo
+  const mesesServicosOrdenados = Object.keys(resumoServicoPorMes).sort((a, b) => b.localeCompare(a));
+
   // Função para formatar mês/ano
   function formatarMesAno(mesAno: string): string {
     const [ano, mes] = mesAno.split('-');
@@ -1294,12 +1548,13 @@ export default function ClienteDetalhesPage() {
   }
 
   // Tabs disponíveis com campo de visibilidade
-  const tabs: { id: Tab; label: string; icon: any; visible: boolean; visibilidadeCampo?: 'sessoes_visiveis' | 'conteudo_visivel' | 'financeiro_visivel' }[] = [
+  const tabs: { id: Tab; label: string; icon: any; visible: boolean; visibilidadeCampo?: 'sessoes_visiveis' | 'conteudo_visivel' | 'financeiro_visivel' | 'servicos_visivel' }[] = [
     { id: 'sobre', label: 'Sobre', icon: User, visible: true },
-    { id: 'orcamentos', label: 'Orçamentos', icon: FileText, visible: true },
-    { id: 'sessoes', label: 'Sessões', icon: Music, visible: isStudio, visibilidadeCampo: 'sessoes_visiveis' },
-    { id: 'conteudo', label: 'Conteúdo', icon: BookOpen, visible: isStudio, visibilidadeCampo: 'conteudo_visivel' },
-    { id: 'financeiro', label: 'Financeiro', icon: Wallet, visible: true, visibilidadeCampo: 'financeiro_visivel' },
+    { id: 'orcamentos', label: 'Orçamentos', icon: FileText, visible: cliente?.aba_orcamentos ?? true },
+    { id: 'sessoes', label: 'Sessões', icon: Music, visible: cliente?.aba_sessoes ?? true, visibilidadeCampo: 'sessoes_visiveis' },
+    { id: 'servicos', label: 'Serviços', icon: Wrench, visible: cliente?.aba_servicos ?? true, visibilidadeCampo: 'servicos_visivel' },
+    { id: 'conteudo', label: 'Conteúdo', icon: BookOpen, visible: cliente?.aba_conteudo ?? true, visibilidadeCampo: 'conteudo_visivel' },
+    { id: 'financeiro', label: 'Financeiro', icon: Wallet, visible: cliente?.aba_financeiro ?? true, visibilidadeCampo: 'financeiro_visivel' },
   ];
 
   if (loading) {
@@ -1490,7 +1745,7 @@ export default function ClienteDetalhesPage() {
                 <LinkIcon size={20} className="text-purple-400" />
                 Acesso do Cliente
               </h2>
-              
+
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="bg-gray-800/50 rounded-xl p-4">
                   <p className="text-gray-400 text-sm mb-2">Link de Acesso</p>
@@ -1506,13 +1761,57 @@ export default function ClienteDetalhesPage() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-800/50 rounded-xl p-4">
                   <p className="text-gray-400 text-sm mb-2">Senha de Acesso</p>
                   <code className="px-3 py-2 bg-gray-900 rounded-lg text-purple-400 text-lg font-mono">
                     {cliente.senha_acesso}
                   </code>
                 </div>
+              </div>
+            </div>
+
+            {/* Abas disponíveis */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-6">
+              <h2 className="font-semibold text-lg mb-1 flex items-center gap-2">
+                <LayoutGrid size={20} className="text-purple-400" />
+                Abas disponíveis
+              </h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Controla quais abas aparecem para este cliente — tanto no admin quanto no portal. Use o cadeado individual de cada aba para controlar apenas a visibilidade no portal.
+              </p>
+
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {([
+                  { campo: 'aba_orcamentos' as const, label: 'Orçamentos', icon: FileText },
+                  { campo: 'aba_sessoes' as const, label: 'Sessões', icon: Music },
+                  { campo: 'aba_servicos' as const, label: 'Serviços', icon: Wrench },
+                  { campo: 'aba_conteudo' as const, label: 'Conteúdo', icon: BookOpen },
+                  { campo: 'aba_financeiro' as const, label: 'Financeiro', icon: Wallet },
+                ]).map(({ campo, label, icon: Icon }) => {
+                  const ativo = cliente[campo] ?? true;
+                  return (
+                    <button
+                      key={campo}
+                      onClick={() => toggleAba(campo)}
+                      className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
+                        ativo
+                          ? 'border-purple-500/50 bg-purple-500/10'
+                          : 'border-gray-700 bg-gray-800/30'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        ativo ? 'bg-purple-500 border-purple-500' : 'border-gray-600'
+                      }`}>
+                        {ativo && <Check size={12} className="text-white" />}
+                      </div>
+                      <Icon size={16} className={ativo ? 'text-purple-400' : 'text-gray-500'} />
+                      <span className={`font-medium text-sm ${ativo ? 'text-white' : 'text-gray-500'}`}>
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -2164,16 +2463,18 @@ export default function ClienteDetalhesPage() {
                 <div className="space-y-3">
                   {itensFinanceiroFiltrados.map((item) => {
                     const isSessao = item.tipo === 'sessao';
-                    const forma = !isSessao && item.forma_pagamento 
+                    const isServico = item.tipo === 'servico';
+                    const forma = item.tipo === 'pagamento' && item.forma_pagamento
                       ? formasPagamento.find(f => f.value === item.forma_pagamento)
                       : null;
-                    
+                    const valorColor = item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : isServico ? 'text-purple-400' : 'text-emerald-400';
+
                     return (
                       <div
                         key={`${item.tipo}-${item.id}`}
                         className={`rounded-xl border p-3 sm:p-4 transition-colors ${
-                          item.pago 
-                            ? 'bg-emerald-500/10 border-emerald-500/30' 
+                          item.pago
+                            ? 'bg-emerald-500/10 border-emerald-500/30'
                             : 'bg-gray-800/30 border-gray-700 hover:bg-gray-800/50'
                         }`}
                       >
@@ -2183,7 +2484,9 @@ export default function ClienteDetalhesPage() {
                             onClick={() => {
                               if (isSessao && item.sessaoOriginal) {
                                 togglePagamento(item.sessaoOriginal);
-                              } else if (!isSessao && item.pagamentoOriginal) {
+                              } else if (isServico && item.servicoOriginal) {
+                                toggleServicoPago(item.servicoOriginal);
+                              } else if (item.tipo === 'pagamento' && item.pagamentoOriginal) {
                                 togglePagamentoPago(item.pagamentoOriginal);
                               }
                             }}
@@ -2192,8 +2495,8 @@ export default function ClienteDetalhesPage() {
                                 ? 'bg-emerald-500 border-emerald-500'
                                 : 'border-gray-600 hover:border-emerald-500'
                             }`}
-                            title={item.pago 
-                              ? `Pago em ${item.pago_em ? formatarDataLocal(item.pago_em.split('T')[0]) : ''}` 
+                            title={item.pago
+                              ? `Pago em ${item.pago_em ? formatarDataLocal(item.pago_em.split('T')[0]) : ''}`
                               : 'Marcar como pago'
                             }
                           >
@@ -2203,16 +2506,22 @@ export default function ClienteDetalhesPage() {
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="font-medium">{formatarDataLocal(item.data)}</span>
-                              {isSessao ? (
+                              {isSessao && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
                                   Sessão
                                 </span>
-                              ) : forma && (
+                              )}
+                              {isServico && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+                                  Serviço
+                                </span>
+                              )}
+                              {forma && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
                                   {forma.label}
                                 </span>
                               )}
-                             {item.pago && item.pago_em && (
+                              {item.pago && item.pago_em && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
                                   Pago em {formatarDataLocal(item.pago_em.split('T')[0])}
                                 </span>
@@ -2224,14 +2533,14 @@ export default function ClienteDetalhesPage() {
                             {item.observacoes && (
                               <p className="text-sm text-gray-500 mt-1">{item.observacoes}</p>
                             )}
-                            
-                            {/* Valor e ações - mobile friendly */}
+
+                            {/* Valor e ações - mobile */}
                             <div className="flex items-center justify-between mt-2 sm:hidden">
-                              <p className={`text-lg font-bold ${item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : 'text-emerald-400'}`}>
+                              <p className={`text-lg font-bold ${valorColor}`}>
                                 {formatarMoeda(item.valor)}
                               </p>
                               <div className="flex gap-2">
-                                {!isSessao && item.pagamentoOriginal && (
+                                {item.tipo === 'pagamento' && item.pagamentoOriginal && (
                                   <>
                                     <button
                                       onClick={() => openPagamentoModal(item.pagamentoOriginal)}
@@ -2255,47 +2564,294 @@ export default function ClienteDetalhesPage() {
                                     <Edit size={16} />
                                   </button>
                                 )}
+                                {isServico && item.servicoOriginal && (
+                                  <>
+                                    <button
+                                      onClick={() => openServicoModal(item.servicoOriginal)}
+                                      className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteServico(item.id)}
+                                      className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Desktop: valor e ações à direita */}
                           <div className="hidden sm:flex items-center gap-4">
-                            <p className={`text-xl font-bold ${item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : 'text-emerald-400'}`}>
+                            <p className={`text-xl font-bold ${valorColor}`}>
                               {formatarMoeda(item.valor)}
                             </p>
-                            
-                            {!isSessao && item.pagamentoOriginal && (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => openPagamentoModal(item.pagamentoOriginal)}
-                                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                                >
-                                  <Edit size={16} />
-                                </button>
-                                <button
-                                  onClick={() => deletePagamento(item.id)}
-                                  className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            )}
-                            {isSessao && item.sessaoOriginal && (
-                              <div className="flex gap-2">
+                            <div className="flex gap-2">
+                              {item.tipo === 'pagamento' && item.pagamentoOriginal && (
+                                <>
+                                  <button
+                                    onClick={() => openPagamentoModal(item.pagamentoOriginal)}
+                                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => deletePagamento(item.id)}
+                                    className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                              {isSessao && item.sessaoOriginal && (
                                 <button
                                   onClick={() => openSessaoModal(item.sessaoOriginal)}
                                   className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
                                 >
                                   <Edit size={16} />
                                 </button>
-                              </div>
-                            )}
+                              )}
+                              {isServico && item.servicoOriginal && (
+                                <>
+                                  <button
+                                    onClick={() => openServicoModal(item.servicoOriginal)}
+                                    className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteServico(item.id)}
+                                    className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* Tab: Serviços */}
+        {activeTab === 'servicos' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-semibold">Serviços</h2>
+                <p className="text-gray-400 text-sm">Serviços prestados ao cliente</p>
+              </div>
+              <button
+                onClick={() => openServicoModal()}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 rounded-xl font-medium transition-all"
+              >
+                <Plus size={20} />
+                Novo Serviço
+              </button>
+            </div>
+
+            {/* Resumo GERAL */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="bg-gray-900/50 rounded-xl border border-purple-500/30 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-purple-400 mb-1">Serviços Totais</p>
+                <p className="text-xl sm:text-2xl font-bold">{resumoGeralServicos.qtdServicos}</p>
+              </div>
+
+              <div className="bg-gray-900/50 rounded-xl border border-purple-500/30 p-3 sm:p-4">
+                <p className="text-xs sm:text-sm text-purple-400 mb-1">Valor Total</p>
+                <p className="text-xl sm:text-2xl font-bold text-purple-400">{formatarMoeda(resumoGeralServicos.totalValor)}</p>
+              </div>
+
+              <div className={`col-span-2 sm:col-span-1 bg-gray-900/50 rounded-xl border p-3 sm:p-4 ${
+                resumoGeralServicos.valorAberto > 0 ? 'border-yellow-500/30' : 'border-emerald-500/30'
+              }`}>
+                <p className={`text-xs sm:text-sm mb-1 ${
+                  resumoGeralServicos.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
+                }`}>
+                  Em Aberto
+                </p>
+                <p className={`text-xl sm:text-2xl font-bold ${
+                  resumoGeralServicos.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'
+                }`}>
+                  {formatarMoeda(resumoGeralServicos.valorAberto)}
+                </p>
+              </div>
+            </div>
+
+            {/* Histórico por Mês */}
+            {mesesServicosOrdenados.length > 0 && (
+              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4 sm:p-6">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Calendar size={20} className="text-purple-400" />
+                  Histórico por Mês
+                </h3>
+
+                {/* Mobile: Cards empilhados */}
+                <div className="sm:hidden space-y-2">
+                  {mesesServicosOrdenados.map((mes) => {
+                    const dados = resumoServicoPorMes[mes];
+                    const isMesSelecionado = mes === mesServico;
+                    return (
+                      <div
+                        key={mes}
+                        onClick={() => setMesServico(mes)}
+                        className={`p-3 rounded-xl cursor-pointer transition-colors ${isMesSelecionado ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-gray-800/50 hover:bg-gray-800'}`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={`font-semibold ${isMesSelecionado ? 'text-purple-400' : ''}`}>
+                            {formatarMesAno(mes)}
+                          </span>
+                          <span className="text-sm text-gray-400">{dados.qtd} serviço(s)</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-bold">{formatarMoeda(dados.total)}</span>
+                          <span className={dados.aberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}>
+                            Aberto: {formatarMoeda(dados.aberto)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop: Tabela */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="text-left py-3 px-2 text-sm text-gray-400 font-medium">Mês</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Serviços</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Total</th>
+                        <th className="text-right py-3 px-2 text-sm text-gray-400 font-medium">Em Aberto</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mesesServicosOrdenados.map((mes) => {
+                        const dados = resumoServicoPorMes[mes];
+                        const isMesSelecionado = mes === mesServico;
+                        return (
+                          <tr
+                            key={mes}
+                            className={`border-b border-gray-800 hover:bg-gray-800/50 cursor-pointer transition-colors ${isMesSelecionado ? 'bg-purple-500/10' : ''}`}
+                            onClick={() => setMesServico(mes)}
+                          >
+                            <td className="py-3 px-2">
+                              <span className={`font-medium ${isMesSelecionado ? 'text-purple-400' : ''}`}>
+                                {formatarMesAno(mes)}
+                              </span>
+                            </td>
+                            <td className="py-3 px-2 text-right">{dados.qtd}</td>
+                            <td className="py-3 px-2 text-right font-medium text-purple-400">{formatarMoeda(dados.total)}</td>
+                            <td className={`py-3 px-2 text-right ${dados.aberto > 0 ? 'text-yellow-400' : 'text-gray-500'}`}>
+                              {formatarMoeda(dados.aberto)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Lista de Serviços do Mês */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                  <Wrench size={20} className="text-purple-400" />
+                  {formatarMesAno(mesServico)} ({servicosFiltrados.length})
+                </h3>
+                <input
+                  type="month"
+                  value={mesServico}
+                  onChange={(e) => setMesServico(e.target.value)}
+                  className="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white text-sm"
+                />
+              </div>
+
+              {servicosFiltrados.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Wrench size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>Nenhum serviço neste mês</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {servicosFiltrados.map((servico) => (
+                    <div
+                      key={servico.id}
+                      className={`bg-gray-800/30 rounded-xl border p-3 sm:p-4 hover:bg-gray-800/50 transition-colors ${
+                        servico.pago ? 'border-emerald-500/30' : 'border-gray-700'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          {/* Checkbox de Pagamento */}
+                          <button
+                            onClick={() => toggleServicoPago(servico)}
+                            className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
+                              servico.pago
+                                ? 'bg-emerald-500 border-emerald-500'
+                                : 'border-gray-600 hover:border-gray-500'
+                            }`}
+                            title={servico.pago ? `Pago em ${servico.pago_em ? formatarDataLocal(servico.pago_em.split('T')[0]) : ''}` : 'Marcar como pago'}
+                          >
+                            {servico.pago && <Check size={14} className="text-white" />}
+                          </button>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className={`font-semibold ${servico.pago ? 'text-gray-400' : 'text-white'}`}>
+                                {servico.nome}
+                              </span>
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">
+                                {formatarDataLocal(servico.data)}
+                              </span>
+                              {servico.pago && servico.pago_em && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                                  Pago em {formatarDataLocal(servico.pago_em.split('T')[0])}
+                                </span>
+                              )}
+                            </div>
+                            {servico.descricao && (
+                              <p className="text-sm text-gray-400">{servico.descricao}</p>
+                            )}
+                            {servico.observacoes && (
+                              <p className="text-sm text-gray-500 mt-1">{servico.observacoes}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between sm:justify-end gap-4 ml-8 sm:ml-0">
+                          <p className={`text-lg sm:text-xl font-bold ${servico.pago ? 'text-gray-500' : 'text-purple-400'}`}>
+                            {formatarMoeda(Number(servico.valor))}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => openServicoModal(servico)}
+                              className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => deleteServico(servico.id)}
+                              className="p-2 bg-gray-700 hover:bg-red-600 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -2714,6 +3270,110 @@ export default function ClienteDetalhesPage() {
                   className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {savingPagamento ? (
+                    <>
+                      <Loader2 size={18} className="animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Serviço */}
+      {showServicoModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 rounded-2xl p-6 w-full max-w-md border border-gray-800">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-white">
+                {editingServico ? 'Editar Serviço' : 'Novo Serviço'}
+              </h3>
+              <button
+                onClick={closeServicoModal}
+                className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-gray-400" />
+              </button>
+            </div>
+
+            <form onSubmit={handleServicoSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Nome do Serviço *</label>
+                <input
+                  type="text"
+                  value={servicoForm.nome}
+                  onChange={(e) => setServicoForm({ ...servicoForm, nome: e.target.value })}
+                  placeholder="Ex: Cadastro ISRC, Elaboração de Capa..."
+                  required
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Descrição</label>
+                <textarea
+                  value={servicoForm.descricao}
+                  onChange={(e) => setServicoForm({ ...servicoForm, descricao: e.target.value })}
+                  placeholder="Detalhes do serviço..."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Data *</label>
+                  <input
+                    type="date"
+                    value={servicoForm.data}
+                    onChange={(e) => setServicoForm({ ...servicoForm, data: e.target.value })}
+                    required
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Valor *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={servicoForm.valor}
+                    onChange={(e) => setServicoForm({ ...servicoForm, valor: e.target.value })}
+                    placeholder="0.00"
+                    required
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-400 mb-2">Observações</label>
+                <textarea
+                  value={servicoForm.observacoes}
+                  onChange={(e) => setServicoForm({ ...servicoForm, observacoes: e.target.value })}
+                  placeholder="Anotações adicionais..."
+                  rows={2}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeServicoModal}
+                  className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingServico}
+                  className="flex-1 py-3 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {savingServico ? (
                     <>
                       <Loader2 size={18} className="animate-spin" />
                       Salvando...

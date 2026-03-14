@@ -25,7 +25,9 @@ import {
   User,
   LogOut,
   Wallet,
-  CreditCard
+  CreditCard,
+  Wrench,
+  Check
 } from 'lucide-react';
 import { supabase, formatarMoeda, DIVISAO_CONFIG } from '@/lib/supabase';
 
@@ -38,7 +40,7 @@ function formatarDataLocal(dataString: string): string {
 }
 
 type Area = 'tech' | 'sports' | 'studio';
-type Tab = 'sessoes' | 'conteudo' | 'financeiro';
+type Tab = 'sessoes' | 'conteudo' | 'financeiro' | 'servicos';
 type TipoConteudo = 'video' | 'pdf' | 'exercicio' | 'link' | 'texto';
 
 interface Cliente {
@@ -50,6 +52,11 @@ interface Cliente {
   sessoes_visiveis: boolean;
   conteudo_visivel: boolean;
   financeiro_visivel: boolean;
+  servicos_visivel: boolean;
+  aba_sessoes: boolean;
+  aba_servicos: boolean;
+  aba_conteudo: boolean;
+  aba_financeiro: boolean;
 }
 
 interface Sessao {
@@ -94,6 +101,17 @@ interface Pagamento {
   pago_em: string | null;
 }
 
+interface Servico {
+  id: string;
+  nome: string;
+  descricao: string;
+  valor: number;
+  data: string;
+  pago: boolean;
+  pago_em: string | null;
+  observacoes: string;
+}
+
 export default function ClientePublicoPage() {
   const params = useParams();
   const slug = params?.slug as string;
@@ -109,10 +127,17 @@ export default function ClientePublicoPage() {
   const [sessoes, setSessoes] = useState<Sessao[]>([]);
   const [modulos, setModulos] = useState<Modulo[]>([]);
   const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
   const [expandedModulos, setExpandedModulos] = useState<string[]>([]);
 
   // Filtro de mês para sessões
   const [mesSessao, setMesSessao] = useState(() => {
+    const hoje = new Date();
+    return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  // Filtro de mês para serviços
+  const [mesServico, setMesServico] = useState(() => {
     const hoje = new Date();
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
   });
@@ -154,7 +179,7 @@ export default function ClientePublicoPage() {
     try {
       const { data, error } = await supabase
         .from('clientes')
-        .select('id, nome, areas, slug, senha_acesso, sessoes_visiveis, conteudo_visivel, financeiro_visivel')
+        .select('id, nome, areas, slug, senha_acesso, sessoes_visiveis, conteudo_visivel, financeiro_visivel, servicos_visivel, aba_sessoes, aba_servicos, aba_conteudo, aba_financeiro')
         .eq('slug', slug)
         .single();
 
@@ -207,6 +232,15 @@ export default function ClientePublicoPage() {
       .order('data', { ascending: false });
 
     setPagamentos(pagamentosData || []);
+
+    // Buscar serviços
+    const { data: servicosData } = await supabase
+      .from('servicos')
+      .select('*')
+      .eq('cliente_id', cliente.id)
+      .order('data', { ascending: false });
+
+    setServicos(servicosData || []);
   }
 
   function handleLogin(e: React.FormEvent) {
@@ -329,6 +363,51 @@ export default function ClientePublicoPage() {
   // Verificar se cliente é Studio
   const isStudio = cliente?.areas?.includes('studio') || false;
 
+  // Filtrar serviços por mês
+  const servicosFiltrados = servicos.filter(s => s.data.startsWith(mesServico));
+
+  // Totais gerais de serviços
+  const resumoGeralServicos = servicos.reduce((acc, s) => {
+    const valor = Number(s.valor);
+    return {
+      totalValor: acc.totalValor + valor,
+      valorAberto: acc.valorAberto + (s.pago ? 0 : valor),
+      qtdServicos: acc.qtdServicos + 1
+    };
+  }, { totalValor: 0, valorAberto: 0, qtdServicos: 0 });
+
+  // Agrupar serviços por mês para histórico
+  const resumoServicoPorMes = servicos.reduce((acc, s) => {
+    const mes = s.data.substring(0, 7);
+    const valor = Number(s.valor);
+    if (!acc[mes]) {
+      acc[mes] = { qtd: 0, total: 0, pago: 0, aberto: 0 };
+    }
+    acc[mes].qtd += 1;
+    acc[mes].total += valor;
+    if (s.pago) {
+      acc[mes].pago += valor;
+    } else {
+      acc[mes].aberto += valor;
+    }
+    return acc;
+  }, {} as Record<string, { qtd: number; total: number; pago: number; aberto: number }>);
+
+  const mesesServicosOrdenados = Object.keys(resumoServicoPorMes).sort((a, b) => b.localeCompare(a));
+
+  // Converter serviços para itens do financeiro
+  const servicosComoFinanceiro = servicos.map(s => ({
+    id: s.id,
+    tipo: 'servico' as const,
+    data: s.data,
+    valor: Number(s.valor),
+    pago: s.pago,
+    pago_em: s.pago_em,
+    referencia: s.nome,
+    observacoes: s.observacoes,
+    forma_pagamento: undefined as string | undefined
+  }));
+
   // Converter sessões para itens do financeiro
 const sessoesComoFinanceiro = sessoes.map(s => {
     const horas = calcularHoras(s.hora_inicio, s.hora_fim);
@@ -359,7 +438,7 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
   }));
 
   // Combinar e ordenar por data (mais recente primeiro)
-  const todosItensFinanceiro = [...sessoesComoFinanceiro, ...pagamentosComoFinanceiro]
+  const todosItensFinanceiro = [...sessoesComoFinanceiro, ...servicosComoFinanceiro, ...pagamentosComoFinanceiro]
     .sort((a, b) => b.data.localeCompare(a.data));
 
   // Filtrar por mês
@@ -401,22 +480,25 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
   }
 
   // Verificar quais abas estão visíveis
-  const mostrarSessoes = isStudio && cliente?.sessoes_visiveis;
-  const mostrarConteudo = isStudio && cliente?.conteudo_visivel;
-  const mostrarFinanceiro = cliente?.financeiro_visivel;
+  const mostrarSessoes = (cliente?.aba_sessoes ?? true) && cliente?.sessoes_visiveis;
+  const mostrarConteudo = (cliente?.aba_conteudo ?? true) && cliente?.conteudo_visivel;
+  const mostrarFinanceiro = (cliente?.aba_financeiro ?? true) && cliente?.financeiro_visivel;
+  const mostrarServicos = (cliente?.aba_servicos ?? true) && cliente?.servicos_visivel;
 
-  // Definir primeira aba disponível
+  // Definir primeira aba disponível (ordem: Sessões → Serviços → Conteúdo → Financeiro)
   useEffect(() => {
     if (cliente && autenticado) {
       if (mostrarSessoes) {
         setActiveTab('sessoes');
+      } else if (mostrarServicos) {
+        setActiveTab('servicos');
       } else if (mostrarConteudo) {
         setActiveTab('conteudo');
       } else if (mostrarFinanceiro) {
         setActiveTab('financeiro');
       }
     }
-  }, [cliente, autenticado, mostrarSessoes, mostrarConteudo, mostrarFinanceiro]);
+  }, [cliente, autenticado, mostrarSessoes, mostrarConteudo, mostrarFinanceiro, mostrarServicos]);
 
   // Loading
   if (loading) {
@@ -541,7 +623,7 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
         </div>
 
         {/* Tabs */}
-        {(mostrarSessoes || mostrarConteudo || mostrarFinanceiro) && (
+        {(mostrarSessoes || mostrarConteudo || mostrarFinanceiro || mostrarServicos) && (
           <div className="max-w-4xl mx-auto px-4">
             <nav className="flex gap-1 -mb-px">
               {mostrarSessoes && (
@@ -555,6 +637,19 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
                 >
                   <Music size={18} />
                   Sessões
+                </button>
+              )}
+              {mostrarServicos && (
+                <button
+                  onClick={() => setActiveTab('servicos')}
+                  className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors ${
+                    activeTab === 'servicos'
+                      ? 'border-purple-500 text-purple-400'
+                      : 'border-transparent text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <Wrench size={18} />
+                  Serviços
                 </button>
               )}
               {mostrarConteudo && (
@@ -805,6 +900,116 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
           </div>
         )}
 
+        {/* Tab: Serviços */}
+        {activeTab === 'servicos' && mostrarServicos && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Seus Serviços</h2>
+
+            {/* Resumo GERAL */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
+                <p className="text-xs text-gray-400 mb-1">Serviços Totais</p>
+                <p className="text-xl font-bold">{resumoGeralServicos.qtdServicos}</p>
+              </div>
+              <div className={`rounded-xl border p-3 ${resumoGeralServicos.valorAberto > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                <p className={`text-xs mb-1 ${resumoGeralServicos.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>Em Aberto</p>
+                <p className={`text-xl font-bold ${resumoGeralServicos.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                  {formatarMoeda(resumoGeralServicos.valorAberto)}
+                </p>
+              </div>
+            </div>
+
+            {/* Histórico por Mês */}
+            {mesesServicosOrdenados.length > 0 && (
+              <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-4">
+                <h3 className="font-medium text-sm text-gray-400 mb-3">Histórico por Mês</h3>
+                <div className="space-y-2">
+                  {mesesServicosOrdenados.map((mes) => {
+                    const dados = resumoServicoPorMes[mes];
+                    const isMesSelecionado = mes === mesServico;
+                    return (
+                      <div
+                        key={mes}
+                        onClick={() => setMesServico(mes)}
+                        className={`p-3 rounded-xl cursor-pointer transition-colors ${isMesSelecionado ? 'bg-purple-500/20 border border-purple-500/30' : 'bg-gray-800/50'}`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`font-semibold ${isMesSelecionado ? 'text-purple-400' : ''}`}>
+                            {formatarMesAno(mes)}
+                          </span>
+                          <span className="text-sm text-gray-400">{dados.qtd} serviço(s)</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="font-bold">{formatarMoeda(dados.total)}</span>
+                          <span className={dados.aberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}>
+                            Aberto: {formatarMoeda(dados.aberto)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Lista de Serviços do Mês */}
+            <div className="bg-gray-900/50 rounded-2xl border border-gray-800 overflow-hidden">
+              <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+                <h3 className="font-medium">{formatarMesAno(mesServico)}</h3>
+                <input
+                  type="month"
+                  value={mesServico}
+                  onChange={(e) => setMesServico(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-800 border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500 text-white text-sm"
+                />
+              </div>
+
+              {servicosFiltrados.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <Wrench size={40} className="mx-auto mb-3 opacity-50" />
+                  <p>Nenhum serviço neste mês</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-800">
+                  {servicosFiltrados.map((servico) => (
+                    <div
+                      key={servico.id}
+                      className={`p-3 sm:p-4 ${servico.pago ? 'bg-emerald-500/5' : ''}`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <span className="font-medium">{servico.nome}</span>
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
+                              {formatarDataLocal(servico.data)}
+                            </span>
+                            {servico.pago && servico.pago_em && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                                Pago em {formatarDataLocal(servico.pago_em.split('T')[0])}
+                              </span>
+                            )}
+                            {!servico.pago && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
+                                Pendente
+                              </span>
+                            )}
+                          </div>
+                          {servico.descricao && (
+                            <p className="text-sm text-gray-400">{servico.descricao}</p>
+                          )}
+                        </div>
+                        <p className={`text-lg font-bold flex-shrink-0 ${servico.pago ? 'text-gray-500' : 'text-purple-400'}`}>
+                          {formatarMoeda(Number(servico.valor))}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Tab: Financeiro */}
         {activeTab === 'financeiro' && mostrarFinanceiro && (
           <div className="space-y-6">
@@ -914,24 +1119,32 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
                 <div className="divide-y divide-gray-800">
                   {itensFinanceiroFiltrados.map((item) => {
                     const isSessao = item.tipo === 'sessao';
-                    const forma = !isSessao && item.forma_pagamento 
+                    const isServico = item.tipo === 'servico';
+                    const forma = item.tipo === 'pagamento' && item.forma_pagamento
                       ? formasPagamento.find(f => f.value === item.forma_pagamento)
                       : null;
-                    
+                    const valorColor = item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : isServico ? 'text-purple-400' : 'text-emerald-400';
+
                     return (
-                      <div 
-                        key={`${item.tipo}-${item.id}`} 
+                      <div
+                        key={`${item.tipo}-${item.id}`}
                         className={`p-3 sm:p-4 ${item.pago ? 'bg-emerald-500/5' : ''}`}
                       >
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div>
                             <div className="flex flex-wrap items-center gap-2 mb-1">
                               <span className="font-medium">{formatarDataLocal(item.data)}</span>
-                              {isSessao ? (
+                              {isSessao && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
                                   Sessão
                                 </span>
-                              ) : forma && (
+                              )}
+                              {isServico && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+                                  Serviço
+                                </span>
+                              )}
+                              {forma && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400">
                                   {forma.label}
                                 </span>
@@ -949,8 +1162,7 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
                               <p className="text-sm text-gray-500 mt-1">{item.observacoes}</p>
                             )}
                           </div>
-                          
-                          <p className={`text-lg font-bold ${item.pago ? 'text-gray-500' : isSessao ? 'text-blue-400' : 'text-emerald-400'}`}>
+                          <p className={`text-lg font-bold flex-shrink-0 ${valorColor}`}>
                             {formatarMoeda(item.valor)}
                           </p>
                         </div>
@@ -964,7 +1176,7 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
         )}
 
         {/* Nenhuma aba disponível */}
-        {!mostrarSessoes && !mostrarConteudo && !mostrarFinanceiro && (
+        {!mostrarSessoes && !mostrarConteudo && !mostrarFinanceiro && !mostrarServicos && (
           <div className="bg-gray-900/50 rounded-2xl border border-gray-800 p-12 text-center">
             <User size={48} className="mx-auto mb-4 text-gray-600" />
             <p className="text-gray-400">Nenhum conteúdo disponível no momento.</p>

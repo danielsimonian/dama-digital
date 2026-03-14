@@ -32,6 +32,7 @@ export type Cliente = {
   endereco: string | null;
   notas: string | null;
   created_at: string;
+  servicos_visivel?: boolean;
 };
 
 export type Orcamento = {
@@ -74,6 +75,19 @@ export type OrcamentoItem = {
   pacote_destaque: boolean;
   valor_mensal: number | null;
   descricao_mensal: string | null;
+};
+
+export type Servico = {
+  id: string;
+  cliente_id: string;
+  nome: string;
+  descricao: string | null;
+  valor: number;
+  data: string;
+  pago: boolean;
+  pago_em: string | null;
+  observacoes: string | null;
+  created_at: string;
 };
 
 // ============================================
