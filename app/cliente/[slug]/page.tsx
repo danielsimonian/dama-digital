@@ -690,15 +690,24 @@ const pagamentosComoFinanceiro = pagamentos.map(p => ({
             <h2 className="text-xl font-semibold">Suas Sessões</h2>
 
         {/* Resumo GERAL */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
                 <p className="text-xs text-gray-400 mb-1">Sessões Totais</p>
                 <p className="text-xl font-bold">{resumoGeralSessoes.qtdSessoes}</p>
               </div>
-              
+
               <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3">
                 <p className="text-xs text-gray-400 mb-1">Total de Horas</p>
                 <p className="text-xl font-bold">{formatarHoras(resumoGeralSessoes.totalHoras)}</p>
+              </div>
+
+              <div className={`rounded-xl border p-3 ${resumoGeralSessoes.valorAberto > 0 ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                <p className={`text-xs mb-1 ${resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                  {resumoGeralSessoes.valorAberto > 0 ? 'Em Aberto' : 'Tudo em dia! ✓'}
+                </p>
+                <p className={`text-xl font-bold ${resumoGeralSessoes.valorAberto > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
+                  {resumoGeralSessoes.valorAberto > 0 ? formatarMoeda(resumoGeralSessoes.valorAberto) : '✓'}
+                </p>
               </div>
             </div>
 

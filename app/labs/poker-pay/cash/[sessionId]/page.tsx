@@ -17,6 +17,8 @@ interface SessionData {
   config: Config;
   players: unknown[];
   dealerChips: number;
+  status?: string;
+  salvaEm?: string;
 }
 
 export default function SessionPage() {
@@ -70,15 +72,19 @@ export default function SessionPage() {
     );
   }
 
+  const finalizada = data?.status === 'finalizada';
+
   return (
     <CashGameApp
       sessionId={sessionId}
-      isAdmin={isAdmin}
+      isAdmin={finalizada ? false : isAdmin}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       initialConfig={data?.config as any}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       initialPlayers={data?.players as any}
       initialDealerChips={data?.dealerChips}
+      initialFinalizada={finalizada}
+      initialSalvaEm={data?.salvaEm}
     />
   );
 }

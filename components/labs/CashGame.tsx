@@ -29,6 +29,8 @@ interface Props {
   initialConfig?: Config;
   initialPlayers?: Player[];
   initialDealerChips?: number;
+  initialFinalizada?: boolean;
+  initialSalvaEm?: string;
 }
 
 interface Inscrito { id: string; nome: string; criadoEm: string; }
@@ -48,6 +50,8 @@ export default function CashGameApp({
   initialConfig,
   initialPlayers,
   initialDealerChips,
+  initialFinalizada,
+  initialSalvaEm,
 }: Props) {
   // — jogo —
   const [config, setConfig] = useState<Config>(
@@ -69,6 +73,8 @@ export default function CashGameApp({
   // — salvar sessão no ranking —
   const [salvandoSessao, setSalvandoSessao] = useState(false);
   const [sessaoSalva, setSessaoSalva] = useState(false);
+  const [finalizada, setFinalizada] = useState(initialFinalizada ?? false);
+  const [salvaEm, setSalvaEm] = useState<string | null>(initialSalvaEm ?? null);
 
   // — grupos —
   const [grupos, setGrupos]             = useState<GrupoOpt[]>([]);
@@ -82,6 +88,8 @@ export default function CashGameApp({
   // — sessão Redis: auto-save e share —
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'error'>('idle');
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef(false);
 
@@ -302,6 +310,16 @@ export default function CashGameApp({
 
       if (res.ok) {
         setSessaoSalva(true);
+        const agora = new Date().toISOString();
+        if (sessionId) {
+          await fetch(`/api/poker/session/${sessionId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'finalizada', salvaEm: agora }),
+          });
+          setFinalizada(true);
+          setSalvaEm(agora);
+        }
         showToast(grupo ? `Sessão salva no grupo "${grupo.nome}"! 🏆` : 'Sessão salva no ranking! 🏆');
       } else {
         showToast('Erro ao salvar sessão.');
@@ -330,6 +348,10 @@ export default function CashGameApp({
     const payments: { from: string; to: string; amount: string }[] = [];
     const debts   = losers.map(l => ({ ...l, rem: Math.abs(l.balance) }));
     const credits = winners.map(w => ({ ...w, rem: w.balance }));
+    const dealerValue = fichasDealer * config.chipValue;
+    if (dealerValue > 0) {
+      credits.push({ id: 'dealer', name: 'Dealer', balance: dealerValue, rem: dealerValue } as typeof credits[0]);
+    }
     debts.forEach(l => credits.forEach(w => {
       if (l.rem > 0.01 && w.rem > 0.01) {
         const amt = Math.min(l.rem, w.rem);
@@ -548,14 +570,38 @@ export default function CashGameApp({
 
   /* ── tela principal do Cash Game ─────────────────────── */
 
-  const ro = isAdmin === false; // read-only (espectador)
+  const ro = isAdmin === false || finalizada; // read-only (espectador ou sessão finalizada)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-900 via-orange-900 to-gray-900 p-3 pb-24">
       <div className="max-w-2xl mx-auto">
 
+        {/* Banner sessão finalizada */}
+        {finalizada && (
+          <div className="bg-orange-900/70 border border-orange-500/50 rounded-xl px-4 py-3 mb-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2 text-orange-200 text-sm font-semibold">
+                <span className="text-base">🔒</span>
+                Sessão Finalizada — Somente Visualização
+              </div>
+              <a
+                href="/labs/poker-pay/ranking"
+                className="flex items-center gap-1.5 text-xs font-bold bg-orange-700/50 hover:bg-orange-700 text-orange-100 px-3 py-1.5 rounded-lg transition-colors shrink-0"
+              >
+                <Trophy className="w-3.5 h-3.5" />
+                Ver no Ranking
+              </a>
+            </div>
+            {salvaEm && (
+              <p className="text-orange-300/70 text-xs mt-1.5">
+                Salva em {new Date(salvaEm).toLocaleDateString('pt-BR')} às {new Date(salvaEm).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Banner espectador */}
-        {ro && (
+        {ro && !finalizada && (
           <div className="bg-yellow-900/60 border border-yellow-600/30 rounded-xl px-4 py-2.5 mb-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-yellow-300 text-sm font-medium">
               <Eye className="w-4 h-4 shrink-0" />
@@ -613,6 +659,16 @@ export default function CashGameApp({
                 title="Compartilhar sessão"
               >
                 <Share2 className="w-4 h-4 text-yellow-300" />
+              </button>
+            )}
+            {/* Encerrar Sala — só para admin */}
+            {sessionId && isAdmin && (
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="bg-red-900/50 hover:bg-red-800 p-2.5 rounded-lg cursor-pointer transition-colors duration-200"
+                title="Encerrar sala"
+              >
+                <Trash2 className="w-4 h-4 text-red-400" />
               </button>
             )}
             <a
@@ -1004,16 +1060,21 @@ export default function CashGameApp({
                         <DollarSign className="w-5 h-5" /> Quem Paga Quem
                       </h2>
                       <div className="space-y-3">
-                        {payments.map((pay, i) => (
-                          <div key={i} className="bg-gray-700 border border-yellow-600 rounded-lg p-4">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-white">{pay.from}</span>
-                              <span className="text-yellow-400">→</span>
-                              <span className="font-bold text-white">{pay.to}</span>
+                        {payments.map((pay, i) => {
+                          const isDealer = pay.to === 'Dealer';
+                          return (
+                            <div key={i} className={`rounded-lg p-4 ${isDealer ? 'bg-yellow-900/40 border-2 border-yellow-400' : 'bg-gray-700 border border-yellow-600'}`}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-bold text-white">{pay.from}</span>
+                                <span className="text-yellow-400">→</span>
+                                <span className={`font-bold ${isDealer ? 'text-yellow-300' : 'text-white'}`}>
+                                  {isDealer ? '🎰 Dealer' : pay.to}
+                                </span>
+                              </div>
+                              <div className={`text-right font-bold text-2xl ${isDealer ? 'text-yellow-300' : 'text-yellow-400'}`}>R$ {pay.amount}</div>
                             </div>
-                            <div className="text-right text-yellow-400 font-bold text-2xl">R$ {pay.amount}</div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -1140,6 +1201,54 @@ export default function CashGameApp({
             >
               Fechar
             </button>
+          </div>
+        </div>
+      )}
+      {/* Modal Encerrar Sala */}
+      {showDeleteModal && sessionId && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => !deleting && setShowDeleteModal(false)}
+        >
+          <div
+            className="bg-gray-900 border border-red-700 rounded-2xl p-6 w-full max-w-sm space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-red-900/50 p-2.5 rounded-xl">
+                <Trash2 className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Encerrar Sala</h3>
+            </div>
+            <p className="text-gray-300 text-sm leading-relaxed">
+              Tem certeza? Isso vai <span className="text-red-400 font-semibold">apagar a sala e todos os dados não salvos</span>. Se já salvou no ranking, o histórico permanece.
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white py-2.5 rounded-xl font-bold text-sm cursor-pointer transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={deleting}
+                onClick={async () => {
+                  setDeleting(true);
+                  try {
+                    await fetch(`/api/poker/session/${sessionId}`, { method: 'DELETE' });
+                    localStorage.removeItem(`poker-admin-${sessionId}`);
+                    window.location.href = '/labs/poker-pay/cash';
+                  } catch {
+                    setDeleting(false);
+                  }
+                }}
+                className="flex-1 bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white py-2.5 rounded-xl font-bold text-sm cursor-pointer transition-colors flex items-center justify-center gap-2"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                {deleting ? 'Encerrando...' : 'Confirmar'}
+              </button>
+            </div>
           </div>
         </div>
       )}
