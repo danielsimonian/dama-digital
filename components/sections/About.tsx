@@ -1,73 +1,92 @@
+"use client"
+
+import { useRef } from 'react';
+import Image from 'next/image';
+import { motion, useInView } from 'framer-motion';
+
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const founders = [
+  {
+    name: 'Daniel Simonian',
+    role: 'CEO & Produtor Musical',
+    bio: 'Produtor musical e desenvolvedor. Une tecnologia e criatividade há mais de dez anos — do código à mixagem.',
+    photo: '/images/daniel.png',
+  },
+  {
+    name: 'Marcella Lima',
+    role: 'CEO & Filmmaker',
+    bio: 'Diretora criativa especializada em storytelling visual. Transforma conceitos em narrativas que emocionam e geram resultado.',
+    photo: '/images/marcella.png',
+  },
+];
+
 export default function About() {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
+
   return (
-    <section id="sobre" className="py-24 bg-gradient-to-b from-black to-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl"></div>
-      </div>
+    <section
+      id="sobre"
+      className="lg:min-h-screen flex flex-col py-12 lg:py-16 bg-background border-t border-border scroll-mt-8"
+    >
+      <div className="container mx-auto px-6 lg:px-12 flex-1 flex flex-col" ref={ref}>
 
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="text-center mb-16">
-          <span className="text-purple-400 font-semibold mb-2 block">SOBRE NÓS</span>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            Criatividade que Transforma
+        {/* Título + subtítulo */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, ease: EASE }}
+        >
+          <h2 className="font-display font-black text-2xl lg:text-3xl text-foreground leading-tight tracking-headline">
+            Uma produtora construída por quem vive o que faz.
           </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            Somos a DAMA Digital: um casal apaixonado por audiovisual há mais de 10 anos
+
+          <p className="font-body text-sm lg:text-base text-foreground-muted mt-4 leading-relaxed">
+            Mais de dez anos no audiovisual, no esporte e na música — não como espectadores,
+            mas como produtores.
           </p>
-        </div>
+        </motion.div>
 
-        {/* Fotos Marcella e Daniel */}
-        <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto mb-16">
-          <div className="group">
-            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-8 rounded-2xl border border-white/10 hover:border-purple-500/50 transition-all h-full">
-              <div className="w-48 h-48 mx-auto mb-6 overflow-hidden rounded-2xl transform rotate-3 hover:rotate-0 transition-transform">
-                <img 
-                  src="/images/marcella.png" 
-                  alt="Marcella Lima"
-                  className="w-full h-full object-cover"
+        {/* Fundadores */}
+        <motion.div
+          className="grid grid-cols-2 gap-4 lg:gap-8 mt-10 border-t border-border pt-8 flex-1"
+          initial="hidden"
+          animate={isInView ? 'visible' : 'hidden'}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12, delayChildren: 0.2 } } }}
+        >
+          {founders.map((founder) => (
+            <motion.div
+              key={founder.name}
+              className="flex flex-col"
+              variants={{
+                hidden: { opacity: 0, y: 16 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
+              }}
+            >
+              <div className="relative aspect-[3/4] lg:aspect-auto lg:flex-1 lg:min-h-0 overflow-hidden rounded-sm mb-2">
+                <Image
+                  src={founder.photo}
+                  alt={founder.name}
+                  fill
+                  className="object-contain object-top"
+                  sizes="(max-width: 1024px) 45vw, 30vw"
                 />
               </div>
-              <h3 className="text-2xl font-bold text-center mb-2">Marcella Lima</h3>
-              <p className="text-purple-400 text-center mb-4 font-semibold">CEO & Filmmaker</p>
-              <p className="text-gray-400 text-center leading-relaxed">
-                Diretora criativa especializada em storytelling visual. Transforma conceitos em narrativas impactantes que emocionam e engajam.
-              </p>
-            </div>
-          </div>
 
-          <div className="group">
-            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-8 rounded-2xl border border-white/10 hover:border-blue-500/50 transition-all h-full">
-              <div className="w-48 h-48 mx-auto mb-6 overflow-hidden rounded-2xl transform -rotate-3 hover:rotate-0 transition-transform">
-                <img 
-                  src="/images/daniel.png" 
-                  alt="Daniel Simonian"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <h3 className="text-2xl font-bold text-center mb-2">Daniel Simonian</h3>
-              <p className="text-blue-400 text-center mb-4 font-semibold">CEO & Produtor Musical</p>
-              <p className="text-gray-400 text-center leading-relaxed">
-                Produtor musical e desenvolvedor. Une tecnologia e criatividade para criar soluções inovadoras e experiências únicas.
+              <p className="font-display font-bold text-base lg:text-lg text-foreground">
+                {founder.name}
               </p>
-            </div>
-          </div>
-        </div>
+              <p className="font-ui text-xs tracking-editorial uppercase text-foreground-muted mt-0.5 mb-2">
+                {founder.role}
+              </p>
+              <p className="font-body text-xs lg:text-sm text-foreground-muted leading-relaxed">
+                {founder.bio}
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
 
-        {/* Nossa História */}
-        <div className="max-w-4xl mx-auto mb-16">
-          <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 p-8 rounded-2xl border border-white/10">
-            <h3 className="text-2xl font-bold mb-4 text-center">Nossa Jornada</h3>
-            <p className="text-lg text-gray-300 leading-relaxed text-center mb-4">
-              Há mais de uma década mergulhados no universo audiovisual, construímos a DAMA Digital 
-              com um propósito: transformar ideias em experiências memoráveis.
-            </p>
-            <p className="text-lg text-gray-300 leading-relaxed text-center">
-              Do beach tennis ao estúdio, do código à música. Atuamos em três frentes distintas, 
-              sempre com o mesmo compromisso: <span className="text-purple-400 font-semibold">qualidade, criatividade e paixão pelo que fazemos.</span>
-            </p>
-          </div>
-        </div>
       </div>
     </section>
   );

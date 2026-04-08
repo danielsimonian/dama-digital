@@ -1,143 +1,335 @@
+"use client"
+
+import { useRef } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { Trophy, Camera, Video, Mic2, Users, Award } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 
-export const metadata = {
-  title: 'DAMA Sports - Produção de Eventos Esportivos',
-  description: 'Arbitragem, locação de som, troféus, filmagem e cobertura completa de eventos esportivos',
-};
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const services = [
+  { number: '01', name: 'Arbitragem', description: 'Árbitros certificados para torneios de beach tennis de qualquer porte.' },
+  { number: '02', name: 'Locação de Som', description: 'Sistema de áudio profissional com operador incluso.' },
+  { number: '03', name: 'Troféus & Medalhas', description: 'Produção personalizada com identidade visual do evento.' },
+  { number: '04', name: 'Fotografia', description: 'Cobertura fotográfica profissional do início ao fim.' },
+  { number: '05', name: 'Filmagem & Drone', description: 'Vídeo cinematográfico e imagens aéreas do evento.' },
+  { number: '06', name: 'Estrutura Completa', description: 'Treliças, pódio, staff e tudo que o evento precisa.' },
+];
+
+const clients = [
+  { name: 'ASSESP', logo: '/images/clients/assesp.jpeg' },
+  { name: 'RONYMOTORS', logo: '/images/clients/rony.png' },
+  { name: 'SPFC', logo: '/images/clients/spfc.png' },
+  { name: 'TOMBEACH', logo: '/images/clients/tombeach.png' },
+  { name: 'OPENSP', logo: '/images/clients/opensp.webp' },
+  { name: 'HYDRA', logo: '/images/clients/hydra.png' },
+  { name: 'GENIAL', logo: '/images/clients/genial.png' },
+];
 
 export default function DamaSportsPage() {
-  const services = [
-    { icon: Users, title: 'Arbitragem', desc: 'Árbitros qualificados para beach tennis' },
-    { icon: Mic2, title: 'Locação de Som', desc: 'Sistema de áudio profissional' },
-    { icon: Award, title: 'Troféus & Medalhas', desc: 'Produção personalizada' },
-    { icon: Camera, title: 'Fotografia', desc: 'Cobertura fotográfica profissional' },
-    { icon: Video, title: 'Filmagem', desc: 'Vídeo e drone para eventos' },
-    { icon: Trophy, title: 'Estrutura Completa', desc: 'Treliças, pódio e staff' },
-  ];
+  const manifestoRef = useRef<HTMLDivElement>(null);
+  const manifestoInView = useInView(manifestoRef, { once: true, margin: '-8% 0px' });
 
-  const clients = [
-    { name: 'ASSESP', logo: '/images/clients/assesp.jpeg' },
-    { name: 'RONYMOTORS', logo: '/images/clients/rony.png' },
-    { name: 'SPFC', logo: '/images/clients/spfc.png' },
-    { name: 'TOMBEACH', logo: '/images/clients/tombeach.png' },
-    { name: 'OPENSP', logo: '/images/clients/opensp.webp' },
-    { name: 'HYDRA', logo: '/images/clients/hydra.png' },
-    { name: 'GENIAL', logo: '/images/clients/genial.png' },
-  ];
+  const servicesRef = useRef<HTMLDivElement>(null);
+  const servicesInView = useInView(servicesRef, { once: true, margin: '-8% 0px' });
+
+  const clientsRef = useRef<HTMLDivElement>(null);
+  const clientsInView = useInView(clientsRef, { once: true, margin: '-8% 0px' });
+
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const ctaInView = useInView(ctaRef, { once: true, margin: '-10% 0px' });
 
   return (
     <>
       <Header />
-      
-      <div className="min-h-screen bg-black text-white pt-20">
-        {/* Header da página */}
-        <div className="relative bg-gradient-to-b from-black via-orange-950/20 to-black border-b border-white/10 overflow-hidden">
-          <div className="absolute inset-0">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-red-500/20 rounded-full blur-3xl"></div>
-          </div>
 
-          <div className="container mx-auto px-6 py-20 relative z-10">
-  <div className="flex flex-col items-center text-center">
-    <div className="flex items-center gap-4 mb-6">
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-2xl shadow-orange-500/50">
-        <Trophy className="w-8 h-8" />
-      </div>
-      <div>
-        <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-orange-400 to-red-400 bg-clip-text text-transparent">
-          DAMA Sports
-        </h1>
-        <p className="text-xl text-orange-400">Produção de Eventos Esportivos</p>
-      </div>
-    </div>
-    
-    <p className="text-xl text-gray-300 max-w-3xl">
-      Experiência completa na produção de torneios de beach tennis. 
-      Da arbitragem à cobertura audiovisual, cuidamos de cada detalhe para 
-      que seu evento seja inesquecível.
-    </p>
-  </div>
-</div>
+      {/* ── Seção 1: Hero com vídeo ── */}
+      <section style={{ position: 'relative', height: '100dvh', overflow: 'hidden' }}>
+        {/* TODO: substituir pelo vídeo real dos torneios da DAMA Sports */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+          src="/videos/sports-placeholder.mp4"
+        />
+
+        {/* Overlay */}
+        <div
+          className="absolute inset-0"
+          style={{ backgroundColor: 'oklch(10% 0.008 50 / 0.55)' }}
+        />
+
+        {/* Conteúdo */}
+        <div className="absolute inset-0 flex flex-col justify-end pb-16 lg:pb-24">
+          <div className="container mx-auto px-6 lg:px-12">
+            <motion.div
+              className="flex flex-col gap-0"
+              initial="hidden"
+              animate="visible"
+              variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.14 } } }}
+            >
+              <motion.p
+                className="font-ui text-xs tracking-editorial uppercase mb-4"
+                style={{ color: 'var(--color-sports)' }}
+                variants={{ hidden: { opacity: 0, x: -40 }, visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: EASE } } }}
+              >
+                DAMA Sports
+              </motion.p>
+
+              <motion.h1
+                className="font-display font-black leading-none tracking-headline"
+                style={{ fontSize: 'clamp(3.5rem, 10vw, 9rem)', color: 'oklch(97% 0.006 58)' }}
+                variants={{ hidden: { opacity: 0, x: -40 }, visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: EASE } } }}
+              >
+                Do sorteio ao pódio.
+              </motion.h1>
+
+              <motion.p
+                className="font-body text-lg mt-6 max-w-2xl"
+                style={{ color: 'oklch(93% 0.006 58 / 0.75)' }}
+                variants={{ hidden: { opacity: 0, x: -40 }, visible: { opacity: 1, x: 0, transition: { duration: 0.7, ease: EASE } } }}
+              >
+                Produção completa de eventos de beach tennis.
+              </motion.p>
+            </motion.div>
+          </div>
         </div>
+      </section>
 
-        {/* Serviços */}
-        <section className="py-24 bg-gradient-to-b from-black via-gray-900 to-black relative overflow-hidden">
-          <div className="absolute inset-0">
-            <div className="absolute top-0 right-1/3 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl"></div>
+      {/* ── Seção 2: Número de impacto + manifesto ── */}
+      <section
+        className="py-section"
+        style={{ backgroundColor: 'oklch(97% 0.006 58)', color: 'oklch(10% 0.008 50)' }}
+        ref={manifestoRef}
+      >
+        <div className="container mx-auto px-6 lg:px-12">
+          <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-center">
+
+            {/* Número */}
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              animate={manifestoInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.8, ease: EASE }}
+            >
+              <p
+                className="font-display font-black leading-none"
+                style={{ fontSize: 'clamp(6rem, 15vw, 14rem)', color: 'var(--color-sports)' }}
+              >
+                10+
+              </p>
+              <p
+                className="font-ui text-xs tracking-editorial uppercase mt-2"
+                style={{ color: 'oklch(50% 0.01 58)' }}
+              >
+                anos de produção
+              </p>
+            </motion.div>
+
+            {/* Texto */}
+            <motion.div
+              className="flex flex-col gap-6"
+              initial={{ opacity: 0, x: 40 }}
+              animate={manifestoInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.8, delay: 0.1, ease: EASE }}
+            >
+              <h2
+                className="font-display font-black text-3xl lg:text-4xl leading-tight"
+                style={{ color: 'oklch(10% 0.008 50)' }}
+              >
+                Cada torneio é uma produção. Nós cuidamos de cada detalhe.
+              </h2>
+              <p
+                className="font-body text-base leading-relaxed max-w-lg"
+                style={{ color: 'oklch(40% 0.01 58)' }}
+              >
+                Da arbitragem à cobertura audiovisual, entregamos a estrutura completa para que o evento aconteça — e seja lembrado.
+              </p>
+            </motion.div>
+
           </div>
+        </div>
+      </section>
 
-          <div className="container mx-auto px-6 relative z-10">
-            <h2 className="text-4xl font-bold mb-12 text-center">
-              Nossos <span className="text-orange-400">Serviços</span>
+      {/* ── Seção 3: Serviços (fundo sports sólido) ── */}
+      <section
+        className="py-section"
+        style={{ backgroundColor: 'var(--color-sports)', color: 'oklch(97% 0.006 58)' }}
+        ref={servicesRef}
+      >
+        <div className="container mx-auto px-6 lg:px-12">
+
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={servicesInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.7, ease: EASE }}
+          >
+            <p
+              className="font-ui text-xs tracking-editorial uppercase mb-4"
+              style={{ opacity: 0.7 }}
+            >
+              O que a gente faz
+            </p>
+            <h2 className="font-display font-black text-3xl lg:text-4xl leading-tight tracking-headline">
+              Estrutura completa. Do início ao fim.
             </h2>
-            
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {services.map((service, idx) => {
-                const Icon = service.icon;
-                return (
-                  <div key={idx} className="group bg-gradient-to-br from-orange-500/10 to-red-500/10 p-6 rounded-2xl border border-orange-500/20 hover:border-orange-500 transition-all hover:scale-105">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold mb-2 text-white">{service.title}</h3>
-                    <p className="text-gray-400">{service.desc}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+          </motion.div>
 
-        {/* Clientes */}
-        <section className="py-24 bg-gradient-to-b from-black via-orange-950/10 to-black relative overflow-hidden">
-          <div className="absolute inset-0">
-            <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-red-500/10 rounded-full blur-3xl"></div>
-          </div>
-
-          <div className="container mx-auto px-6 relative z-10">
-            <h2 className="text-4xl font-bold mb-12 text-center">
-              Eventos que <span className="text-orange-400">Produzimos</span>
-            </h2>
-            
-            <div className="flex flex-wrap justify-center gap-8 max-w-4xl mx-auto">
-              {clients.map((client, idx) => (
-                <div 
-                  key={idx} 
-                  className="aspect-square bg-gradient-to-br from-orange-500/10 to-red-500/10 rounded-xl flex items-center justify-center border border-orange-500/20 hover:border-orange-500 transition-all cursor-pointer group w-64 h-64 p-8"
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px mt-12"
+            style={{ backgroundColor: 'oklch(97% 0.006 58 / 0.15)' }}
+            initial="hidden"
+            animate={servicesInView ? 'visible' : 'hidden'}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+          >
+            {services.map((service) => (
+              <motion.div
+                key={service.number}
+                variants={{
+                  hidden: { opacity: 0, y: 16 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+                }}
+                className="flex flex-col gap-3"
+                style={{ padding: '2rem', backgroundColor: 'var(--color-sports)' }}
+              >
+                <span
+                  className="font-ui text-xs tracking-editorial"
+                  style={{ opacity: 0.6 }}
                 >
-                  <img 
-                    src={client.logo} 
+                  {service.number}
+                </span>
+                <h3 className="font-display font-bold text-xl">
+                  {service.name}
+                </h3>
+                <p
+                  className="font-body text-sm leading-relaxed"
+                  style={{ opacity: 0.75 }}
+                >
+                  {service.description}
+                </p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+        </div>
+      </section>
+
+      {/* ── Seção 4: Clientes (fundo claro) ── */}
+      <section
+        className="py-section"
+        style={{ backgroundColor: 'oklch(97% 0.006 58)', color: 'oklch(10% 0.008 50)' }}
+        ref={clientsRef}
+      >
+        <div className="container mx-auto px-6 lg:px-12">
+
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            animate={clientsInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.7, ease: EASE }}
+          >
+            <p
+              className="font-ui text-xs tracking-editorial uppercase mb-4"
+              style={{ color: 'oklch(50% 0.01 58)' }}
+            >
+              Quem já confiou
+            </p>
+            <h2
+              className="font-display font-black text-2xl lg:text-3xl leading-tight tracking-headline"
+              style={{ color: 'oklch(10% 0.008 50)' }}
+            >
+              Eventos e marcas que passaram pela nossa produção.
+            </h2>
+          </motion.div>
+
+          <motion.div
+            className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-14 lg:gap-20 mt-10 w-fit mx-auto"
+            initial="hidden"
+            animate={clientsInView ? 'visible' : 'hidden'}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
+          >
+            {clients.map((client) => (
+              <motion.div
+                key={client.name}
+                variants={{
+                  hidden: { opacity: 0, y: 16 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+                }}
+                className="group flex items-center justify-center"
+              >
+                <div
+                  className="relative w-28 h-28 lg:w-36 lg:h-36 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-105"
+                  style={{ border: '1px solid oklch(80% 0.01 58)', backgroundColor: 'oklch(90% 0.01 58)' }}
+                >
+                  <Image
+                    src={client.logo}
                     alt={client.name}
-                    className="w-full h-full object-contain rounded-full grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                    fill
+                    className="object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                    sizes="(max-width: 768px) 20vw, 10vw"
                   />
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
+              </motion.div>
+            ))}
+          </motion.div>
 
-        {/* CTA */}
-        <section className="py-24 bg-gradient-to-br from-orange-900/50 via-black to-red-900/50 relative overflow-hidden">
-          <div className="absolute inset-0">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/20 rounded-full blur-3xl"></div>
-          </div>
+        </div>
+      </section>
 
-          <div className="container mx-auto px-6 text-center relative z-10">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              Pronto para realizar seu evento?
+      {/* ── Seção 5: CTA (fundo escuro) ── */}
+      <section
+        className="py-section"
+        style={{ backgroundColor: 'oklch(10% 0.008 50)', color: 'oklch(93% 0.006 58)' }}
+        ref={ctaRef}
+      >
+        <div className="container mx-auto px-6 lg:px-12">
+
+          <motion.div
+            className="max-w-3xl"
+            initial={{ opacity: 0, x: -40 }}
+            animate={ctaInView ? { opacity: 1, x: 0 } : {}}
+            transition={{ duration: 0.7, ease: EASE }}
+          >
+            <h2
+              className="font-display font-black text-4xl lg:text-5xl leading-tight tracking-headline mb-4"
+              style={{ color: 'oklch(93% 0.006 58)' }}
+            >
+              Pronto para o próximo evento?
             </h2>
-            <p className="text-xl text-gray-300 mb-8">
-              Entre em contato e receba um orçamento personalizado
+
+            <p
+              className="font-body text-lg mb-10"
+              style={{ color: 'oklch(65% 0.01 58)' }}
+            >
+              Manda a ideia — a gente cuida do resto.
             </p>
-            <a href="/#contato" className="inline-block bg-gradient-to-r from-orange-500 to-red-500 px-8 py-4 rounded-full font-bold hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/50 transition-all">
-              Solicitar Orçamento
-            </a>
-          </div>
-        </section>
-      </div>
+
+            <Link
+              href="/#contato"
+              className="inline-block font-ui text-sm font-medium px-8 py-3 transition-colors duration-200"
+              style={{
+                border: '1px solid oklch(93% 0.006 58)',
+                color: 'oklch(93% 0.006 58)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'var(--color-sports)';
+                e.currentTarget.style.borderColor = 'var(--color-sports)';
+                e.currentTarget.style.color = 'oklch(97% 0.006 58)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'oklch(93% 0.006 58)';
+                e.currentTarget.style.color = 'oklch(93% 0.006 58)';
+              }}
+            >
+              Entrar em contato
+            </Link>
+          </motion.div>
+
+        </div>
+      </section>
 
       <Footer />
     </>
