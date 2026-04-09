@@ -54,10 +54,11 @@ export default function Header() {
       } ${
         scrolled
           ? 'bg-background/95 backdrop-blur-sm border-b border-border'
-          : 'bg-transparent'
+          : ''
       }`}
+      style={!scrolled ? { background: 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)' } : undefined}
     >
-      <nav className="container mx-auto px-6 lg:px-12 py-5">
+      <nav className="container mx-auto px-6 lg:px-12 py-5" style={!scrolled ? { textShadow: '0 1px 8px rgba(0,0,0,0.8)' } : undefined}>
         <div className="flex items-center justify-between">
 
           {/* Logo */}
