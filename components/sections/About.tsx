@@ -64,13 +64,13 @@ export default function About() {
                 visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
               }}
             >
-              <div className="relative aspect-[3/4] lg:aspect-auto lg:flex-1 lg:min-h-0 overflow-hidden rounded-sm mb-2">
+              <div className="relative aspect-square w-32 lg:w-44 overflow-hidden rounded-full mb-4 ring-1 ring-border">
                 <Image
                   src={founder.photo}
                   alt={founder.name}
                   fill
-                  className="object-contain object-top"
-                  sizes="(max-width: 1024px) 45vw, 30vw"
+                  className="object-cover object-top"
+                  sizes="(max-width: 1024px) 128px, 176px"
                 />
               </div>
 

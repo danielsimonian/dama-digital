@@ -10,15 +10,13 @@ const divisions = [
   {
     number: '01',
     name: 'DAMA Sports',
-    anchor: 'Do sorteio ao pódio, a gente cuida.',
+    anchor: 'Do sorteio ao pódio.',
     description:
-      'Produção completa de eventos de beach tennis: arbitragem, locação de som, troféus, filmagem e fotografia.',
+      'Produção completa de eventos de beach tennis: arbitragem, som, troféus, filmagem e fotografia.',
     href: '/sports',
-    cardBg: 'bg-sports-subtle',
-    ruleBg: 'bg-sports',
-    numberColor: 'text-sports/25 group-hover:text-sports/50',
-    accentHover: 'group-hover:text-sports',
-    borderHover: 'group-hover:border-sports/50',
+    barHover: 'group-hover:bg-sports',
+    nameHover: 'group-hover:text-sports',
+    borderHover: 'group-hover:border-sports/40',
   },
   {
     number: '02',
@@ -27,48 +25,30 @@ const divisions = [
     description:
       'Websites, sistemas sob medida e aplicativos — do conceito ao lançamento.',
     href: '/tech',
-    cardBg: 'bg-tech-subtle',
-    ruleBg: 'bg-tech',
-    numberColor: 'text-tech/25 group-hover:text-tech/50',
-    accentHover: 'group-hover:text-tech',
-    borderHover: 'group-hover:border-tech/50',
+    barHover: 'group-hover:bg-tech',
+    nameHover: 'group-hover:text-tech',
+    borderHover: 'group-hover:border-tech/40',
   },
   {
     number: '03',
     name: 'DAMA Studio',
     anchor: 'Sua música soa do jeito que merece.',
     description:
-      'Aulas de violão e guitarra, gravação, mixagem, masterização e distribuição digital.',
+      'Aulas, gravação, mixagem, masterização e distribuição digital.',
     href: '/studio',
-    cardBg: 'bg-studio-subtle',
-    ruleBg: 'bg-studio',
-    numberColor: 'text-studio/25 group-hover:text-studio/50',
-    accentHover: 'group-hover:text-studio',
-    borderHover: 'group-hover:border-studio/50',
+    barHover: 'group-hover:bg-studio',
+    nameHover: 'group-hover:text-studio',
+    borderHover: 'group-hover:border-studio/40',
   },
 ];
-
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.14 } },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 32 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.7, ease: EASE },
-  },
-};
 
 export default function Divisions() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
 
   return (
-    <section id="divisoes" className="py-section bg-background">
-      <div className="container mx-auto px-6 lg:px-12" ref={ref}>
+    <section id="divisoes" className="py-section bg-background" ref={ref}>
+      <div className="container mx-auto px-6 lg:px-12">
 
         {/* Eyebrow */}
         <motion.p
@@ -80,84 +60,80 @@ export default function Divisions() {
           Nossas Divisões
         </motion.p>
 
-        {/* Grid de cards */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-5"
-          variants={containerVariants}
-          initial="hidden"
-          animate={isInView ? 'visible' : 'hidden'}
-        >
-          {divisions.map((div) => (
-            <motion.div key={div.number} variants={cardVariants} className="flex">
-              <Link href={div.href} className="group flex w-full focus-visible:outline-none">
-                <div
-                  className={`
-                    relative flex flex-col w-full min-h-[22rem] lg:min-h-[28rem]
-                    p-8 lg:p-10 overflow-hidden
-                    border border-white/8 transition-colors duration-300
-                    ${div.cardBg} ${div.borderHover}
-                  `}
-                >
-                  {/* Régua de acento — topo do card */}
-                  <div className={`absolute top-0 left-0 right-0 h-0.5 ${div.ruleBg}`} />
+        {/* Linhas */}
+        <div className="border-t border-border">
+          {divisions.map((div, i) => (
+            <motion.div
+              key={div.number}
+              initial={{ opacity: 0, y: 24 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.6, ease: EASE, delay: 0.1 + i * 0.12 }}
+            >
+              <Link
+                href={div.href}
+                className={`
+                  group flex items-stretch gap-6 lg:gap-10
+                  border-b border-border transition-colors duration-300
+                  ${div.borderHover}
+                  py-7 lg:py-9
+                `}
+              >
+                {/* Barra de acento vertical */}
+                <div className="flex-shrink-0 flex items-stretch">
+                  <div
+                    className={`
+                      w-0.5 rounded-full transition-all duration-500
+                      bg-border ${div.barHover}
+                      opacity-60 group-hover:opacity-100
+                    `}
+                  />
+                </div>
 
-                  {/* Número decorativo — canto superior direito */}
+                {/* Número */}
+                <span className="flex-shrink-0 font-ui text-xs text-foreground-subtle tracking-editorial self-center w-6">
+                  {div.number}
+                </span>
+
+                {/* Nome + anchor */}
+                <div className="flex-1 min-w-0">
+                  <h2
+                    className={`
+                      font-display font-black leading-none tracking-headline
+                      text-3xl sm:text-4xl lg:text-5xl xl:text-6xl
+                      text-foreground transition-colors duration-300
+                      ${div.nameHover}
+                    `}
+                  >
+                    {div.name}
+                  </h2>
+                  <p className="font-body italic text-foreground-muted text-sm lg:text-base mt-2 leading-snug">
+                    {div.anchor}
+                  </p>
+                </div>
+
+                {/* Descrição + seta — desktop */}
+                <div className="hidden lg:flex flex-col justify-center flex-shrink-0 max-w-[22rem] text-right gap-4">
+                  <p className="font-ui text-sm text-foreground-subtle leading-relaxed">
+                    {div.description}
+                  </p>
                   <span
                     className={`
-                      absolute top-5 right-7 select-none pointer-events-none
-                      font-display font-black leading-none
-                      text-7xl lg:text-8xl
-                      transition-colors duration-300
-                      ${div.numberColor}
+                      inline-flex items-center justify-end gap-2
+                      font-ui text-sm text-foreground-muted
+                      transition-colors duration-200
+                      ${div.nameHover}
                     `}
-                    aria-hidden="true"
                   >
-                    {div.number}
-                  </span>
-
-                  {/* Conteúdo */}
-                  <div className="relative z-10 flex flex-col flex-1 pt-2">
-                    <h2
-                      className={`
-                        font-display font-black text-2xl lg:text-3xl
-                        text-foreground leading-tight
-                        transition-colors duration-300
-                        ${div.accentHover}
-                      `}
-                    >
-                      {div.name}
-                    </h2>
-
-                    <p className="font-body italic text-lg text-foreground-muted mt-3 leading-snug">
-                      {div.anchor}
-                    </p>
-
-                    <p className="font-ui text-sm text-foreground-subtle mt-4 leading-relaxed max-w-[22ch]">
-                      {div.description}
-                    </p>
-                  </div>
-
-                  {/* Rodapé */}
-                  <div className="relative z-10 border-t border-border pt-5 mt-8">
-                    <span
-                      className={`
-                        inline-flex items-center gap-2
-                        font-ui text-sm text-foreground-muted
-                        transition-colors duration-200
-                        ${div.accentHover}
-                      `}
-                    >
-                      Conheça
-                      <span className="transition-transform duration-200 group-hover:translate-x-1">
-                        →
-                      </span>
+                    Conheça
+                    <span className="transition-transform duration-300 group-hover:translate-x-1.5">
+                      →
                     </span>
-                  </div>
+                  </span>
                 </div>
               </Link>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
       </div>
     </section>
