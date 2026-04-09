@@ -165,7 +165,7 @@ export default function Divisions() {
                   </span>
 
                   {/* Nome grande */}
-                  <h2 className="font-display font-black text-4xl lg:text-5xl xl:text-6xl text-foreground leading-none tracking-headline">
+                  <h2 className="font-display font-black text-4xl lg:text-5xl xl:text-6xl text-foreground leading-none tracking-headline whitespace-nowrap">
                     {current.name}
                   </h2>
 
