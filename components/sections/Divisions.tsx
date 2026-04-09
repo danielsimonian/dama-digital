@@ -109,7 +109,7 @@ export default function Divisions() {
                 {/* Nome */}
                 <span
                   className={`
-                    font-display font-black leading-tight
+                    font-display font-black leading-tight whitespace-nowrap
                     text-xl lg:text-2xl xl:text-3xl
                     transition-colors duration-200
                     ${active === i ? 'text-foreground' : 'text-foreground-muted'}
@@ -165,7 +165,7 @@ export default function Divisions() {
                   </span>
 
                   {/* Nome grande */}
-                  <h2 className="font-display font-black text-4xl lg:text-5xl xl:text-6xl text-foreground leading-none tracking-headline whitespace-nowrap">
+                  <h2 className="font-display font-black text-4xl lg:text-5xl xl:text-6xl text-foreground leading-none tracking-headline">
                     {current.name}
                   </h2>
 
