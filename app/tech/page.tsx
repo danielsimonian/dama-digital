@@ -796,10 +796,119 @@ export default function DamaTechPage() {
               // experimentos em produção
             </p>
             <h2
-              className="text-3xl lg:text-4xl leading-tight"
+              className="text-3xl lg:text-4xl leading-tight flex items-end gap-3"
               style={{ fontFamily: 'var(--font-display)', fontWeight: 900, color: TEXT }}
             >
               DAMA Labs
+              <span className="inline-flex items-center justify-center" style={{ width: '1em', height: '1em', flexShrink: 0, transform: 'translateY(-0.32em)', position: 'relative', zIndex: 1, filter: 'drop-shadow(-18px 0px 10px oklch(62% 0.22 262 / 0.7))' }}>
+                <svg viewBox="0 0 28 33" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+                  <defs>
+                    <clipPath id="flask-clip-labs">
+                      <path d="M 10 3 L 18 3 L 18 11 L 23 26 Q 24 32 14 32 Q 4 32 5 26 L 10 11 Z" />
+                    </clipPath>
+                  </defs>
+
+                  {/* Líquido (fundo do frasco) */}
+                  <rect x="0" y="16" width="28" height="18" fill="var(--color-tech)" fillOpacity={0.28} clipPath="url(#flask-clip-labs)" />
+
+                  {/* Bolinhas aglomeradas na superfície */}
+                  <g clipPath="url(#flask-clip-labs)">
+                    {[
+                      { cx: 11,  r: 0.55, delay: 0,    dur: 2.4 },
+                      { cx: 13,  r: 0.75, delay: 0.4,  dur: 3.0 },
+                      { cx: 14.5,r: 0.45, delay: 0.9,  dur: 2.1 },
+                      { cx: 16,  r: 0.65, delay: 0.2,  dur: 2.7 },
+                      { cx: 17.5,r: 0.5,  delay: 1.3,  dur: 2.3 },
+                    ].map((b, i) => (
+                      <motion.circle
+                        key={`surface-${i}`}
+                        cx={b.cx}
+                        r={b.r}
+                        fill="none"
+                        stroke="var(--color-tech)"
+                        strokeWidth={0.5}
+                        animate={{
+                          cy:      [17.5, 15.5, 16.5, 15, 16, 17.5],
+                          opacity: [0,    0.6,  0.6,  0.6, 0.6,  0],
+                        }}
+                        transition={{
+                          duration: b.dur,
+                          delay: b.delay,
+                          repeat: Infinity,
+                          ease: 'easeInOut',
+                        }}
+                      />
+                    ))}
+                  </g>
+
+                  {/* Borbulhas internas no líquido */}
+                  <g clipPath="url(#flask-clip-labs)">
+                    {[
+                      { cx: 10, cy: 30, r: 0.6, delay: 0,    dur: 1.3 },
+                      { cx: 14, cy: 29, r: 0.4, delay: 0.45, dur: 1.0 },
+                      { cx: 18, cy: 31, r: 0.7, delay: 0.9,  dur: 1.5 },
+                      { cx: 12, cy: 27, r: 0.5, delay: 1.3,  dur: 1.1 },
+                      { cx: 16, cy: 28, r: 0.35,delay: 0.65, dur: 0.95 },
+                    ].map((b, i) => (
+                      <motion.circle
+                        key={`bubble-inner-${i}`}
+                        cx={b.cx}
+                        r={b.r}
+                        fill="none"
+                        stroke="var(--color-tech)"
+                        strokeWidth={0.5}
+                        animate={{
+                          cy:      [b.cy, 17, 17, b.cy],
+                          opacity: [0,   0.65,  0,    0],
+                        }}
+                        transition={{
+                          duration: b.dur,
+                          delay: b.delay,
+                          repeat: Infinity,
+                          ease: 'easeOut',
+                          times: [0, 0.78, 0.92, 1],
+                        }}
+                      />
+                    ))}
+                  </g>
+
+                  {/* Bolinhas subindo */}
+                  {[
+                    { cx: 12, delay: 0,    r: 0.8 },
+                    { cx: 14, delay: 0.85, r: 1.5 },
+                    { cx: 16, delay: 1.7,  r: 1.1 },
+                  ].map((b, i) => (
+                    <motion.circle
+                      key={i}
+                      cx={b.cx}
+                      r={b.r}
+                      stroke="var(--color-tech)"
+                      strokeWidth={0.7}
+                      fill="none"
+                      animate={{
+                        cy:      [16,   -18,   -18,  -18,   -18,   16],
+                        r:       [b.r,  b.r,   b.r,  b.r,     8,  b.r],
+                        opacity: [0.9,  0.9,     0,  0.55,    0,    0],
+                      }}
+                      transition={{
+                        duration: 2.8,
+                        delay: b.delay,
+                        repeat: Infinity,
+                        ease: 'easeOut',
+                        times: [0, 0.60, 0.68, 0.69, 0.84, 1],
+                      }}
+                    />
+                  ))}
+
+                  {/* Contorno do frasco Erlenmeyer (por cima) */}
+                  <path
+                    d="M 10 3 L 18 3 L 18 11 L 23 26 Q 24 32 14 32 Q 4 32 5 26 L 10 11 Z"
+                    stroke="var(--color-tech)"
+                    strokeWidth={0.9}
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
             </h2>
             <p
               className="text-base mt-3 max-w-lg"

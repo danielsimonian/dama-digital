@@ -11,6 +11,12 @@ const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 const TECH_SERVICES = ['_01 Websites', '_02 Sistemas Web', '_03 Aplicativos', '_04 Automações'];
 
+const SPORTS_EVENTS = [
+  { status: 'realizado', name: 'Open Santos ASSESP',        date: 'ABR 2026', stats: '250+ atletas · 14 cat · 13 quadras' },
+  { status: 'em breve',  name: 'Open SPFC de Beach Tennis', date: 'MAI 2026', stats: '400+ atletas previstos · 19 cat' },
+  { status: 'em breve',  name: 'Open DAMA Tom Beach',       date: 'JUN 2026', stats: '150+ atletas previstos · 10 cat' },
+];
+
 const divisions = [
   {
     number: '01',
@@ -55,6 +61,7 @@ export default function Divisions() {
   const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
   const [active, setActive] = useState(0);
   const [techGlitch, setTechGlitch] = useState(false);
+  const [sportsImpact, setSportsImpact] = useState(false);
 
   const current = divisions[active];
 
@@ -71,6 +78,17 @@ export default function Divisions() {
           100% { text-shadow: none; transform: translate(0) skewX(0); }
         }
         .tech-glitch { animation: div-text-glitch 0.65s steps(1) forwards; }
+
+        @keyframes div-sports-impact {
+          0%   { transform: scale(1) translate(0, 0) rotate(0deg); }
+          10%  { transform: scale(1.07, 0.93) translate(4px, 3px) rotate(0.5deg); }
+          22%  { transform: scale(0.94, 1.09) translate(-3px, -5px) rotate(-0.8deg); }
+          36%  { transform: scale(1.05, 0.96) translate(3px, 2px) rotate(0.4deg); }
+          52%  { transform: scale(0.97, 1.03) translate(-1px, -2px) rotate(-0.2deg); }
+          70%  { transform: scale(1.02, 0.99) translate(1px, 0px); }
+          100% { transform: scale(1) translate(0, 0) rotate(0deg); }
+        }
+        .sports-impact { animation: div-sports-impact 0.6s cubic-bezier(0.16,1,0.3,1) forwards; }
       `}</style>
 
       <div className="container mx-auto px-6 lg:px-12">
@@ -104,6 +122,7 @@ export default function Divisions() {
                   onMouseEnter={() => {
                     setActive(i);
                     if (isTech && !techGlitch) setTechGlitch(true);
+                    if (i === 0 && !sportsImpact) setSportsImpact(true);
                   }}
                   onClick={() => setActive(i)}
                   className={`
@@ -133,13 +152,17 @@ export default function Divisions() {
 
                   {/* Nome */}
                   <span
-                    onAnimationEnd={() => setTechGlitch(false)}
+                    onAnimationEnd={() => {
+                      if (isTech) setTechGlitch(false);
+                      if (i === 0) setSportsImpact(false);
+                    }}
                     className={`
                       font-display font-black leading-tight whitespace-nowrap
                       text-xl lg:text-2xl xl:text-3xl
                       transition-colors duration-200
                       ${active === i ? 'text-foreground' : 'text-foreground-muted'}
                       ${isTech && techGlitch ? 'tech-glitch' : ''}
+                      ${i === 0 && sportsImpact ? 'sports-impact' : ''}
                     `}
                   >
                     {div.name}
@@ -164,8 +187,108 @@ export default function Divisions() {
           <div className="lg:w-[62%] relative overflow-hidden lg:pl-12 lg:py-2">
             <AnimatePresence mode="wait">
 
-              {/* Painel TECH */}
-              {active === 1 ? (
+              {/* Painel SPORTS */}
+              {active === 0 ? (
+                <motion.div
+                  key="sports"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.35, ease: EASE }}
+                  className="h-full flex flex-col"
+                  style={{
+                    background: 'oklch(8% 0.012 33)',
+                    border: '1px solid oklch(22% 0.04 33)',
+                    borderRadius: '0.25rem',
+                    padding: '2rem 2.5rem',
+                  }}
+                >
+                  {/* Número decorativo */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute bottom-0 right-6 font-display font-black leading-none select-none pointer-events-none text-[12rem] lg:text-[18rem] text-sports opacity-[0.04]"
+                  >
+                    01
+                  </span>
+
+                  <div className="relative z-10 flex flex-col gap-6 h-full justify-center">
+
+                    {/* Próximo torneio — destaque */}
+                    <div
+                      className="flex flex-col gap-2 p-4"
+                      style={{
+                        background: 'oklch(65% 0.21 33 / 0.1)',
+                        border: '1px solid oklch(65% 0.21 33 / 0.25)',
+                        borderRadius: '0.25rem',
+                      }}
+                    >
+                      <span
+                        className="font-ui text-[10px] tracking-widest uppercase font-bold"
+                        style={{ color: 'oklch(65% 0.21 33)' }}
+                      >
+                        ● Próximo torneio
+                      </span>
+                      <span
+                        className="font-display font-black text-xl lg:text-2xl leading-tight"
+                        style={{ color: 'oklch(93% 0.015 33)' }}
+                      >
+                        Open SPFC de Beach Tennis
+                      </span>
+                      <span
+                        className="font-ui text-sm"
+                        style={{ color: 'oklch(60% 0.08 33)' }}
+                      >
+                        29–31 mai · São Paulo · 400+ atletas
+                      </span>
+                    </div>
+
+                    {/* Outros torneios */}
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span
+                          className="font-ui text-xs"
+                          style={{ color: 'oklch(60% 0.08 33)' }}
+                        >
+                          Open DAMA Tom Beach
+                        </span>
+                        <span
+                          className="font-ui text-[10px] tracking-widest"
+                          style={{ color: 'oklch(45% 0.06 33)' }}
+                        >
+                          JUN
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between" style={{ opacity: 0.5 }}>
+                        <span
+                          className="font-ui text-xs line-through"
+                          style={{ color: 'oklch(60% 0.08 33)' }}
+                        >
+                          Open Santos ASSESP
+                        </span>
+                        <span
+                          className="font-ui text-[10px] tracking-widest"
+                          style={{ color: 'oklch(65% 0.21 33)' }}
+                        >
+                          ✓ ABR
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <Link
+                      href="/sports"
+                      className="inline-flex items-center gap-2 font-ui text-sm font-medium group/cta w-fit"
+                      style={{ color: 'oklch(65% 0.21 33)' }}
+                    >
+                      <span className="transition-transform duration-300 group-hover/cta:translate-x-1">→</span>
+                      Ver todos os torneios
+                    </Link>
+                  </div>
+                </motion.div>
+
+              ) : active === 1 ? (
+
+              /* Painel TECH */
                 <motion.div
                   key="tech"
                   initial={{ opacity: 0, y: 16 }}
@@ -251,7 +374,7 @@ export default function Divisions() {
 
               ) : (
 
-                /* Painel padrão (Sports / Studio) */
+                /* Painel padrão (Studio) */
                 <motion.div
                   key={current.number}
                   initial={{ opacity: 0, y: 16 }}

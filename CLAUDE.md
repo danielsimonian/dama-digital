@@ -25,16 +25,23 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 
 ## Current Status
 
-**Branch:** `main` (single active branch, no PRs open)
+**Branch ativa:** `main` (produção) + `redesign/publico` (em andamento)
 
-**Recent work (last 5 commits):**
+**Branch `main` — últimos commits:**
 - `b0c851a` — Poker bug fix
 - `5d0dfd8` — Added "Em Aberto" (unpaid balance) card to Sessions tab in client portal
 - `c8630de` — Full Serviços (Services) tab in client management — both admin + portal sides
-- `b18409b` — Fix: added `valor_mensal` / `descricao_mensal` to OrcamentoItem initial state
-- `29ce76e` — Orçamentos now support package types (`simples` vs `pacotes`) and monthly pricing
 
-The system is **production-ready and actively used**. Recent focus has been on the client portal (adding tabs, improving billing UX) and expanding quote capabilities.
+**Branch `redesign/publico` — redesign completo do site público:**
+- Preview Vercel: `dama-digital-git-redesign-publico-danielsimonian.vercel.app`
+- Home (Hero vídeo, Divisions spotlight, About, Portfolio, Contact)
+- Páginas de divisão: Sports · Tech · Studio — cada uma com estética própria
+- Tech: hero typewriter, serviços glitch, projetos SVG border, DAMA Labs com ícone frasco SVG animado, terminal macOS interativo como CTA
+- Ícone frasco Erlenmeyer em `app/tech/page.tsx`: bolhas internas, bolhas na superfície, bolhas que sobem e estouram fora do frasco, sombra `drop-shadow` direcional
+- Fontes: Epilogue (display) + Chivo (body) + JetBrains Mono (tech)
+- Design system OKLCH por divisão via classes `.theme-*`
+
+The system is **production-ready and actively used**. The redesign branch has a Vercel preview and is not yet merged to `main`.
 
 ---
 
