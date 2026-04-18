@@ -927,7 +927,7 @@ export default function DamaSportsPage() {
           </motion.div>
 
           <motion.div
-            className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 gap-14 lg:gap-20 mt-10 w-fit mx-auto"
+            className="flex flex-wrap justify-center gap-6 lg:gap-8 mt-10"
             initial="hidden"
             animate={clientsInView ? 'visible' : 'hidden'}
             variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
@@ -942,7 +942,7 @@ export default function DamaSportsPage() {
                 className="group flex items-center justify-center"
               >
                 <div
-                  className="relative w-28 h-28 lg:w-36 lg:h-36 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-105"
+                  className="relative w-24 aspect-square lg:w-28 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-105"
                   style={{ border: '1px solid oklch(80% 0.01 58)', backgroundColor: 'oklch(90% 0.01 58)' }}
                 >
                   <Image
