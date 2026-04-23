@@ -168,6 +168,22 @@ export default function Divisions() {
                     {div.name}
                   </span>
 
+                  {/* Badge "em breve" — Studio */}
+                  {i === 2 && (
+                    <span
+                      className="flex-shrink-0 font-mono text-[9px] tracking-widest uppercase px-1.5 py-0.5"
+                      style={{
+                        color: 'oklch(60% 0.17 148)',
+                        background: 'oklch(60% 0.17 148 / 0.1)',
+                        border: '1px solid oklch(60% 0.17 148 / 0.25)',
+                        borderRadius: '0.2rem',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
+                      em breve
+                    </span>
+                  )}
+
                   {/* Seta (quando ativo) */}
                   <span
                     className={`
