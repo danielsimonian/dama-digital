@@ -1,0 +1,9 @@
+{
+  "skills": [
+    {
+      "name": "orcamentos",
+      "description": "Gerador de Orçamentos DAMA — use quando pedir para criar, sugerir ou montar um orçamento",
+      "file": "../skills/orcamentos/SKILL.md"
+    }
+  ]
+}

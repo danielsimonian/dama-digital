@@ -1,28 +1,44 @@
+"use client"
+
+import { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
+
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
 export default function CTA() {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-10% 0px' });
+
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <section className="py-24 bg-gradient-to-br from-purple-900/50 via-gray-900 to-pink-900/50 relative overflow-hidden">
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
-      </div>
-      
-      <div className="container mx-auto px-6 text-center relative z-10">
-        <h2 className="text-4xl md:text-5xl font-bold mb-6">
-          Pronto para criar algo incrível?
-        </h2>
-        <p className="text-xl text-gray-300 mb-8">
-          Vamos transformar sua visão em realidade
-        </p>
-        <button onClick={() => scrollToSection('contato')} className="bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-gray-200 transition-all transform hover:scale-105">
-          Iniciar Conversa
-        </button>
+    <section className="py-section bg-background border-t border-border" ref={ref}>
+      <div className="container mx-auto px-6 lg:px-12">
+
+        <motion.div
+          className="max-w-3xl"
+          initial={{ opacity: 0, y: 28 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, ease: EASE }}
+        >
+          <h2 className="font-display font-black text-4xl lg:text-5xl text-foreground leading-tight tracking-headline mb-4">
+            Pronto para criar algo junto?
+          </h2>
+
+          <p className="font-body text-lg text-foreground-muted mb-10">
+            Conta pra gente o que você tem em mente.
+          </p>
+
+          <button
+            onClick={() => scrollToSection('contato')}
+            className="font-ui text-sm font-medium px-8 py-3 border border-foreground text-foreground hover:bg-foreground hover:text-background transition-colors duration-200"
+          >
+            Entrar em contato
+          </button>
+        </motion.div>
+
       </div>
     </section>
   );

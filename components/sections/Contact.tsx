@@ -1,29 +1,44 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import { Instagram, Youtube, MessageCircle } from 'lucide-react';
 import { socialLinks } from '@/lib/constants';
+
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+
+const socials = [
+  { label: 'Instagram', icon: Instagram, href: socialLinks.instagram, color: 'text-[#E1306C]' },
+  { label: 'YouTube', icon: Youtube, href: socialLinks.youtube, color: 'text-[#FF0000]' },
+  { label: 'WhatsApp', icon: MessageCircle, href: socialLinks.whatsapp, color: 'text-[#25D366]' },
+];
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
+};
 
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    message: ''
+    message: '',
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
-
     try {
       const response = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-
       if (response.ok) {
         setStatus('success');
         setFormData({ name: '', email: '', phone: '', message: '' });
@@ -31,122 +46,131 @@ export default function Contact() {
       } else {
         setStatus('error');
       }
-    } catch (error) {
+    } catch {
       setStatus('error');
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  return (
-    <section id="contato" className="py-24 bg-gray-900">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <span className="text-pink-400 font-semibold mb-2 block">CONTATO</span>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6">
-            Vamos Conversar?
-          </h2>
-          <p className="text-xl text-gray-400">
-            Como podemos te ajudar hoje? 😉
-          </p>
-        </div>
+  const inputClass =
+    'w-full bg-accent-subtle border border-border focus:border-foreground focus:outline-none ' +
+    'text-foreground placeholder:text-foreground-subtle font-body text-base ' +
+    'px-4 py-3 rounded-none transition-colors duration-200';
 
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-gradient-to-br from-white/5 to-white/10 p-8 md:p-12 rounded-2xl border border-white/10">
-            <form onSubmit={handleSubmit} className="space-y-4 mb-8">
-              <input 
+  return (
+    <section id="contato" className="py-section bg-background border-t border-border">
+      <div className="container mx-auto px-6 lg:px-12" ref={ref}>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+
+          {/* Esquerda — info + redes */}
+          <motion.div
+            className="flex flex-col gap-10"
+            initial="hidden"
+            animate={isInView ? 'visible' : 'hidden'}
+            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
+          >
+            <motion.div variants={itemVariants}>
+              <p className="font-ui text-xs tracking-editorial text-foreground-muted uppercase mb-4">
+                Contato
+              </p>
+              <h2 className="font-display font-black text-4xl lg:text-5xl text-foreground leading-tight tracking-headline">
+                Vamos conversar.
+              </h2>
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="flex flex-col gap-4">
+              <p className="font-body text-lg text-foreground-muted leading-relaxed max-w-sm">
+                Conta pra gente sobre o seu projeto — respondemos em até 24 horas.
+              </p>
+
+              <div className="flex items-center gap-5">
+                {socials.map(({ label, icon: Icon, href, color }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={label}
+                    className={`${color} opacity-70 hover:opacity-100 transition-opacity duration-200`}
+                  >
+                    <Icon size={26} />
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+
+          {/* Direita — formulário */}
+          <motion.div
+            initial={{ opacity: 0, y: 28 }}
+            animate={isInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.7, delay: 0.18, ease: EASE }}
+          >
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Seu nome" 
+                placeholder="Seu nome"
                 required
-                className="w-full bg-black/50 px-6 py-4 rounded-xl border border-white/10 focus:outline-none focus:border-purple-500 transition-colors text-white"
+                className={inputClass}
               />
-              <input 
+              <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Seu e-mail" 
+                placeholder="Seu e-mail"
                 required
-                className="w-full bg-black/50 px-6 py-4 rounded-xl border border-white/10 focus:outline-none focus:border-purple-500 transition-colors text-white"
+                className={inputClass}
               />
-              <input 
+              <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="Seu telefone" 
-                className="w-full bg-black/50 px-6 py-4 rounded-xl border border-white/10 focus:outline-none focus:border-purple-500 transition-colors text-white"
+                placeholder="Seu telefone"
+                className={inputClass}
               />
-              <textarea 
+              <textarea
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
-                placeholder="Conte-nos sobre seu projeto..." 
+                placeholder="Sobre o seu projeto..."
                 rows={5}
                 required
-                className="w-full bg-black/50 px-6 py-4 rounded-xl border border-white/10 focus:outline-none focus:border-purple-500 transition-colors text-white"
-              ></textarea>
-              
-              <button 
+                className={inputClass}
+              />
+
+              <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4 rounded-xl font-bold hover:shadow-2xl hover:shadow-purple-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="font-ui text-sm font-medium px-8 py-3 bg-foreground text-background hover:bg-accent hover:text-background transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
               >
-                {status === 'loading' ? 'Enviando...' : 'Enviar Mensagem'}
+                {status === 'loading' ? 'Enviando...' : 'Enviar mensagem →'}
               </button>
 
               {status === 'success' && (
-                <div className="bg-green-500/20 border border-green-500 text-green-400 px-4 py-3 rounded-xl text-center">
-                  ✅ Mensagem enviada com sucesso! Entraremos em contato em breve.
-                </div>
+                <p className="font-ui text-sm text-foreground-muted border border-border px-4 py-3">
+                  Mensagem enviada. Entraremos em contato em breve.
+                </p>
               )}
 
               {status === 'error' && (
-                <div className="bg-red-500/20 border border-red-500 text-red-400 px-4 py-3 rounded-xl text-center">
-                  ❌ Erro ao enviar mensagem. Tente novamente.
-                </div>
+                <p className="font-ui text-sm text-foreground-muted border border-border px-4 py-3">
+                  Erro ao enviar. Tente novamente.
+                </p>
               )}
             </form>
+          </motion.div>
 
-            <div className="flex justify-center space-x-4">
-              <a 
-                href={socialLinks.instagram} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                aria-label="Instagram"
-              >
-                <Instagram size={20} />
-              </a>
-              <a 
-                href={socialLinks.youtube} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                aria-label="YouTube"
-              >
-                <Youtube size={20} />
-              </a>
-              <a 
-                href={socialLinks.whatsapp} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center hover:scale-110 transition-transform"
-                aria-label="WhatsApp"
-              >
-                <MessageCircle size={20} />
-              </a>
-            </div>
-          </div>
         </div>
+
       </div>
     </section>
   );

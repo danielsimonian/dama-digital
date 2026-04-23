@@ -1,21 +1,28 @@
-// ============================================
-// ARQUIVO: app/layout.tsx
-// ATENÇÃO: Este arquivo JÁ EXISTE no projeto!
-// Substitua o conteúdo pelo código abaixo.
-// ============================================
-
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Epilogue, Chivo } from "next/font/google";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "@/components/providers";
 
-const inter = Inter({ subsets: ["latin"] });
+const epilogue = Epilogue({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-epilogue",
+  display: "swap",
+});
+
+const chivo = Chivo({
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  variable: "--font-chivo",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
-  title: "DAMA Digital - Agência Criativa",
-  description: "Transformamos ideias em experiências audiovisuais memoráveis"
+  title: "DAMA Digital — Criatividade com mais de uma saída",
+  description:
+    "Agência criativa brasileira com três divisões: DAMA Tech, DAMA Sports e DAMA Studio. Fundada por Daniel Simonian e Marcella Lima.",
 };
 
 export default function RootLayout({
@@ -24,8 +31,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+    <html
+      lang="pt-BR"
+      className={`${epilogue.variable} ${chivo.variable}`}
+      suppressHydrationWarning
+    >
+      <body suppressHydrationWarning>
         <Providers>
           {children}
         </Providers>
