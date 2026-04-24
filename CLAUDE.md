@@ -25,23 +25,20 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 
 ## Current Status
 
-**Branch ativa:** `main` (produção) + `redesign/publico` (em andamento)
+**Branch ativa:** `main` (produção)
 
-**Branch `main` — últimos commits:**
-- `b0c851a` — Poker bug fix
-- `5d0dfd8` — Added "Em Aberto" (unpaid balance) card to Sessions tab in client portal
-- `c8630de` — Full Serviços (Services) tab in client management — both admin + portal sides
-
-**Branch `redesign/publico` — redesign completo do site público:**
-- Preview Vercel: `dama-digital-git-redesign-publico-danielsimonian.vercel.app`
-- Home (Hero vídeo, Divisions spotlight, About, Portfolio, Contact)
+**Branch `main` — redesign completo em produção (merge de 23/04/2026):**
+- `062678f` — merge redesign/publico → main (redesign completo do site público)
+- `db26a68` — badge "em breve" no Studio na seção Divisions
+- Redesign inclui: Home (Hero, Divisions spotlight, About, Portfolio, Contact)
 - Páginas de divisão: Sports · Tech · Studio — cada uma com estética própria
-- Tech: hero typewriter, serviços glitch, projetos SVG border, DAMA Labs com ícone frasco SVG animado, terminal macOS interativo como CTA
-- Ícone frasco Erlenmeyer em `app/tech/page.tsx`: bolhas internas, bolhas na superfície, bolhas que sobem e estouram fora do frasco, sombra `drop-shadow` direcional
+- Tech: hero typewriter, serviços glitch, projetos SVG border, DAMA Labs com frasco SVG animado, terminal macOS interativo como CTA
 - Fontes: Epilogue (display) + Chivo (body) + JetBrains Mono (tech)
 - Design system OKLCH por divisão via classes `.theme-*`
 
-The system is **production-ready and actively used**. The redesign branch has a Vercel preview and is not yet merged to `main`.
+**Branch `redesign/publico`** — ainda existe, mas já foi mergeada. Próximo uso: redesign do admin/portal.
+
+The system is **production-ready and actively used**. O redesign público está no ar no domínio oficial.
 
 ---
 
@@ -84,7 +81,10 @@ app/
 ├── labs/
 │   ├── poker-pay/                # Cash game lobby, sessions, players, groups, ranking, report
 │   └── fidelidade/               # Loyalty store create + [slug] card view
-├── sports/ tech/ studio/         # Division landing pages
+├── sports/ tech/                 # Division landing pages
+├── studio/
+│   ├── page.tsx                  # Studio landing (Hero, Produção, Último Lançamento, Portfólio, Aulas, Distribuição, CTA)
+│   └── artistas/page.tsx         # Portfólio completo — grid de 13 artistas com placeholder de iniciais
 └── api/
     ├── send/                     # Contact form (Resend)
     ├── poker/                    # 7 endpoints: jogadores, session, grupos, inscricoes, historico
@@ -124,7 +124,7 @@ app/
 - **Root:** `/Users/danielsimonian/Documents/Claude/Projects/dama-digital`
 - **Git remote:** not confirmed, assume GitHub
 - **Branch:** `main`
-- **Untracked:** `.claude/`, `CLAUDE.md`, `skills/` (pending commit)
+- **MCP:** Supabase MCP configurado em `.mcp.json` (gitignored) com personal access token — disponível neste projeto ao reiniciar o Claude Code
 
 ### Key files to know
 
@@ -145,13 +145,14 @@ app/
 
 Based on code state and recent commits, likely priorities:
 
-1. **Conteúdo tab** in client portal — content/modules system (video, PDF, exercises, links, text) needs verification of completeness
-2. **Financeiro tab** — payment tracking and invoice visibility for clients
-3. **Quote PDF polish** — print CSS export could use layout refinement
-4. **Player profiles** in Poker Pay — `jogadores` DB in Redis, could grow to need persistent storage
-5. **Commit untracked files** — `.claude/`, `CLAUDE.md`, `skills/` not yet committed
+1. **Redesign do admin/portal** — próxima fase: novo visual + migração para Supabase Auth por cliente
+2. **RLS completo no Supabase** — `servicos` com RLS ativo (anon SELECT + authenticated ALL); outras tabelas precisam de auditoria
+3. **Vídeos reais** — placeholders ainda em produção (hero, tech, studio — sports já tem vídeo real)
+4. **Capas dos artistas** — `/studio` e `/studio/artistas` usam placeholder de iniciais; Daniel vai inserindo as imagens reais (salvar em `public/images/studio/`)
+5. **Configurar Resend** — `/api/send` existe mas não está configurado para envio em produção (formulários Tech terminal + Sports FichaInscricao)
 6. **Password hashing** for client portal access — currently plaintext in DB
-7. **Row-Level Security** audit on Supabase tables
+7. **Quote PDF polish** — print CSS export could use layout refinement
+8. **Home page** — será a última coisa a trabalhar (após Studio concluído)
 
 ---
 

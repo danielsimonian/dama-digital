@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { JetBrains_Mono } from 'next/font/google';
 
@@ -10,6 +10,9 @@ const mono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', displ
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
 const TECH_SERVICES = ['_01 Websites', '_02 Sistemas Web', '_03 Aplicativos', '_04 Automações'];
+
+const STUDIO_ARTISTS = ['SAID', 'Raffa Pereira', 'Karina Cyrillo', 'André Simonian', 'Caio Jack'];
+const STUDIO_RELEASES = ['I Miss You', 'Canto pra Guerreira', 'Te Quis', 'Lança, Vol. 01', 'Alto Mar'];
 
 const SPORTS_EVENTS = [
   { status: 'realizado', name: 'Open Santos ASSESP',        date: 'ABR 2026', stats: '250+ atletas · 14 cat · 13 quadras' },
@@ -62,6 +65,12 @@ export default function Divisions() {
   const [active, setActive] = useState(0);
   const [techGlitch, setTechGlitch] = useState(false);
   const [sportsImpact, setSportsImpact] = useState(false);
+  const [studioIdx, setStudioIdx] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setStudioIdx(i => (i + 1) % STUDIO_ARTISTS.length), 3000);
+    return () => clearInterval(t);
+  }, []);
 
   const current = divisions[active];
 
@@ -390,54 +399,118 @@ export default function Divisions() {
 
               ) : (
 
-                /* Painel padrão (Studio) */
+                /* Painel STUDIO */
                 <motion.div
-                  key={current.number}
+                  key="studio"
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.35, ease: EASE }}
                   className="h-full flex flex-col"
+                  style={{
+                    background: 'oklch(8% 0.012 148)',
+                    border: '1px solid oklch(22% 0.04 148)',
+                    borderRadius: '0.25rem',
+                    padding: '2rem 2.5rem',
+                  }}
                 >
-                  {/* Número decorativo de fundo */}
+                  {/* Número decorativo */}
                   <span
                     aria-hidden="true"
-                    className={`
-                      absolute top-0 right-0
-                      font-display font-black leading-none select-none pointer-events-none
-                      text-[10rem] lg:text-[16rem]
-                      ${current.textColor} opacity-[0.06]
-                    `}
+                    className="absolute bottom-0 right-6 font-display font-black leading-none select-none pointer-events-none text-[12rem] lg:text-[18rem] text-studio opacity-[0.04]"
                   >
-                    {current.number}
+                    03
                   </span>
 
-                  <div className="relative z-10 flex flex-col gap-6 lg:gap-8 h-full justify-center">
-                    <span className={`font-ui text-xs tracking-editorial uppercase ${current.textColor}`}>
-                      Divisão {current.number}
-                    </span>
+                  <div className="relative z-10 flex flex-col gap-5 h-full justify-center">
 
-                    <h2 className="font-display font-black text-4xl lg:text-5xl xl:text-6xl text-foreground leading-none tracking-headline">
-                      {current.name}
-                    </h2>
-
-                    <p className="font-body italic text-foreground-muted text-lg lg:text-xl leading-snug max-w-[32ch]">
-                      {current.anchor}
-                    </p>
-
-                    <div className={`border-t pt-6 ${current.borderColor} border-opacity-30`}>
-                      <p className="font-ui text-sm text-foreground-subtle leading-relaxed max-w-[42ch]">
-                        {current.description}
-                      </p>
+                    {/* Indicador REC */}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-2 h-2 rounded-full"
+                        style={{
+                          backgroundColor: 'oklch(60% 0.17 148)',
+                          animation: 'blink 1.4s step-end infinite',
+                        }}
+                      />
+                      <span
+                        className="font-ui text-[10px] tracking-widest uppercase font-bold"
+                        style={{ color: 'oklch(60% 0.17 148)' }}
+                      >
+                        Em Estúdio
+                      </span>
                     </div>
 
-                    <Link
-                      href={current.href}
-                      className={`inline-flex items-center gap-2 font-ui text-sm font-medium ${current.textColor} group/cta w-fit`}
+                    {/* Artista em destaque */}
+                    <div
+                      className="flex flex-col gap-1.5 p-4"
+                      style={{
+                        background: 'oklch(60% 0.17 148 / 0.08)',
+                        border: '1px solid oklch(60% 0.17 148 / 0.2)',
+                        borderRadius: '0.25rem',
+                      }}
                     >
-                      Conheça a {current.name}
-                      <span className="transition-transform duration-300 group-hover/cta:translate-x-1.5">→</span>
-                    </Link>
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={studioIdx}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{ duration: 0.3 }}
+                          className="flex flex-col gap-1"
+                        >
+                          <span
+                            className="font-display font-black text-xl lg:text-2xl leading-tight"
+                            style={{ color: 'oklch(93% 0.008 88)' }}
+                          >
+                            {STUDIO_ARTISTS[studioIdx]}
+                          </span>
+                          <span
+                            className="font-ui text-sm"
+                            style={{ color: 'oklch(55% 0.06 148)' }}
+                          >
+                            {STUDIO_RELEASES[studioIdx]}
+                          </span>
+                        </motion.div>
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Stat */}
+                    <div style={{ borderTop: '1px solid oklch(22% 0.04 148)', paddingTop: '1.25rem' }}>
+                      <span
+                        className="font-display font-black text-4xl lg:text-5xl leading-none"
+                        style={{ color: 'oklch(60% 0.17 148)' }}
+                      >
+                        12
+                      </span>
+                      <span
+                        className="font-ui text-xs tracking-widest uppercase block mt-1"
+                        style={{ color: 'oklch(40% 0.04 148)' }}
+                      >
+                        artistas produzidos
+                      </span>
+                    </div>
+
+                    {/* CTAs */}
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/studio/artistas"
+                        className="inline-flex items-center gap-2 font-ui text-sm font-medium group/cta w-fit"
+                        style={{ color: 'oklch(60% 0.17 148)' }}
+                      >
+                        <span className="transition-transform duration-300 group-hover/cta:translate-x-1">→</span>
+                        Ver portfólio completo
+                      </Link>
+                      <Link
+                        href="/studio"
+                        className="inline-flex items-center gap-2 font-ui text-sm group/cta2 w-fit"
+                        style={{ color: 'oklch(40% 0.04 148)' }}
+                      >
+                        <span className="transition-transform duration-300 group-hover/cta2:translate-x-1">→</span>
+                        Conheça o DAMA Studio
+                      </Link>
+                    </div>
+
                   </div>
                 </motion.div>
               )}
