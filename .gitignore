@@ -38,6 +38,7 @@ yarn-error.log*
 
 # claude code local settings (tokens, secrets)
 .claude/settings.local.json
+.claude/worktrees/
 .mcp.json
 
 # typescript
