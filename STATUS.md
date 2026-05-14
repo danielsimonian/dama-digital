@@ -1,31 +1,28 @@
 # STATUS.md — DAMA Digital
 
-**Last updated:** 2026-03-30
+**Last updated:** 2026-05-13
 
 ---
 
 ## Active Focus
 
-Client portal completeness — ensuring all four tabs (Sessões, Conteúdo, Financeiro, Serviços) are fully functional on both the admin and client-facing sides.
+Site público DAMA Studio — portfólio de artistas completo com capas reais e links Spotify.
 
 ---
 
-## Last Session Summary
+## Last Session Summary (13/05/2026)
 
-Five commits landed on `main`:
+Quatro commits em `main`:
 
-1. **Poker bug fix** (`b0c851a`) — unspecified fix in the Poker Pay system
-2. **"Em Aberto" card on Sessões tab** (`5d0dfd8`) — client portal now shows an open/unpaid balance summary card in the Sessions tab
-3. **Serviços tab — full implementation** (`c8630de`) — complete Services tab in both admin client management and client portal; this closes the last known missing tab
-4. **OrcamentoItem state fix** (`b18409b`) — `valor_mensal` and `descricao_mensal` were missing from the initial item state, causing bugs when creating new quote items
-5. **Package + monthly pricing support in quotes** (`29ce76e`) — orçamentos now support `tipo: 'pacotes'` with per-item package assignment and highlighted packages; monthly recurring values added to items
+1. **Limpeza do repo** (`08df077`) — removidos `poker-pay-app/`, `poker-control-*.md`, `.claude/worktrees/`; `.claude/launch.json` atualizado; `.gitignore` com `.claude/worktrees/`
+2. **Portfólio Studio + DAMA Tech** (`72f3f60`, 43 arquivos) — portfólio `/studio/artistas` completo: 15 artistas, 40+ releases, capas reais do Spotify, cards clicáveis → Spotify; `/studio` hero e portfólio atualizados; `/tech` hero com Maxwell e Escola Simonian, novo card Escola Simonian
+3. **Fix texto** (`036232c`) — "Ver todos os lançamentos" no portfólio preview da Studio
 
 ---
 
 ## Notes
 
-- `CLAUDE.md` and `STATUS.md` were written/updated this session and are currently **untracked** in git alongside `.claude/` and `skills/` — commit when ready
 - No open PRs or branches; all work lands directly on `main`
-- The Serviços tab completion likely closes the client portal MVP — next likely focus is content/financial tab polish or quote PDF output
-- Poker Pay had an unspecified fix; worth a quick regression check on cash game session save/load flow
-- `valor_mensal` / `descricao_mensal` fix suggests the monthly pricing feature was added but not fully tested before the Serviços sprint
+- `/studio/artistas`: capas faltando para Fernando Silveyra (não encontrado link Spotify via fetch) — já tem link mas a capa do Confiança foi atualizada via download direto
+- Pendências do site público: vídeos reais (hero, tech, studio), configurar Resend no `/api/send`
+- Admin/portal redesign continua sendo a próxima grande fase

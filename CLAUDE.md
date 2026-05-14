@@ -27,14 +27,22 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 
 **Branch ativa:** `main` (produção)
 
-**Branch `main` — redesign completo em produção (merge de 23/04/2026):**
+**Branch `main` — redesign completo em produção (merge de 23/04/2026), atualizado em 13/05/2026:**
 - `062678f` — merge redesign/publico → main (redesign completo do site público)
-- `db26a68` — badge "em breve" no Studio na seção Divisions
-- Redesign inclui: Home (Hero, Divisions spotlight, About, Portfolio, Contact)
-- Páginas de divisão: Sports · Tech · Studio — cada uma com estética própria
-- Tech: hero typewriter, serviços glitch, projetos SVG border, DAMA Labs com frasco SVG animado, terminal macOS interativo como CTA
-- Fontes: Epilogue (display) + Chivo (body) + JetBrains Mono (tech)
-- Design system OKLCH por divisão via classes `.theme-*`
+- `08df077` — limpeza do repo: remoção de poker-pay-app/, poker-control-*.md, .claude/worktrees/
+- `72f3f60` — portfólio Studio completo + atualizações DAMA Tech (43 arquivos)
+- `036232c` — fix texto portfólio Studio
+
+**Studio (`/studio` + `/studio/artistas`) — estado atual (13/05/2026):**
+- `/studio/artistas`: 15 artistas, 40+ releases com capas reais do Spotify, cards clicáveis → Spotify
+- `/studio`: hero cicla 15 artistas com gênero, portfólio preview com 4 lançamentos 2026, stats atualizados (15 artistas · +40 lançamentos · 12+ anos), link "Ouvir no Spotify" no Último Lançamento
+- Padrão de imagens: `public/images/studio/[artista]-[release].jpg`
+- Spotify URLs em campo `spotify: string | null` — cards com link viram `<a>`, sem link ficam `<div>`
+
+**DAMA Tech (`/tech`) — estado atual (13/05/2026):**
+- Hero typewriter: 5 projetos → Maxwell Rodrigues + Escola Simonian de Música adicionados
+- Projetos: Maxwell URL → maxwellrodrigues.com · Escola Simonian adicionada com logo verde
+- Número decorativo "02" no hero removido
 
 **Branch `redesign/publico`** — ainda existe, mas já foi mergeada. Próximo uso: redesign do admin/portal.
 
@@ -84,7 +92,7 @@ app/
 ├── sports/ tech/                 # Division landing pages
 ├── studio/
 │   ├── page.tsx                  # Studio landing (Hero, Produção, Último Lançamento, Portfólio, Aulas, Distribuição, CTA)
-│   └── artistas/page.tsx         # Portfólio completo — grid de 13 artistas com placeholder de iniciais
+│   └── artistas/page.tsx         # Portfólio completo — grid de 15 artistas, 40+ releases com capas Spotify
 └── api/
     ├── send/                     # Contact form (Resend)
     ├── poker/                    # 7 endpoints: jogadores, session, grupos, inscricoes, historico
