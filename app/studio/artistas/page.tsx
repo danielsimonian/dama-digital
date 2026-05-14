@@ -22,103 +22,59 @@ const TYPE_LABEL: Record<string, string> = {
   CD: 'Álbum',
 }
 
+const SP = 'https://open.spotify.com/album/'
+
 const artists = [
-  {
-    name: 'Fernando Silveyra',
-    lastRelease: 'Confiança',
-    year: 2026,
-    type: 'CD',
-    cover: '/images/studio/fernando-silveyra-confianca.jpg',
-    initials: 'FS',
-  },
-  {
-    name: 'SAID',
-    lastRelease: 'I Miss You',
-    year: 2023,
-    type: 'Single',
-    cover: null,
-    initials: 'SA',
-  },
-  {
-    name: 'Raffa Pereira',
-    lastRelease: 'Canto pra Guerreira',
-    year: 2022,
-    type: 'Single',
-    cover: null,
-    initials: 'RP',
-  },
-  {
-    name: 'André Simonian',
-    lastRelease: 'Lança, Vol. 01',
-    year: 2022,
-    type: 'EP',
-    cover: null,
-    initials: 'AS',
-  },
-  {
-    name: 'Karina Cyrillo',
-    lastRelease: 'Te Quis',
-    year: 2022,
-    type: 'Single',
-    cover: null,
-    initials: 'KC',
-  },
-  {
-    name: 'Caio Jack',
-    lastRelease: 'Alto Mar',
-    year: 2022,
-    type: 'Single',
-    cover: null,
-    initials: 'CJ',
-  },
-  {
-    name: 'Lopes.Inc',
-    lastRelease: 'Uma Despedida Espanhola',
-    year: 2021,
-    type: 'Single',
-    cover: null,
-    initials: 'LI',
-  },
-  {
-    name: 'Caio Simonian',
-    lastRelease: 'Voz, violão e vassoura',
-    year: 2021,
-    type: 'CD',
-    cover: null,
-    initials: 'CS',
-  },
-  {
-    name: 'Intemporal',
-    lastRelease: 'Anseio',
-    year: 2020,
-    type: 'Single',
-    cover: null,
-    initials: 'IN',
-  },
-  {
-    name: 'Marcella Lima',
-    lastRelease: 'Temporal',
-    year: 2020,
-    type: 'Single',
-    cover: null,
-    initials: 'ML',
-  },
-  {
-    name: 'Marcos Alves',
-    lastRelease: 'Amanhecerá',
-    year: 2016,
-    type: 'CD',
-    cover: null,
-    initials: 'MA',
-  },
-  {
-    name: 'Kayoko Yamabe',
-    lastRelease: 'Lembrança do Brasil',
-    year: 2012,
-    type: 'CD',
-    cover: null,
-    initials: 'KY',
-  },
+  // 2026
+  { name: 'Fernando Silveyra',  lastRelease: 'Confiança',                               year: 2026, type: 'CD',     cover: '/images/studio/fernando-silveyra-confianca.jpg',                 initials: 'FS', spotify: `${SP}67dv685dARviuHRS8K5jVF` },
+  { name: 'Fábio Zulli',        lastRelease: 'Nico Manezinho',                           year: 2026, type: 'Single', cover: '/images/studio/fabio-zulli-nico-manezinho.jpg',                   initials: 'FZ', spotify: `${SP}7Ly3VKT8LgL0TULQpIfvO5` },
+  { name: 'SAID',               lastRelease: 'Find Love',                                year: 2026, type: 'Single', cover: '/images/studio/said-find-love.jpg',                               initials: 'SA', spotify: `${SP}2Fmk8IR5DvSVZhWEXdKrnU` },
+  { name: 'Antonio Eduardo',    lastRelease: 'MRB — Revisitando Guerra Peixe',           year: 2026, type: 'CD',     cover: '/images/studio/antonio-eduardo-revisitando-guerra-peixe.jpg',     initials: 'AE', spotify: `${SP}73qBHEp5bTTe6f3QvKvFVe` },
+  { name: 'Antonio Eduardo',    lastRelease: 'MRB — Miniaturas Secretas de Harry Crowl', year: 2026, type: 'EP',     cover: '/images/studio/antonio-eduardo-miniaturas-secretas.jpg',           initials: 'AE', spotify: `${SP}64zyVmjoOZq6tZbbWUh3Kj` },
+  { name: 'Antonio Eduardo',    lastRelease: 'MRB — Compositores Baianos',               year: 2026, type: 'Single', cover: '/images/studio/antonio-eduardo-compositores-baianos.jpg',         initials: 'AE', spotify: `${SP}7577b5w14KGTojPpKKuJW8` },
+  // 2025
+  { name: 'André Simonian',     lastRelease: 'Manifesto',                                year: 2025, type: 'Single', cover: '/images/studio/andre-simonian-manifesto.jpg',                     initials: 'AS', spotify: `${SP}1MzPmMFTOFKqG0Hk13zpJ0` },
+  { name: 'André Simonian',     lastRelease: 'Nosso Grande Alento',                      year: 2025, type: 'Single', cover: '/images/studio/andre-simonian-nosso-grande-alento.jpg',           initials: 'AS', spotify: `${SP}5k98tQ1r7mN09SCkj7w8Rz` },
+  { name: 'SAID',               lastRelease: 'Tik Tok',                                  year: 2025, type: 'Single', cover: '/images/studio/said-tik-tok.jpg',                                 initials: 'SA', spotify: `${SP}0PsMhzZxCD95ucZ1LVIi5m` },
+  { name: 'SAID',               lastRelease: 'Vontade Louca',                            year: 2025, type: 'Single', cover: '/images/studio/said-vontade-louca.jpg',                           initials: 'SA', spotify: `${SP}6ak4VamDvkhS1ABem0Guxj` },
+  // 2024
+  { name: 'José Simonian',      lastRelease: 'Houve as Nossas Canções',                  year: 2024, type: 'CD',     cover: '/images/studio/jose-simonian-houve-as-nossas-cancoes.jpg',        initials: 'JS', spotify: `${SP}02d1YLgTKflDku4qvTZ9px` },
+  { name: 'André Simonian',     lastRelease: 'Notícias do Brasil',                       year: 2024, type: 'Single', cover: '/images/studio/andre-simonian-noticias-do-brasil.jpg',            initials: 'AS', spotify: `${SP}6VOpqlnhDgiQVG96v724nA` },
+  { name: 'SAID',               lastRelease: 'My Head',                                  year: 2024, type: 'Single', cover: '/images/studio/said-my-head.jpg',                                 initials: 'SA', spotify: `${SP}2ZiCJ3KFbqNHeK9JzWKXIQ` },
+  { name: 'SAID',               lastRelease: 'Impact',                                   year: 2024, type: 'EP',     cover: '/images/studio/said-impact.jpg',                                  initials: 'SA', spotify: `${SP}2FiObNM2Ofmi8iJAMb0vQy` },
+  // 2023
+  { name: 'SAID',               lastRelease: 'I Miss You',                               year: 2023, type: 'Single', cover: '/images/studio/said-i-miss-you.jpg',                             initials: 'SA', spotify: `${SP}59E6uGIkrEsmcHJBgrNEZD` },
+  { name: 'Fábio Zulli',        lastRelease: 'Cantando Poeminhas',                       year: 2023, type: 'CD',     cover: '/images/studio/fabio-zulli-cantando-poeminhas.jpg',               initials: 'FZ', spotify: `${SP}4cTFV6okjccoHws49DWqjm` },
+  // 2022
+  { name: 'Raffa Pereira',      lastRelease: 'Canto pra Guerreira',                      year: 2022, type: 'Single', cover: '/images/studio/raffa-pereira-canto-pra-guerreira.jpg',           initials: 'RP', spotify: `${SP}29jva9tHQt3oEN16jj1S7c` },
+  { name: 'André Simonian',     lastRelease: 'Davi',                                     year: 2022, type: 'Single', cover: '/images/studio/andre-simonian-davi.jpg',                         initials: 'AS', spotify: `${SP}70zO6tf122ISeDYj5qTuXy` },
+  { name: 'André Simonian',     lastRelease: 'Lança, Vol. 01',                           year: 2022, type: 'EP',     cover: '/images/studio/andre-simonian-lanca-vol-01.jpg',                 initials: 'AS', spotify: `${SP}4ow20X22JNmtQ79eguZEBi` },
+  { name: 'André Simonian',     lastRelease: 'Porta Aberta',                             year: 2022, type: 'Single', cover: '/images/studio/andre-simonian-porta-aberta.jpg',                 initials: 'AS', spotify: `${SP}4NhrlydeGdVofo2oZImRAl` },
+  { name: 'SAID',               lastRelease: 'Le Petit',                                 year: 2022, type: 'Single', cover: '/images/studio/said-le-petit.jpg',                               initials: 'SA', spotify: `${SP}05rHHXhl6P9L3TyCbzEfsK` },
+  { name: 'SAID',               lastRelease: 'Pode Falar',                               year: 2022, type: 'Single', cover: '/images/studio/said-pode-falar.jpg',                             initials: 'SA', spotify: `${SP}7ugyDTQKie5NdqmrVfhjK6` },
+  { name: 'Karina Cyrillo',     lastRelease: 'Te Quis',                                  year: 2022, type: 'Single', cover: '/images/studio/karina-cyrillo-te-quis.jpg',                      initials: 'KC', spotify: `${SP}3WzDvd9SCgBkM07JAqTp3Z` },
+  { name: 'Caio Jack',          lastRelease: 'Alto Mar',                                 year: 2022, type: 'Single', cover: '/images/studio/caio-jack-alto-mar.jpg',                    initials: 'CJ', spotify: `${SP}5dO6YvY2Jn4zOVgp69kKoI` },
+  { name: 'Caio Jack',          lastRelease: 'Dia de Sol',                               year: 2022, type: 'Single', cover: '/images/studio/caio-jack-dia-de-sol.jpg',                         initials: 'CJ', spotify: `${SP}5ydCucHC5INf5CDd3rGFTc` },
+  // 2021
+  { name: 'Karina Cyrillo',     lastRelease: 'Ella',                                     year: 2021, type: 'Single', cover: '/images/studio/karina-cyrillo-ella.jpg',                         initials: 'KC', spotify: `${SP}1zPhcya15SVrFsHtu1bPa0` },
+  { name: 'Karina Cyrillo',     lastRelease: 'Passarinho',                               year: 2021, type: 'Single', cover: '/images/studio/karina-cyrillo-passarinho.jpg',                   initials: 'KC', spotify: `${SP}6KUFOCJy12OvFKYIFnfE3k` },
+  { name: 'Raffa Pereira',      lastRelease: 'Ai Amor',                                  year: 2021, type: 'Single', cover: '/images/studio/raffa-pereira-ai-amor.jpg',                       initials: 'RP', spotify: `${SP}4j8hnS5S74opp7vfPtHlNA` },
+  { name: 'Raffa Pereira',      lastRelease: 'Liberdade Dança',                          year: 2021, type: 'Single', cover: '/images/studio/raffa-pereira-liberdade-danca.jpg',               initials: 'RP', spotify: `${SP}4UDoKOwmykXxaWZ0a1t9Bk` },
+  { name: 'Lopes.Inc',          lastRelease: 'Amor de Carnaval',                         year: 2021, type: 'Single', cover: '/images/studio/lopes-inc-amor-de-carnaval.jpg',             initials: 'LI', spotify: `${SP}4X0DyS8vgnj4UNfpgSguoR` },
+  { name: 'Caio Simonian',      lastRelease: 'Voz, violão e vassoura',                   year: 2021, type: 'CD',     cover: '/images/studio/caio-simonian-voz-violao-e-vassoura.jpg',         initials: 'CS', spotify: `${SP}36wB8Ss6R8cOjKvIEvgYv6` },
+  // 2020
+  { name: 'Karina Cyrillo',     lastRelease: 'Cicatrizes',                               year: 2020, type: 'Single', cover: '/images/studio/karina-cyrillo-cicatrizes.jpg',                   initials: 'KC', spotify: `${SP}4kWeggaKmaDk3EgYICk1iL` },
+  { name: 'Karina Cyrillo',     lastRelease: 'Acústicas',                                year: 2020, type: 'EP',     cover: '/images/studio/karina-cyrillo-acusticas.jpg',                    initials: 'KC', spotify: `${SP}5Wj422coBpJpNVZzjatY4l` },
+  { name: 'Intemporal',         lastRelease: 'Anseio',                                   year: 2020, type: 'Single', cover: '/images/studio/intemporal-anseio.jpg',                        initials: 'IN', spotify: `${SP}4bEMPiBcCmD6GlrI5NmZhc` },
+  { name: 'Intemporal',         lastRelease: 'Espelho',                                  year: 2020, type: 'Single', cover: '/images/studio/intemporal-espelho.jpg',                             initials: 'IN', spotify: `${SP}6wiL2pjHPkdaJzn2r8jSxL` },
+  { name: 'Intemporal',         lastRelease: 'Não Dá Mais',                              year: 2020, type: 'Single', cover: '/images/studio/intemporal-nao-da-mais.jpg',                         initials: 'IN', spotify: `${SP}45VqKZ1MQ6uFQ0dBLw0ryA` },
+  { name: 'Daniel Simonian & Marcella Lima', lastRelease: 'Temporal (Acústico)',         year: 2020, type: 'Single', cover: '/images/studio/daniel-marcella-temporal-acustico.jpg',            initials: 'DM', spotify: `${SP}4y0hnnmdJbGh8JKqjCzt3B` },
+  // 2016
+  { name: 'Marcos Alves',       lastRelease: 'Amanhecerá',                               year: 2016, type: 'CD',     cover: '/images/studio/marcos-alves-amanhacera.jpg',                     initials: 'MA', spotify: `${SP}0LxOuQHgwSduQyHYj1AAdS` },
+  // 2015
+  { name: 'Fernando Silveyra',  lastRelease: 'Labaredas',                               year: 2015, type: 'CD',     cover: '/images/studio/fernando-silveyra-labaredas.jpg',                 initials: 'FS', spotify: `${SP}7G5RewztShPZLZnH1mifjR` },
+  // 2012
+  { name: 'Kayoko Yamabe',      lastRelease: 'Lembrança do Brasil',                      year: 2012, type: 'CD',     cover: null,                                                             initials: 'KY', spotify: null },
 ]
 
 function ArtistCover({ artist }: { artist: typeof artists[0] }) {
@@ -177,7 +133,7 @@ function ArtistCover({ artist }: { artist: typeof artists[0] }) {
 }
 
 function ArtistCard({ artist, index }: { artist: typeof artists[0]; index: number }) {
-  return (
+  const card = (
     <motion.div
       className="group flex flex-col"
       variants={{
@@ -231,6 +187,16 @@ function ArtistCard({ artist, index }: { artist: typeof artists[0]; index: numbe
       </div>
     </motion.div>
   )
+
+  if (artist.spotify) {
+    return (
+      <a href={artist.spotify} target="_blank" rel="noopener noreferrer" className="block">
+        {card}
+      </a>
+    )
+  }
+
+  return card
 }
 
 export default function ArtistasPage() {
@@ -293,7 +259,7 @@ export default function ArtistasPage() {
                   className="max-w-sm text-base leading-relaxed"
                   style={{ fontFamily: 'var(--font-body)', color: MUTED }}
                 >
-                  {artists.length} artistas produzidos ao longo de mais de uma década de estúdio.
+                  Mais de {artists.length} lançamentos produzidos ao longo de mais de uma década de estúdio.
                 </p>
               </div>
             </motion.div>
@@ -313,7 +279,7 @@ export default function ArtistasPage() {
               variants={{ hidden: {}, visible: {} }}
             >
               {artists.map((artist, i) => (
-                <ArtistCard key={artist.name} artist={artist} index={i} />
+                <ArtistCard key={`${artist.name}-${artist.lastRelease}`} artist={artist} index={i} />
               ))}
             </motion.div>
           </div>

@@ -17,11 +17,21 @@ const MUTED  = 'oklch(50% 0.03 85)';
 const ACCENT = 'oklch(60% 0.17 148)';
 
 const heroArtists = [
-  { name: 'Raffa Pereira',    genre: 'MPB & Jazz' },
-  { name: 'SAID',             genre: 'Pop Music' },
-  { name: 'Karina Cyrillo',   genre: 'Pop' },
-  { name: 'André Simonian',   genre: 'Jazz / Instrumental' },
-  { name: 'Fernando Silveyra',genre: 'MPB' },
+  { name: 'Fernando Silveyra',              genre: 'MPB' },
+  { name: 'SAID',                           genre: 'Pop' },
+  { name: 'Antonio Eduardo',               genre: 'Música Clássica Brasileira' },
+  { name: 'André Simonian',                genre: 'Pop / MPB' },
+  { name: 'José Simonian',                 genre: 'MPB / Clássico' },
+  { name: 'Fábio Zulli',                   genre: 'Música Infantil' },
+  { name: 'Raffa Pereira',                 genre: 'MPB & Jazz' },
+  { name: 'Karina Cyrillo',                genre: 'Pop' },
+  { name: 'Caio Jack',                     genre: 'Pop' },
+  { name: 'Lopes.Inc',                     genre: 'Pop' },
+  { name: 'Caio Simonian',                 genre: 'Jazz / MPB' },
+  { name: 'Intemporal',                    genre: 'Rock' },
+  { name: 'Daniel Simonian & Marcella Lima', genre: 'MPB' },
+  { name: 'Marcos Alves',                  genre: 'MPB' },
+  { name: 'Kayoko Yamabe',                 genre: 'Música Clássica' },
 ];
 
 const ultimoLancamento = {
@@ -32,13 +42,14 @@ const ultimoLancamento = {
   type: 'CD',
   cover: '/images/studio/fernando-silveyra-confianca.jpg',
   initials: 'FS',
+  spotify: 'https://open.spotify.com/album/67dv685dARviuHRS8K5jVF',
 };
 
 const portfolioPreview = [
-  { name: 'Raffa Pereira',    release: 'Canto pra Guerreira', year: 2022, cover: null, initials: 'RP' },
-  { name: 'Karina Cyrillo',   release: 'Te Quis',             year: 2022, cover: null, initials: 'KC' },
-  { name: 'André Simonian',   release: 'Lança, Vol. 01',      year: 2022, cover: null, initials: 'AS' },
-  { name: 'Fernando Silveyra',release: 'Labaredas',           year: 2016, cover: null, initials: 'FS' },
+  { name: 'Fernando Silveyra', release: 'Confiança',                    year: 2026, cover: '/images/studio/fernando-silveyra-confianca.jpg',               initials: 'FS' },
+  { name: 'Fábio Zulli',       release: 'Nico Manezinho',               year: 2026, cover: '/images/studio/fabio-zulli-nico-manezinho.jpg',                 initials: 'FZ' },
+  { name: 'SAID',              release: 'Find Love',                    year: 2026, cover: '/images/studio/said-find-love.jpg',                             initials: 'SA' },
+  { name: 'Antonio Eduardo',   release: 'MRB — Revisitando Guerra Peixe', year: 2026, cover: '/images/studio/antonio-eduardo-revisitando-guerra-peixe.jpg', initials: 'AE' },
 ];
 
 const producaoInclui = [
@@ -210,9 +221,9 @@ export default function DamaStudioPage() {
               {/* Stats */}
               <div className="flex gap-10">
                 {[
-                  { n: '12+', label: 'artistas' },
-                  { n: '50+', label: 'lançamentos' },
-                  { n: '5+',  label: 'anos' },
+                  { n: '15',  label: 'artistas' },
+                  { n: '+40', label: 'lançamentos' },
+                  { n: '12+', label: 'anos' },
                 ].map(s => (
                   <div key={s.label}>
                     <p style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '2.5rem', color: ACCENT, lineHeight: 1 }}>
@@ -380,16 +391,30 @@ export default function DamaStudioPage() {
                 </p>
               </div>
 
-              <Link
-                href="/studio/artistas"
-                className="inline-flex items-center gap-2 mt-2 group/link w-fit text-sm"
-                style={{ fontFamily: 'var(--font-ui)', color: MUTED }}
-                onMouseEnter={e => { e.currentTarget.style.color = ACCENT }}
-                onMouseLeave={e => { e.currentTarget.style.color = MUTED }}
-              >
-                Ver todos os lançamentos
-                <span className="transition-transform duration-300 group-hover/link:translate-x-1">→</span>
-              </Link>
+              <div className="flex flex-wrap items-center gap-4 mt-2">
+                <a
+                  href={ultimoLancamento.spotify}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 group/spotify text-sm"
+                  style={{ fontFamily: 'var(--font-ui)', color: ACCENT }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.7' }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+                >
+                  <span className="transition-transform duration-300 group-hover/spotify:translate-x-1">→</span>
+                  Ouvir no Spotify
+                </a>
+                <Link
+                  href="/studio/artistas"
+                  className="inline-flex items-center gap-2 group/link w-fit text-sm"
+                  style={{ fontFamily: 'var(--font-ui)', color: MUTED }}
+                  onMouseEnter={e => { e.currentTarget.style.color = ACCENT }}
+                  onMouseLeave={e => { e.currentTarget.style.color = MUTED }}
+                >
+                  Ver todos os lançamentos
+                  <span className="transition-transform duration-300 group-hover/link:translate-x-1">→</span>
+                </Link>
+              </div>
             </motion.div>
 
           </div>
@@ -423,7 +448,7 @@ export default function DamaStudioPage() {
               className="inline-flex items-center gap-2 shrink-0 group/link"
               style={{ fontFamily: 'var(--font-ui)', color: ACCENT, fontSize: '0.8rem', letterSpacing: '0.04em' }}
             >
-              Ver todos os 12 artistas
+              Ver todos os 15 artistas
               <span className="transition-transform duration-300 group-hover/link:translate-x-1">→</span>
             </Link>
           </motion.div>

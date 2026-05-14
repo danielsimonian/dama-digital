@@ -59,7 +59,15 @@ const projects = [
     brandColor: '#C9A227',
     logo: '/images/projects/maxwell-logo.png',
     desc: 'Site pessoal do apresentador do PORTO 360 (TV Globo) e maior influenciador portuário do Brasil — identidade visual, seções de destaque, palestras e contato.',
-    href: 'https://maxwellrodrigues.damadigitalcriativa.com.br',
+    href: 'https://maxwellrodrigues.com',
+  },
+  {
+    tag: 'site institucional · música',
+    brandName: 'Escola Simonian de Música',
+    brandColor: '#52B735',
+    logo: '/images/projects/simonian-logo.png',
+    desc: 'Site institucional da Escola Simonian de Música — cursos, professores, agenda e matrícula online.',
+    href: 'https://escolasimonian.com.br',
   },
 ];
 
@@ -67,6 +75,8 @@ const heroProjects = [
   { name: 'ClinUp.', subtitle: 'Gestão para clínicas — agendamento, prontuário e financeiro em um só sistema.' },
   { name: 'RankingBT.com.br', subtitle: 'Plataforma de ranking e torneios de beach tennis com pontuação em tempo real.' },
   { name: 'PlayStock.app', subtitle: 'Estoque centralizado para redes de varejo — alertas, transferências e relatórios.' },
+  { name: 'maxwellrodrigues.com', subtitle: 'Apresentador do PORTO 360 (TV Globo) — identidade e presença digital.' },
+  { name: 'escolasimonian.com.br', subtitle: 'Escola de música — cursos, agenda e matrícula online.' },
 ];
 
 function TypewriterText({ texts, onIndexChange, typeSpeed = 40, deleteSpeed = 15, pauseMs = 5000 }: { texts: string[]; onIndexChange?: (i: number) => void; typeSpeed?: number; deleteSpeed?: number; pauseMs?: number }) {
@@ -523,24 +533,7 @@ export default function DamaTechPage() {
         />
         <div className="absolute inset-0" style={{ backgroundColor: 'oklch(8% 0.015 262 / 0.82)' }} />
 
-        {/* Número decorativo */}
-        <span
-          className="absolute select-none pointer-events-none"
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontWeight: 900,
-            fontSize: '18vw',
-            color: 'var(--color-tech)',
-            opacity: 0.04,
-            bottom: '-2rem',
-            right: 0,
-            lineHeight: 1,
-          }}
-        >
-          02
-        </span>
-
-        <div className="absolute inset-0 flex flex-col justify-center">
+<div className="absolute inset-0 flex flex-col justify-center">
           <div className="container mx-auto px-6 lg:px-12">
 
             <p
@@ -554,7 +547,7 @@ export default function DamaTechPage() {
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 900,
-                fontSize: 'clamp(3rem, 8vw, 7.5rem)',
+                fontSize: 'clamp(2.5rem, 6vw, 6rem)',
                 color: 'oklch(97% 0.006 58)',
                 lineHeight: 1,
                 letterSpacing: '-0.03em',
