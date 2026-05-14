@@ -448,7 +448,7 @@ export default function DamaStudioPage() {
               className="inline-flex items-center gap-2 shrink-0 group/link"
               style={{ fontFamily: 'var(--font-ui)', color: ACCENT, fontSize: '0.8rem', letterSpacing: '0.04em' }}
             >
-              Ver todos os 15 artistas
+              Ver todos os lançamentos
               <span className="transition-transform duration-300 group-hover/link:translate-x-1">→</span>
             </Link>
           </motion.div>
