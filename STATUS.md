@@ -1,28 +1,36 @@
 # STATUS.md — DAMA Digital
 
-**Last updated:** 2026-05-13
+**Last updated:** 2026-05-15
 
 ---
 
 ## Active Focus
 
-Site público DAMA Studio — portfólio de artistas completo com capas reais e links Spotify.
+Site público — home redesign concluído. Próxima fase: redesign do admin/portal.
 
 ---
 
-## Last Session Summary (13/05/2026)
+## Last Session Summary (15/05/2026)
 
-Quatro commits em `main`:
+Um commit em `main`: `2d6ddfc` — redesign home + atualizações DAMA Sports
 
-1. **Limpeza do repo** (`08df077`) — removidos `poker-pay-app/`, `poker-control-*.md`, `.claude/worktrees/`; `.claude/launch.json` atualizado; `.gitignore` com `.claude/worktrees/`
-2. **Portfólio Studio + DAMA Tech** (`72f3f60`, 43 arquivos) — portfólio `/studio/artistas` completo: 15 artistas, 40+ releases, capas reais do Spotify, cards clicáveis → Spotify; `/studio` hero e portfólio atualizados; `/tech` hero com Maxwell e Escola Simonian, novo card Escola Simonian
-3. **Fix texto** (`036232c`) — "Ver todos os lançamentos" no portfólio preview da Studio
+**Home:**
+- Hero reescrito: headline ciclante "Seu [evento/sistema/música] merece mais.", vídeo com overlay, stats bar, 3 CTAs por divisão
+- About redesenhado: layout editorial 2 colunas, retratos 3:4, stats globais (20+ anos · 3 divisões · 100+ projetos)
+- Portfolio: círculos corrigidos (object-contain + overflow-hidden + aspect-square), IFBT adicionado
+- Divisions: Seletiva Pan-Americano substituiu Open Tom Beach; badge "em breve" Studio removido; painel Studio com lista de 5 serviços
+
+**DAMA Sports:**
+- Seletiva Seleção Brasileira Pan-Americano IFBT (23-24/mai) substituiu Open Tom Beach; link LetzPlay atualizado
+- Logo DAMA Sports no nav com inversão CSS (branco no hero via `brightness-0 invert`, preto ao rolar)
+- Parceiro IFBT adicionado (home + sports)
+- Círculos de logos corrigidos
 
 ---
 
 ## Notes
 
 - No open PRs or branches; all work lands directly on `main`
-- `/studio/artistas`: capas faltando para Fernando Silveyra (não encontrado link Spotify via fetch) — já tem link mas a capa do Confiança foi atualizada via download direto
-- Pendências do site público: vídeos reais (hero, tech, studio), configurar Resend no `/api/send`
-- Admin/portal redesign continua sendo a próxima grande fase
+- Site público completo: home ✅ sports ✅ tech ✅ studio ✅
+- Pendências: vídeos reais (hero, tech, studio — sports já tem), configurar Resend no `/api/send`
+- Admin/portal redesign é a próxima grande fase

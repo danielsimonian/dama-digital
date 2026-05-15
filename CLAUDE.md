@@ -27,11 +27,23 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 
 **Branch ativa:** `main` (produção)
 
-**Branch `main` — redesign completo em produção (merge de 23/04/2026), atualizado em 13/05/2026:**
+**Branch `main` — redesign completo em produção (merge de 23/04/2026), atualizado em 15/05/2026:**
+- `2d6ddfc` — redesign home + atualizações DAMA Sports (15/05/2026)
 - `062678f` — merge redesign/publico → main (redesign completo do site público)
 - `08df077` — limpeza do repo: remoção de poker-pay-app/, poker-control-*.md, .claude/worktrees/
 - `72f3f60` — portfólio Studio completo + atualizações DAMA Tech (43 arquivos)
-- `036232c` — fix texto portfólio Studio
+
+**Home (`/`) — estado atual (15/05/2026):**
+- Hero: headline ciclante "Seu evento / Seu sistema / Sua música merece mais." com cor por divisão, vídeo placeholder, stats bar (20+ anos · 3 divisões · 100+ projetos), 3 CTAs por divisão
+- Divisions: spotlight interativo com painéis temáticos por divisão; Seletiva Pan-Americano substituiu Open Tom Beach; badge "em breve" do Studio removido; painel Studio lista 5 serviços
+- About: layout editorial 2 colunas — eyebrow+headline+texto+stats à esquerda, retratos 3:4 dos fundadores à direita
+- Portfolio: logos em círculos corrigidos (object-contain + overflow-hidden + aspect-square); IFBT adicionado
+
+**DAMA Sports (`/sports`) — estado atual (15/05/2026):**
+- Torneios: Seletiva Seleção Brasileira Pan-Americano IFBT (23-24/mai, Santos) substituiu Open Tom Beach; Open SPFC (29-31/mai) mantido; link LetzPlay: letzplay.me/assespgonzaga/tourneys/57445
+- Nav: logo DAMA Sports (`/images/dama-sports-logo.png`) — branco no hero (brightness-0 invert quando !scrolled), preto ao rolar
+- Parceiros: IFBT adicionado (`/images/clients/ifbt.jpg`)
+- Círculos de logos: mesma correção da home (object-contain + overflow-hidden)
 
 **Studio (`/studio` + `/studio/artistas`) — estado atual (13/05/2026):**
 - `/studio/artistas`: 15 artistas, 40+ releases com capas reais do Spotify, cards clicáveis → Spotify
@@ -160,7 +172,7 @@ Based on code state and recent commits, likely priorities:
 5. **Configurar Resend** — `/api/send` existe mas não está configurado para envio em produção (formulários Tech terminal + Sports FichaInscricao)
 6. **Password hashing** for client portal access — currently plaintext in DB
 7. **Quote PDF polish** — print CSS export could use layout refinement
-8. **Home page** — será a última coisa a trabalhar (após Studio concluído)
+8. **Home page** — ✅ redesign completo entregue em 15/05/2026
 
 ---
 
