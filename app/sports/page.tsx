@@ -15,7 +15,7 @@ const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 const events = [
   { title: 'Open Santos ASSESP',             subtitle: 'Santos, SP' },
   { title: 'Open SPFC de Beach Tennis',      subtitle: 'São Paulo, SP' },
-  { title: 'Open DAMA Tom Beach',             subtitle: 'Guarujá, SP' },
+  { title: 'Seletiva Seleção Brasileira',      subtitle: 'Santos, SP' },
   { title: 'Open São Paulo de Beach Tennis', subtitle: 'São Paulo, SP' },
 ];
 
@@ -151,21 +151,21 @@ const upcomingEvents = [
     link: { url: 'https://letzplay.me/damasports/tourneys/56324', label: 'Inscreva-se no LetzPlay' },
   },
   {
-    id: 'open-guaruja',
-    name: 'Open DAMA Tom Beach',
-    subtitle: 'Beach Tennis',
-    date: '6 e 7 de junho de 2026',
-    location: 'Tom Beach · Guarujá, SP',
+    id: 'seletiva-pan-americano',
+    name: 'Seletiva Seleção Brasileira',
+    subtitle: 'Pan-Americano IFBT',
+    date: '23 e 24 de maio de 2026',
+    location: 'Assesp Gonzaga BT · Santos, SP',
     stats: [
-      { label: 'atletas previstos', value: '150+' },
-      { label: 'inscrições previstas', value: '200+' },
-      { label: 'categorias', value: '10' },
+      { label: 'atletas previstos', value: '100+' },
+      { label: 'inscrições previstas', value: '120+' },
+      { label: 'categorias', value: '8' },
       { label: 'quadras', value: '4' },
     ],
-    description: 'Torneio à beira-mar com vista para o Atlântico. Ambiente praiano, competição de alto nível e produção completa no coração do litoral paulista.',
+    description: 'Seletiva oficial para a Seleção Brasileira de Beach Tennis rumo ao Pan-Americano IFBT. Organização DAMA Sports em parceria com a Assesp Gonzaga BT, em Santos.',
     logo: null,
     tag: 'EM BREVE',
-    link: { url: 'https://letzplay.me/damasports', label: 'Ver perfil no LetzPlay' },
+    link: { url: 'https://letzplay.me/assespgonzaga/tourneys/57445', label: 'Inscreva-se no LetzPlay' },
   },
 ];
 
@@ -186,6 +186,7 @@ const clients = [
   { name: 'OPENSP',    logo: '/images/clients/opensp.webp' },
   { name: 'HYDRA',     logo: '/images/clients/hydra.png' },
   { name: 'GENIAL',    logo: '/images/clients/genial.png' },
+  { name: 'IFBT',      logo: '/images/clients/ifbt.jpg' },
 ];
 
 // ── Histórico de torneios ─────────────────────────────────────
@@ -720,7 +721,7 @@ export default function DamaSportsPage() {
 
   return (
     <>
-      <Header />
+      <Header logoSrc="/images/dama-sports-logo.png" logoAlt="DAMA Sports" />
 
       {/* ── Hero com vídeo ── */}
       <section ref={heroRef} style={{ position: 'relative', height: '100dvh', overflow: 'hidden' }}>
@@ -942,16 +943,18 @@ export default function DamaSportsPage() {
                 className="group flex items-center justify-center"
               >
                 <div
-                  className="relative w-28 h-28 lg:w-36 lg:h-36 rounded-full overflow-hidden transition-transform duration-300 group-hover:scale-105"
+                  className="w-28 lg:w-36 aspect-square shrink-0 rounded-full overflow-hidden flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
                   style={{ border: '1px solid oklch(80% 0.01 58)', backgroundColor: 'oklch(90% 0.01 58)' }}
                 >
-                  <Image
-                    src={client.logo}
-                    alt={client.name}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-110"
-                    sizes="(max-width: 768px) 20vw, 10vw"
-                  />
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={client.logo}
+                      alt={client.name}
+                      fill
+                      className="object-contain transition-transform duration-300 group-hover:scale-110"
+                      sizes="(max-width: 768px) 20vw, 10vw"
+                    />
+                  </div>
                 </div>
               </motion.div>
             ))}

@@ -7,25 +7,16 @@ import { clients } from '@/lib/constants';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.07 } },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
-};
-
 export default function Portfolio() {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: '-8% 0px' });
 
   return (
-    <section id="portfolio" className="lg:min-h-screen flex flex-col py-12 lg:py-16 bg-background border-t border-border scroll-mt-8">
-      <div className="container mx-auto px-6 lg:px-12 flex-1 flex flex-col" ref={ref}>
+    <section id="portfolio" className="py-section bg-background border-t border-border scroll-mt-8">
+      <div className="container mx-auto px-6 lg:px-12" ref={ref}>
 
         <motion.div
+          className="mb-10"
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, ease: EASE }}
@@ -39,25 +30,33 @@ export default function Portfolio() {
         </motion.div>
 
         <motion.div
-          className="grid grid-cols-3 md:grid-cols-5 gap-6 md:gap-14 lg:gap-20 items-center flex-1 mt-10 content-start w-fit mx-auto"
-          variants={containerVariants}
+          className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-6 md:gap-10 lg:gap-12"
           initial="hidden"
           animate={isInView ? 'visible' : 'hidden'}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.07 } } }}
         >
           {clients.map((client) => (
             <motion.div
               key={client.name}
-              variants={itemVariants}
+              variants={{
+                hidden: { opacity: 0, y: 16 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
+              }}
               className="group flex items-center justify-center"
             >
-              <div className="relative w-24 h-24 md:w-28 md:h-28 lg:w-36 lg:h-36 shrink-0 rounded-full border border-border bg-accent-subtle flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
-                <Image
-                  src={client.logo}
-                  alt={client.name}
-                  fill
-                  className="object-cover transition-opacity duration-300 opacity-80 group-hover:opacity-100"
-                  sizes="(max-width: 768px) 20vw, 10vw"
-                />
+              <div
+                className="w-full aspect-square shrink-0 rounded-full overflow-hidden flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                style={{ border: '1px solid oklch(80% 0.01 58)', backgroundColor: 'oklch(90% 0.01 58)' }}
+              >
+                <div className="relative w-full h-full">
+                  <Image
+                    src={client.logo}
+                    alt={client.name}
+                    fill
+                    className="object-contain transition-opacity duration-300 opacity-85 group-hover:opacity-100"
+                    sizes="(max-width: 768px) 30vw, 15vw"
+                  />
+                </div>
               </div>
             </motion.div>
           ))}

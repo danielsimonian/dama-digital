@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
-export default function Header() {
+export default function Header({ logoSrc, logoAlt }: { logoSrc?: string; logoAlt?: string } = {}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [footerVisible, setFooterVisible] = useState(false);
@@ -64,11 +64,11 @@ export default function Header() {
           {/* Logo */}
           <button onClick={scrollToTop} className="cursor-pointer shrink-0">
             <Image
-              src="/images/logo.png"
-              alt="DAMA Digital"
+              src={logoSrc ?? "/images/logo.png"}
+              alt={logoAlt ?? "DAMA Digital"}
               width={140}
               height={48}
-              className="h-10 w-auto"
+              className={`h-10 w-auto transition-all duration-300 ${logoSrc && !scrolled ? 'brightness-0 invert' : ''}`}
               priority
             />
           </button>

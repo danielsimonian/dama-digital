@@ -17,7 +17,7 @@ const STUDIO_RELEASES = ['I Miss You', 'Canto pra Guerreira', 'Te Quis', 'Lança
 const SPORTS_EVENTS = [
   { status: 'realizado', name: 'Open Santos ASSESP',        date: 'ABR 2026', stats: '250+ atletas · 14 cat · 13 quadras' },
   { status: 'em breve',  name: 'Open SPFC de Beach Tennis', date: 'MAI 2026', stats: '400+ atletas previstos · 19 cat' },
-  { status: 'em breve',  name: 'Open DAMA Tom Beach',       date: 'JUN 2026', stats: '150+ atletas previstos · 10 cat' },
+  { status: 'em breve',  name: 'Seletiva Seleção Brasileira', date: 'MAI 2026', stats: 'Pan-Americano IFBT · Santos, SP' },
 ];
 
 const divisions = [
@@ -177,22 +177,6 @@ export default function Divisions() {
                     {div.name}
                   </span>
 
-                  {/* Badge "em breve" — Studio */}
-                  {i === 2 && (
-                    <span
-                      className="flex-shrink-0 font-mono text-[9px] tracking-widest uppercase px-1.5 py-0.5"
-                      style={{
-                        color: 'oklch(60% 0.17 148)',
-                        background: 'oklch(60% 0.17 148 / 0.1)',
-                        border: '1px solid oklch(60% 0.17 148 / 0.25)',
-                        borderRadius: '0.2rem',
-                        fontFamily: 'var(--font-mono)',
-                      }}
-                    >
-                      em breve
-                    </span>
-                  )}
-
                   {/* Seta (quando ativo) */}
                   <span
                     className={`
@@ -257,13 +241,13 @@ export default function Divisions() {
                         className="font-display font-black text-xl lg:text-2xl leading-tight"
                         style={{ color: 'oklch(93% 0.015 33)' }}
                       >
-                        Open SPFC de Beach Tennis
+                        Seletiva Seleção Brasileira
                       </span>
                       <span
                         className="font-ui text-sm"
                         style={{ color: 'oklch(60% 0.08 33)' }}
                       >
-                        29–31 mai · São Paulo · 400+ atletas
+                        23–24 mai · Santos · Pan-Americano IFBT
                       </span>
                     </div>
 
@@ -274,13 +258,13 @@ export default function Divisions() {
                           className="font-ui text-xs"
                           style={{ color: 'oklch(60% 0.08 33)' }}
                         >
-                          Open DAMA Tom Beach
+                          Open SPFC de Beach Tennis
                         </span>
                         <span
                           className="font-ui text-[10px] tracking-widest"
                           style={{ color: 'oklch(45% 0.06 33)' }}
                         >
-                          JUN
+                          MAI
                         </span>
                       </div>
                       <div className="flex items-center justify-between" style={{ opacity: 0.5 }}>
@@ -475,20 +459,23 @@ export default function Divisions() {
                       </AnimatePresence>
                     </div>
 
-                    {/* Stat */}
-                    <div style={{ borderTop: '1px solid oklch(22% 0.04 148)', paddingTop: '1.25rem' }}>
+                    {/* Serviços */}
+                    <div className="flex flex-col gap-2" style={{ borderTop: '1px solid oklch(22% 0.04 148)', paddingTop: '1.25rem' }}>
                       <span
-                        className="font-display font-black text-4xl lg:text-5xl leading-none"
-                        style={{ color: 'oklch(60% 0.17 148)' }}
+                        className="font-ui text-xs mb-1"
+                        style={{ color: 'oklch(38% 0.04 148)' }}
                       >
-                        12
+                        {'// o que a gente faz'}
                       </span>
-                      <span
-                        className="font-ui text-xs tracking-widest uppercase block mt-1"
-                        style={{ color: 'oklch(40% 0.04 148)' }}
-                      >
-                        artistas produzidos
-                      </span>
+                      {['_01 Aulas de Violão e Guitarra', '_02 Gravação', '_03 Mixagem', '_04 Masterização', '_05 Distribuição Digital'].map((s) => (
+                        <span
+                          key={s}
+                          className="font-ui text-sm"
+                          style={{ color: 'oklch(72% 0.06 148)' }}
+                        >
+                          {s}
+                        </span>
+                      ))}
                     </div>
 
                     {/* CTAs */}

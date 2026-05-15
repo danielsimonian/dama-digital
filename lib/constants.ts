@@ -42,7 +42,8 @@ export const clients = [
   { name: 'Tom Beach', logo: '/images/clients/tombeach.png' },
   { name: 'Genial', logo: '/images/clients/genial.png' },
   { name: 'Open SP', logo: '/images/clients/opensp.webp' },
-  { name: 'Sampaio', logo: '/images/clients/sampaio.png' }
+  { name: 'Sampaio', logo: '/images/clients/sampaio.png' },
+  { name: 'IFBT',    logo: '/images/clients/ifbt.jpg' }
 ];
 
 export const team = [
