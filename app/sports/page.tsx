@@ -7,6 +7,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { ClipboardList, Flag, Volume2, Clapperboard, Trophy, Building2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import { getPastEvents, getUpcomingEvents, historico as historicoData, type SportsEvent } from '@/lib/sports-events';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -102,72 +103,10 @@ const BG_DARK  = 'oklch(10% 0.008 50)';
 const BG_LIGHT = 'oklch(97% 0.009 52)';
 const FG_DARK  = 'oklch(10% 0.015 45)';
 
-// ── Dados de eventos ──────────────────────────────────────────
-const pastEvents = [
-  {
-    id: 'open-santos-assesp',
-    name: 'Open Santos ASSESP',
-    subtitle: 'Beach Tennis',
-    date: '11 e 12 de abril de 2026',
-    location: 'Point do Gonzaga · Santos, SP',
-    banner: '/images/events/openassesp.jpg',
-    link: { url: 'https://www.rankingbt.com.br/torneios/open-santos-assesp-de-beach-tennis-2026-04-11', label: 'Ver no RankingBT' },
-    stats: [
-      { label: 'atletas', value: '250+' },
-      { label: 'inscrições', value: '300+' },
-      { label: 'categorias', value: '14' },
-      { label: 'quadras', value: '13' },
-    ],
-    description: 'Maior torneio de beach tennis da Baixada Santista. Dois dias de competição, cobertura audiovisual completa, arbitragem profissional e estrutura montada do zero pela DAMA Sports.',
-    logo: '/images/clients/assesp.jpeg',
-    tag: 'REALIZADO',
-  },
-];
-
-const historico = [
-  { name: 'Open Santos ASSESP 2025', date: 'Abril de 2025', location: 'Santos, SP', categorias: 12 },
-  { name: 'Open Tom Beach 2025',     date: 'Agosto de 2025', location: 'Guarujá, SP', categorias: 8 },
-  { name: 'Open Santos ASSESP 2024', date: 'Abril de 2024', location: 'Santos, SP', categorias: 10 },
-  { name: 'Open Tom Beach 2024',     date: 'Agosto de 2024', location: 'Guarujá, SP', categorias: 8 },
-  { name: 'Open Santos ASSESP 2023', date: 'Abril de 2023', location: 'Santos, SP', categorias: 8 },
-];
-
-const upcomingEvents = [
-  {
-    id: 'open-spfc',
-    name: 'Open SPFC',
-    subtitle: 'Beach Tennis',
-    date: '29, 30 e 31 de maio de 2026',
-    location: 'CT do São Paulo FC · São Paulo, SP',
-    stats: [
-      { label: 'atletas previstos', value: '400+' },
-      { label: 'inscrições previstas', value: '500+' },
-      { label: 'categorias', value: '19' },
-      { label: 'quadras', value: '7' },
-    ],
-    description: 'O maior torneio de beach tennis já realizado no CT do São Paulo Futebol Clube. Estrutura completa, parceria com um dos maiores clubes do Brasil.',
-    logo: '/images/clients/spfc.png',
-    tag: 'EM BREVE',
-    link: { url: 'https://letzplay.me/damasports/tourneys/56324', label: 'Inscreva-se no LetzPlay' },
-  },
-  {
-    id: 'seletiva-pan-americano',
-    name: 'Seletiva Seleção Brasileira',
-    subtitle: 'Pan-Americano IFBT',
-    date: '23 e 24 de maio de 2026',
-    location: 'Assesp Gonzaga BT · Santos, SP',
-    stats: [
-      { label: 'atletas previstos', value: '100+' },
-      { label: 'inscrições previstas', value: '120+' },
-      { label: 'categorias', value: '8' },
-      { label: 'quadras', value: '4' },
-    ],
-    description: 'Seletiva oficial para a Seleção Brasileira de Beach Tennis rumo ao Pan-Americano IFBT. Organização DAMA Sports em parceria com a Assesp Gonzaga BT, em Santos.',
-    logo: null,
-    tag: 'EM BREVE',
-    link: { url: 'https://letzplay.me/assespgonzaga/tourneys/57445', label: 'Inscreva-se no LetzPlay' },
-  },
-];
+// ── Dados de eventos — importados de lib/sports-events.ts ─────
+const pastEvents     = getPastEvents();
+const upcomingEvents = getUpcomingEvents();
+const historico      = historicoData;
 
 const services = [
   { number: '01', icon: ClipboardList, name: 'Gestão do Torneio', description: 'Chaveamento, inscrições via LetzPlay e RankingBT, controle de categorias e resultados do início ao fim.' },
@@ -255,7 +194,7 @@ function HistoricoDropdown() {
 }
 
 // ── Componente: card de evento passado ───────────────────────
-function PastEventCard({ event, inView }: { event: typeof pastEvents[0]; inView: boolean }) {
+function PastEventCard({ event, inView }: { event: SportsEvent; inView: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 32 }}
@@ -317,17 +256,26 @@ function PastEventCard({ event, inView }: { event: typeof pastEvents[0]; inView:
             {event.description}
           </p>
 
-          {event.link && (
-            <a
-              href={event.link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-ui text-xs font-medium tracking-wide self-start transition-colors duration-200"
-              style={{ color: SPORTS, textDecoration: 'underline', textUnderlineOffset: '4px' }}
+          <div className="flex items-center gap-6 flex-wrap">
+            {event.link && (
+              <a
+                href={event.link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-ui text-xs font-medium tracking-wide self-start transition-colors duration-200"
+                style={{ color: SPORTS, textDecoration: 'underline', textUnderlineOffset: '4px' }}
+              >
+                {event.link.label} ↗
+              </a>
+            )}
+            <Link
+              href={`/sports/torneios/${event.slug}`}
+              className="font-ui text-xs font-semibold tracking-wide self-start transition-opacity duration-200 hover:opacity-70"
+              style={{ color: FG_DARK }}
             >
-              {event.link.label} ↗
-            </a>
-          )}
+              Ver página completa →
+            </Link>
+          </div>
         </div>
 
         {/* Stats */}
@@ -362,7 +310,7 @@ function PastEventCard({ event, inView }: { event: typeof pastEvents[0]; inView:
 }
 
 // ── Componente: card de próximo evento ───────────────────────
-function UpcomingEventCard({ event, index, inView }: { event: typeof upcomingEvents[0]; index: number; inView: boolean }) {
+function UpcomingEventCard({ event, index, inView }: { event: SportsEvent; index: number; inView: boolean }) {
   const [hovered, setHovered] = useState(false);
 
   return (
@@ -788,36 +736,38 @@ export default function DamaSportsPage() {
         </div>
       </section>
 
-      {/* ── Próximos eventos ── */}
-      <section ref={upcomingRef} className="py-section" style={{ backgroundColor: BG_DARK }}>
-        <div className="container mx-auto px-6 lg:px-12">
-          <motion.div
-            className="flex items-baseline gap-4 mb-12"
-            initial={{ opacity: 0, x: -30 }}
-            animate={upcomingInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7, ease: EASE }}
-          >
-            <h2
-              className="font-display font-black leading-none tracking-tight"
-              style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: 'oklch(93% 0.006 58)' }}
+      {/* ── Próximos eventos — só renderiza se houver torneios futuros ── */}
+      {upcomingEvents.length > 0 && (
+        <section ref={upcomingRef} className="py-section" style={{ backgroundColor: BG_DARK }}>
+          <div className="container mx-auto px-6 lg:px-12">
+            <motion.div
+              className="flex items-baseline gap-4 mb-12"
+              initial={{ opacity: 0, x: -30 }}
+              animate={upcomingInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.7, ease: EASE }}
             >
-              Próximos Torneios
-            </h2>
-            <span
-              className="font-ui text-xs tracking-editorial uppercase"
-              style={{ color: SPORTS }}
-            >
-              — próximos torneios
-            </span>
-          </motion.div>
+              <h2
+                className="font-display font-black leading-none tracking-tight"
+                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: 'oklch(93% 0.006 58)' }}
+              >
+                Próximos Torneios
+              </h2>
+              <span
+                className="font-ui text-xs tracking-editorial uppercase"
+                style={{ color: SPORTS }}
+              >
+                — próximos torneios
+              </span>
+            </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {upcomingEvents.map((event, i) => (
-              <UpcomingEventCard key={event.id} event={event} index={i} inView={upcomingInView} />
-            ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {upcomingEvents.map((event, i) => (
+                <UpcomingEventCard key={event.id} event={event} index={i} inView={upcomingInView} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── Serviços ── */}
       <section
