@@ -182,20 +182,21 @@ function ReelsMosaic({ reels, images, eventName }: {
         Highlights & Fotos
       </h2>
 
-      {/* Primeiro reel + mosaico lado a lado */}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,_340px)_1fr] gap-4 items-stretch">
-        {/* Reel */}
-        <div className="flex flex-col gap-3">
-          <ReelPlayer reel={reels[0]} />
-          {reels[0].title && (
-            <p className="font-ui text-xs" style={{ color: 'oklch(45% 0.02 48)' }}>
-              {reels[0].title}
-            </p>
-          )}
+      {/* Primeiro reel + mosaico lado a lado — mesma altura */}
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,_340px)_1fr] gap-[3px] items-stretch">
+        {/* Reel — define a altura da linha */}
+        <ReelPlayer reel={reels[0]} />
+        {/* Mosaico — clipado exatamente na altura do reel */}
+        <div className="overflow-hidden h-full">
+          <PhotoMosaic images={images} eventName={eventName} />
         </div>
-        {/* Mosaico de fotos */}
-        <PhotoMosaic images={images} eventName={eventName} />
       </div>
+      {/* Título abaixo, fora do grid */}
+      {reels[0].title && (
+        <p className="font-ui text-xs mt-2" style={{ color: 'oklch(45% 0.02 48)' }}>
+          {reels[0].title}
+        </p>
+      )}
 
       {/* Reels adicionais abaixo (se houver mais de 1) */}
       {reels.length > 1 && (
