@@ -96,7 +96,7 @@ export const sportsEvents: SportsEvent[] = [
     year: 2026,
     date: '11 e 12 de abril de 2026',
     location: 'Point do Gonzaga · Santos, SP',
-    banner: '/images/events/openassesp.jpg',
+    banner: '/images/events/open-santos-assesp/banner.jpg',
     logo: '/images/clients/assesp.jpeg',
     description: 'Maior torneio de beach tennis da Baixada Santista. Dois dias de competição, cobertura audiovisual completa, arbitragem profissional e estrutura montada do zero pela DAMA Sports.',
     stats: [
