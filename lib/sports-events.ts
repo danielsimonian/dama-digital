@@ -45,7 +45,12 @@ export const sportsEvents: SportsEvent[] = [
       { label: 'quadras', value: '7' },
     ],
     gallery: [
-      // '/images/events/open-spfc/foto1.jpg',
+      '/images/events/open-spfc/foto1.jpg',
+      '/images/events/open-spfc/foto2.jpg',
+      '/images/events/open-spfc/foto3.jpg',
+      '/images/events/open-spfc/foto4.jpeg',
+      '/images/events/open-spfc/foto5.jpeg',
+      '/images/events/open-spfc/foto6.jpeg',
     ],
     reels: [
       { title: 'Open SPFC 2026', url: '/videos/events/open-spfc/reel.mp4' },
