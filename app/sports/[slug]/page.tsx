@@ -93,14 +93,14 @@ function Reels({ reels }: { reels: SportsEvent['reels'] }) {
       <h2 className="font-display font-black text-2xl md:text-3xl mb-6" style={{ color: 'oklch(97% 0.009 52)' }}>
         Highlights & Reels
       </h2>
-      <div className={`grid gap-6 ${reels.length === 1 ? 'grid-cols-1 max-w-3xl' : 'grid-cols-1 md:grid-cols-2'}`}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {reels.map((reel, i) => {
           const embedUrl = getEmbedUrl(reel.url);
           return (
-            <div key={i}>
+            <div key={i} className="w-full max-w-xs mx-auto sm:max-w-none">
               {embedUrl ? (
                 <div>
-                  <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: '56.25%' }}>
+                  <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: '177.78%' }}>
                     <iframe
                       src={embedUrl}
                       title={reel.title}
