@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Calendar, ExternalLink, Play } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, ExternalLink, Play, Camera } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { getEventBySlug, sportsEvents, type SportsEvent } from '@/lib/sports-events';
@@ -50,112 +50,213 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Gallery ──────────────────────────────────────────────────
-function Gallery({ images, eventName }: { images: string[]; eventName: string }) {
-  if (images.length === 0) return null;
+// ── Foto placeholder (enquanto não tem foto real) ────────────
+function PhotoPlaceholder({ index }: { index: number }) {
+  const shades = [
+    'oklch(16% 0.012 50)',
+    'oklch(14% 0.01 50)',
+    'oklch(18% 0.014 50)',
+    'oklch(13% 0.008 50)',
+  ];
   return (
-    <section>
-      <h2 className="font-display font-black text-2xl md:text-3xl mb-6" style={{ color: 'oklch(97% 0.009 52)' }}>
-        Galeria
-      </h2>
-      <div
-        className={`grid gap-2 ${
-          images.length === 1
-            ? 'grid-cols-1 max-w-2xl'
-            : images.length === 2
-            ? 'grid-cols-2'
-            : 'grid-cols-2 md:grid-cols-3'
-        }`}
-      >
-        {images.map((src, i) => (
-          <div
-            key={i}
-            className="relative aspect-square overflow-hidden rounded-xl"
-            style={{ backgroundColor: 'oklch(15% 0.01 50)' }}
-          >
-            <Image
-              src={src}
-              alt={`${eventName} — foto ${i + 1}`}
-              fill
-              className="object-cover transition-transform duration-500 hover:scale-105"
-            />
-          </div>
-        ))}
-      </div>
-    </section>
+    <div
+      className="w-full h-full flex flex-col items-center justify-center gap-2 rounded-xl"
+      style={{ backgroundColor: shades[index % shades.length] }}
+    >
+      <Camera size={22} style={{ color: 'oklch(38% 0.02 48)' }} />
+      <span className="font-ui text-xs" style={{ color: 'oklch(35% 0.018 48)' }}>
+        Foto {index + 1}
+      </span>
+    </div>
   );
 }
 
-// ── Reels ────────────────────────────────────────────────────
-// Suporte a 3 tipos de fonte:
-//   1. Arquivo local  → /videos/events/open-spfc/reel.mp4  → <video> nativo
-//   2. YouTube        → youtube.com/watch?v=XXX            → iframe embed
-//   3. Qualquer outra → link externo com ícone
-function Reels({ reels }: { reels: SportsEvent['reels'] }) {
-  if (reels.length === 0) return null;
+// ── Mosaico de fotos (real ou placeholder) ────────────────────
+function PhotoMosaic({ images, eventName }: { images: string[]; eventName: string }) {
+  // Se não tiver fotos, mostra 4 placeholders
+  const isPlaceholder = images.length === 0;
+  const count = isPlaceholder ? 4 : images.length;
+  const items = isPlaceholder ? [0, 1, 2, 3] : images.map((_, i) => i);
+
+  // Layout do mosaico varia por quantidade
+  if (count === 1) {
+    return (
+      <div className="relative w-full h-full min-h-[200px] overflow-hidden rounded-xl">
+        {isPlaceholder ? (
+          <PhotoPlaceholder index={0} />
+        ) : (
+          <Image src={images[0]} alt={`${eventName} — foto 1`} fill className="object-cover" />
+        )}
+      </div>
+    );
+  }
+
+  if (count === 2) {
+    return (
+      <div className="grid grid-rows-2 gap-2 h-full">
+        {items.slice(0, 2).map((idx) => (
+          <div key={idx} className="relative overflow-hidden rounded-xl" style={{ minHeight: '120px' }}>
+            {isPlaceholder ? (
+              <PhotoPlaceholder index={idx} />
+            ) : (
+              <Image src={images[idx]} alt={`${eventName} — foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (count === 3) {
+    return (
+      <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
+        {/* Foto grande à esquerda */}
+        <div className="relative row-span-2 overflow-hidden rounded-xl" style={{ minHeight: '200px' }}>
+          {isPlaceholder ? <PhotoPlaceholder index={0} /> : (
+            <Image src={images[0]} alt={`${eventName} — foto 1`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+          )}
+        </div>
+        {/* Duas menores à direita */}
+        {items.slice(1, 3).map((idx) => (
+          <div key={idx} className="relative overflow-hidden rounded-xl">
+            {isPlaceholder ? <PhotoPlaceholder index={idx} /> : (
+              <Image src={images[idx]} alt={`${eventName} — foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 4+ fotos: grade 2×2 (exibe as 4 primeiras)
+  return (
+    <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
+      {items.slice(0, 4).map((idx) => (
+        <div key={idx} className="relative overflow-hidden rounded-xl" style={{ minHeight: '120px' }}>
+          {isPlaceholder ? <PhotoPlaceholder index={idx} /> : (
+            <Image src={images[idx]} alt={`${eventName} — foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Reel player ───────────────────────────────────────────────
+function ReelPlayer({ reel }: { reel: SportsEvent['reels'][number] }) {
+  const ytUrl   = getYouTubeEmbedUrl(reel.url);
+  const isLocal = isLocalVideo(reel.url);
+
+  if (isLocal) {
+    return (
+      <video
+        src={reel.url}
+        controls
+        playsInline
+        className="w-full rounded-2xl"
+        style={{ aspectRatio: '9/16', objectFit: 'cover', backgroundColor: 'oklch(8% 0.008 50)' }}
+      />
+    );
+  }
+
+  if (ytUrl) {
+    return (
+      <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: '177.78%' }}>
+        <iframe
+          src={ytUrl}
+          title={reel.title}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 w-full h-full"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <a
+      href={reel.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-4 p-5 rounded-2xl transition-opacity duration-200 hover:opacity-80"
+      style={{ backgroundColor: 'oklch(15% 0.01 50)' }}
+    >
+      <div
+        className="flex items-center justify-center w-12 h-12 rounded-full flex-shrink-0"
+        style={{ backgroundColor: `color-mix(in oklch, ${SPORTS} 15%, transparent)` }}
+      >
+        <Play size={18} style={{ color: SPORTS }} />
+      </div>
+      <span className="font-ui text-sm font-medium flex-1" style={{ color: 'oklch(88% 0.01 50)' }}>
+        {reel.title || 'Ver vídeo'}
+      </span>
+      <ExternalLink size={14} className="flex-shrink-0" style={{ color: 'oklch(45% 0.02 48)' }} />
+    </a>
+  );
+}
+
+// ── Seção combinada: Reels + Mosaico ─────────────────────────
+function ReelsMosaic({ reels, images, eventName }: {
+  reels: SportsEvent['reels'];
+  images: string[];
+  eventName: string;
+}) {
+  if (reels.length === 0 && images.length === 0) return null;
+
+  // Só fotos, sem reels
+  if (reels.length === 0) {
+    return (
+      <section>
+        <h2 className="font-display font-black text-2xl md:text-3xl mb-6" style={{ color: 'oklch(97% 0.009 52)' }}>
+          Galeria
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {images.map((src, i) => (
+            <div key={i} className="relative aspect-square overflow-hidden rounded-xl">
+              <Image src={src} alt={`${eventName} — foto ${i + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section>
       <h2 className="font-display font-black text-2xl md:text-3xl mb-6" style={{ color: 'oklch(97% 0.009 52)' }}>
-        Highlights & Reels
+        Highlights & Fotos
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {reels.map((reel, i) => {
-          const ytUrl   = getYouTubeEmbedUrl(reel.url);
-          const isLocal = isLocalVideo(reel.url);
 
-          return (
-            <div key={i} className="w-full max-w-xs mx-auto sm:max-w-none flex flex-col gap-3">
-              {/* ── Vídeo local (mp4/webm/mov) ── */}
-              {isLocal ? (
-                <video
-                  src={reel.url}
-                  controls
-                  playsInline
-                  className="w-full rounded-2xl"
-                  style={{ aspectRatio: '9/16', objectFit: 'cover', backgroundColor: 'oklch(8% 0.008 50)' }}
-                />
-              ) : ytUrl ? (
-                /* ── YouTube embed ── */
-                <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: '177.78%' }}>
-                  <iframe
-                    src={ytUrl}
-                    title={reel.title}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="absolute inset-0 w-full h-full"
-                  />
-                </div>
-              ) : (
-                /* ── Link externo (fallback) ── */
-                <a
-                  href={reel.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-4 p-5 rounded-2xl transition-opacity duration-200 hover:opacity-80"
-                  style={{ backgroundColor: 'oklch(15% 0.01 50)' }}
-                >
-                  <div
-                    className="flex items-center justify-center w-12 h-12 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: `color-mix(in oklch, ${SPORTS} 15%, transparent)` }}
-                  >
-                    <Play size={18} style={{ color: SPORTS }} />
-                  </div>
-                  <span className="font-ui text-sm font-medium flex-1" style={{ color: 'oklch(88% 0.01 50)' }}>
-                    {reel.title || 'Ver vídeo'}
-                  </span>
-                  <ExternalLink size={14} className="flex-shrink-0" style={{ color: 'oklch(45% 0.02 48)' }} />
-                </a>
-              )}
+      {/* Primeiro reel + mosaico lado a lado */}
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,_340px)_1fr] gap-4 items-stretch">
+        {/* Reel */}
+        <div className="flex flex-col gap-3">
+          <ReelPlayer reel={reels[0]} />
+          {reels[0].title && (
+            <p className="font-ui text-xs" style={{ color: 'oklch(45% 0.02 48)' }}>
+              {reels[0].title}
+            </p>
+          )}
+        </div>
+        {/* Mosaico de fotos */}
+        <PhotoMosaic images={images} eventName={eventName} />
+      </div>
 
-              {reel.title && (isLocal || ytUrl) && (
-                <p className="font-ui text-sm" style={{ color: 'oklch(55% 0.02 48)' }}>
+      {/* Reels adicionais abaixo (se houver mais de 1) */}
+      {reels.length > 1 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          {reels.slice(1).map((reel, i) => (
+            <div key={i} className="flex flex-col gap-3">
+              <ReelPlayer reel={reel} />
+              {reel.title && (
+                <p className="font-ui text-xs" style={{ color: 'oklch(45% 0.02 48)' }}>
                   {reel.title}
                 </p>
               )}
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -194,7 +295,7 @@ export default async function TorneioPagina({ params }: { params: Promise<{ slug
   const event = getEventBySlug(slug);
   if (!event) notFound();
 
-  const hasMedia = event.gallery.length > 0 || event.reels.length > 0;
+  const hasMedia = event.reels.length > 0 || event.gallery.length > 0;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: BG_DARK }}>
@@ -307,7 +408,7 @@ export default async function TorneioPagina({ params }: { params: Promise<{ slug
           </div>
         </section>
 
-        {/* Placeholder quando sem media */}
+        {/* Sem nenhum material */}
         {!hasMedia && (
           <div
             className="rounded-2xl border-2 border-dashed flex flex-col items-center justify-center py-20 text-center"
@@ -322,11 +423,8 @@ export default async function TorneioPagina({ params }: { params: Promise<{ slug
           </div>
         )}
 
-        {/* Gallery */}
-        <Gallery images={event.gallery} eventName={event.name} />
-
-        {/* Reels */}
-        <Reels reels={event.reels} />
+        {/* Reels + mosaico de fotos lado a lado */}
+        <ReelsMosaic reels={event.reels} images={event.gallery} eventName={event.name} />
 
         {/* Sponsors */}
         <Sponsors sponsors={event.sponsors} />
