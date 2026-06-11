@@ -118,7 +118,7 @@ const services = [
 ];
 
 // Logos de eventos anteriores sem página própria
-const extraClients = [
+const extraClients: { name: string; logo: string; zoom?: boolean }[] = [
   { name: 'RONYMOTORS', logo: '/images/clients/rony.png' },
   { name: 'TOMBEACH',   logo: '/images/clients/tombeach.png' },
   { name: 'OPENSP',     logo: '/images/clients/opensp.webp' },
