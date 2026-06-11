@@ -193,243 +193,182 @@ function HistoricoDropdown() {
   );
 }
 
-// ── Componente: card de evento passado ───────────────────────
-function PastEventCard({ event, inView }: { event: SportsEvent; inView: boolean }) {
+// ── Último torneio — card resumido (light bg) ─────────────────
+function LastEventCard({ event, inView }: { event: SportsEvent; inView: boolean }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, ease: EASE }}
-      className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-px"
-      style={{ backgroundColor: 'oklch(80% 0.02 45 / 0.15)' }}
+      transition={{ duration: 0.75, ease: EASE }}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-px"
+      style={{ backgroundColor: 'oklch(82% 0.015 50 / 0.2)' }}
     >
-      {/* Coluna esquerda — banner */}
-      {event.banner && (
-        <div className="relative min-h-[420px] lg:min-h-0" style={{ backgroundColor: BG_LIGHT }}>
-          <Image
-            src={event.banner}
-            alt={`Banner ${event.name}`}
-            fill
-            className="object-contain object-center"
-            sizes="320px"
-            priority
-          />
-        </div>
-      )}
-
-      {/* Coluna direita — info + stats */}
-      <div
-        className="flex flex-col gap-px"
-        style={{ backgroundColor: 'oklch(80% 0.02 45 / 0.15)' }}
-      >
-        {/* Info */}
-        <div
-          className="flex flex-col gap-6 p-8 lg:p-12"
-          style={{ backgroundColor: BG_LIGHT, color: FG_DARK }}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="font-ui text-xs tracking-editorial uppercase mb-2" style={{ color: SPORTS }}>
-                {event.subtitle}
-              </p>
-              <h3
-                className="font-display font-black leading-none tracking-tight"
-                style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', color: FG_DARK }}
-              >
-                {event.name}
-              </h3>
-            </div>
-            <span
-              className="font-ui text-2xs font-semibold tracking-widest uppercase px-2 py-1 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: 'oklch(90% 0.03 50)', color: 'oklch(45% 0.03 48)' }}
-            >
-              {event.tag}
-            </span>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <p className="font-ui text-sm" style={{ color: 'oklch(45% 0.025 48)' }}>{event.date}</p>
-            <p className="font-ui text-sm" style={{ color: 'oklch(55% 0.02 48)' }}>{event.location}</p>
-          </div>
-
-          <p className="font-body text-sm leading-relaxed" style={{ color: 'oklch(38% 0.015 48)' }}>
-            {event.description}
+      {/* Info */}
+      <div className="flex flex-col gap-6 p-8 lg:p-10" style={{ backgroundColor: BG_LIGHT }}>
+        <div>
+          <span
+            className="inline-block font-ui text-2xs font-bold tracking-widest uppercase px-2 py-0.5 mb-3"
+            style={{ backgroundColor: 'oklch(88% 0.03 50)', color: 'oklch(42% 0.04 48)' }}
+          >
+            Último torneio
+          </span>
+          <p className="font-ui text-xs tracking-editorial uppercase mb-1" style={{ color: SPORTS }}>
+            {event.subtitle}
           </p>
-
-          <div className="flex items-center gap-6 flex-wrap">
-            {event.link && (
-              <a
-                href={event.link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-ui text-xs font-medium tracking-wide self-start transition-colors duration-200"
-                style={{ color: SPORTS, textDecoration: 'underline', textUnderlineOffset: '4px' }}
-              >
-                {event.link.label} ↗
-              </a>
-            )}
-            <Link
-              href={`/sports/torneios/${event.slug}`}
-              className="font-ui text-xs font-semibold tracking-wide self-start transition-opacity duration-200 hover:opacity-70"
-              style={{ color: FG_DARK }}
-            >
-              Ver página completa →
-            </Link>
-          </div>
+          <h3
+            className="font-display font-black leading-none tracking-tight"
+            style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: FG_DARK }}
+          >
+            {event.name}
+          </h3>
         </div>
-
-        {/* Stats */}
-        <div
-          className="grid gap-px"
-          style={{
-            gridTemplateColumns: `repeat(${event.stats.length}, 1fr)`,
-            backgroundColor: 'oklch(80% 0.02 45 / 0.15)',
-          }}
+        <div className="flex flex-col gap-1">
+          <p className="font-ui text-sm" style={{ color: 'oklch(45% 0.02 48)' }}>{event.date}</p>
+          <p className="font-ui text-sm" style={{ color: 'oklch(55% 0.02 48)' }}>{event.location}</p>
+        </div>
+        <p className="font-body text-sm leading-relaxed" style={{ color: 'oklch(38% 0.015 48)' }}>
+          {event.description}
+        </p>
+        <Link
+          href={`/sports/${event.slug}`}
+          className="inline-flex items-center gap-2 font-ui text-sm font-semibold self-start transition-opacity duration-200 hover:opacity-70"
+          style={{ color: SPORTS }}
         >
-          {event.stats.map((stat, i) => (
-            <div
-              key={i}
-              className="flex flex-col justify-end gap-1 p-6 lg:p-8"
-              style={{ backgroundColor: BG_LIGHT }}
-            >
-              <p
-                className="font-display font-black leading-none"
-                style={{ fontSize: 'clamp(2rem, 4vw, 3.5rem)', color: SPORTS }}
-              >
-                {stat.value}
-              </p>
-              <p className="font-ui text-xs tracking-editorial uppercase" style={{ color: 'oklch(55% 0.025 48)' }}>
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
+          Ver fotos, reels e detalhes →
+        </Link>
+      </div>
+
+      {/* Stats grid */}
+      <div
+        className="grid gap-px"
+        style={{
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gridTemplateRows: `repeat(${Math.ceil(event.stats.length / 2)}, 1fr)`,
+          backgroundColor: 'oklch(82% 0.015 50 / 0.2)',
+        }}
+      >
+        {event.stats.map((stat, i) => (
+          <div key={i} className="flex flex-col justify-end gap-1 p-7" style={{ backgroundColor: BG_LIGHT }}>
+            <p className="font-display font-black leading-none" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', color: SPORTS }}>
+              {stat.value}
+            </p>
+            <p className="font-ui text-xs tracking-editorial uppercase" style={{ color: 'oklch(55% 0.025 48)' }}>
+              {stat.label}
+            </p>
+          </div>
+        ))}
       </div>
     </motion.div>
   );
 }
 
-// ── Componente: card de próximo evento ───────────────────────
-function UpcomingEventCard({ event, index, inView }: { event: SportsEvent; index: number; inView: boolean }) {
-  const [hovered, setHovered] = useState(false);
-
+// ── Lista de torneios realizados ──────────────────────────────
+function EventListRow({ event, index, inView }: { event: SportsEvent; index: number; inView: boolean }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, delay: index * 0.12, ease: EASE }}
-      className="flex flex-col gap-0 cursor-default"
-      style={{
-        border: `1px solid ${hovered ? SPORTS : 'oklch(28% 0.012 50)'}`,
-        transition: 'border-color 0.25s ease',
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      initial={{ opacity: 0, x: -20 }}
+      animate={inView ? { opacity: 1, x: 0 } : {}}
+      transition={{ duration: 0.55, delay: index * 0.07, ease: EASE }}
     >
-      {/* Topo: tag + data */}
-      <div
-        className="flex items-center justify-between px-6 py-3"
-        style={{
-          borderBottom: `1px solid ${hovered ? SPORTS : 'oklch(28% 0.012 50)'}`,
-          backgroundColor: hovered ? 'oklch(18% 0.05 33)' : 'transparent',
-          transition: 'background-color 0.25s ease, border-color 0.25s ease',
-        }}
+      <Link
+        href={`/sports/${event.slug}`}
+        className="group flex items-center gap-5 py-5 border-b transition-colors duration-200"
+        style={{ borderColor: 'oklch(82% 0.015 50 / 0.3)' }}
       >
+        {/* Logo */}
+        <div
+          className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-white"
+          style={{ border: '1px solid oklch(75% 0.01 55)' }}
+        >
+          {event.logo && (
+            <Image src={event.logo} alt={event.name} fill className="object-contain p-1" sizes="40px" />
+          )}
+        </div>
+        {/* Name + meta */}
+        <div className="flex-1 min-w-0">
+          <p
+            className="font-display font-bold leading-tight transition-colors duration-200"
+            style={{ color: FG_DARK, fontSize: '1rem' }}
+          >
+            {event.name}
+            <span className="font-ui font-normal text-xs ml-2" style={{ color: 'oklch(55% 0.02 48)' }}>
+              {event.subtitle}
+            </span>
+          </p>
+          <p className="font-ui text-xs mt-0.5" style={{ color: 'oklch(55% 0.02 48)' }}>
+            {event.date} · {event.location}
+          </p>
+        </div>
+        {/* Arrow */}
         <span
-          className="font-ui text-2xs font-semibold tracking-widest uppercase"
+          className="font-ui text-sm font-semibold flex-shrink-0 transition-all duration-200 group-hover:translate-x-1"
           style={{ color: SPORTS }}
+        >
+          Ver torneio →
+        </span>
+      </Link>
+    </motion.div>
+  );
+}
+
+// ── Próximo torneio — card destaque (dark bg) ─────────────────
+function NextEventCard({ event, inView }: { event: SportsEvent; inView: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.75, ease: EASE }}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center"
+    >
+      {/* Info */}
+      <div>
+        <span
+          className="inline-block font-ui text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-5"
+          style={{ backgroundColor: `color-mix(in oklch, ${SPORTS} 18%, transparent)`, color: SPORTS }}
         >
           {event.tag}
         </span>
-        <span
-          className="font-ui text-xs"
-          style={{ color: 'oklch(55% 0.015 50)' }}
-        >
-          {event.date}
-        </span>
-      </div>
-
-      {/* Corpo */}
-      <div className="flex flex-col gap-6 p-6 lg:p-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="font-ui text-xs tracking-editorial uppercase mb-1" style={{ color: 'oklch(55% 0.015 50)' }}>
-              {event.subtitle}
-            </p>
-            <h3
-              className="font-display font-black leading-none tracking-tight"
-              style={{
-                fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
-                color: hovered ? SPORTS : 'oklch(93% 0.006 58)',
-                transition: 'color 0.25s ease',
-              }}
-            >
-              {event.name}
-            </h3>
-          </div>
-
-          {event.logo && (
-            <div
-              className="relative w-14 h-14 rounded-full overflow-hidden flex-shrink-0 opacity-60"
-              style={{ border: '1px solid oklch(30% 0.012 50)' }}
-            >
-              <Image
-                src={event.logo}
-                alt={event.name}
-                fill
-                className="object-cover"
-                sizes="56px"
-              />
-            </div>
-          )}
-        </div>
-
-        <p className="font-ui text-sm" style={{ color: 'oklch(55% 0.015 50)' }}>
-          {event.location}
+        <p className="font-ui text-xs tracking-editorial uppercase mb-2" style={{ color: 'oklch(55% 0.015 50)' }}>
+          {event.subtitle}
         </p>
-
-        <p className="font-body text-sm leading-relaxed" style={{ color: 'oklch(62% 0.015 55)' }}>
+        <h3
+          className="font-display font-black leading-none tracking-tight mb-4"
+          style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: 'oklch(95% 0.006 58)' }}
+        >
+          {event.name}
+        </h3>
+        <p className="font-ui text-sm mb-1" style={{ color: 'oklch(60% 0.015 50)' }}>{event.date}</p>
+        <p className="font-ui text-sm mb-6" style={{ color: 'oklch(55% 0.015 50)' }}>{event.location}</p>
+        <p className="font-body text-base leading-relaxed mb-8" style={{ color: 'oklch(68% 0.015 50)' }}>
           {event.description}
         </p>
-
         {event.link && (
           <a
             href={event.link.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-ui text-xs font-medium tracking-wide self-start transition-opacity duration-200 hover:opacity-70"
-            style={{ color: SPORTS, textDecoration: 'underline', textUnderlineOffset: '4px' }}
+            className="inline-block font-ui text-sm font-semibold px-8 py-3 transition-colors duration-200"
+            style={{ backgroundColor: SPORTS, color: 'oklch(10% 0.008 50)' }}
           >
-            {event.link.label} ↗
+            {event.link.label}
           </a>
         )}
-
-        {/* Stats em linha */}
-        <div
-          className="grid gap-px"
-          style={{
-            gridTemplateColumns: `repeat(${event.stats.length}, 1fr)`,
-            backgroundColor: 'oklch(28% 0.012 50)',
-          }}
-        >
-          {event.stats.map((stat, i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-0.5 p-4"
-              style={{ backgroundColor: BG_DARK }}
-            >
-              <p
-                className="font-display font-black leading-none"
-                style={{ fontSize: 'clamp(1.5rem, 3vw, 2.25rem)', color: SPORTS }}
-              >
-                {stat.value}
-              </p>
-              <p className="font-ui text-2xs tracking-editorial uppercase" style={{ color: 'oklch(45% 0.012 50)' }}>
-                {stat.label}
-              </p>
-            </div>
-          ))}
-        </div>
+      </div>
+      {/* Stats */}
+      <div
+        className="grid grid-cols-2 gap-px"
+        style={{ backgroundColor: 'oklch(22% 0.01 50)' }}
+      >
+        {event.stats.map((stat, i) => (
+          <div key={i} className="flex flex-col gap-1 p-7" style={{ backgroundColor: BG_DARK }}>
+            <p className="font-display font-black leading-none" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', color: SPORTS }}>
+              {stat.value}
+            </p>
+            <p className="font-ui text-xs tracking-editorial uppercase" style={{ color: 'oklch(45% 0.015 50)' }}>
+              {stat.label}
+            </p>
+          </div>
+        ))}
       </div>
     </motion.div>
   );
@@ -703,40 +642,7 @@ export default function DamaSportsPage() {
         </div>
       </section>
 
-      {/* ── Eventos realizados ── */}
-      <section ref={pastRef} className="py-section" style={{ backgroundColor: BG_LIGHT }}>
-        <div className="container mx-auto px-6 lg:px-12">
-          <motion.div
-            className="flex items-baseline gap-4 mb-12"
-            initial={{ opacity: 0, x: -30 }}
-            animate={pastInView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7, ease: EASE }}
-          >
-            <h2
-              className="font-display font-black leading-none tracking-tight"
-              style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: FG_DARK }}
-            >
-              Já aconteceu
-            </h2>
-            <span
-              className="font-ui text-xs tracking-editorial uppercase"
-              style={{ color: SPORTS }}
-            >
-              — eventos realizados
-            </span>
-          </motion.div>
-
-          <div className="flex flex-col gap-px">
-            {pastEvents.map((event) => (
-              <PastEventCard key={event.id} event={event} inView={pastInView} />
-            ))}
-          </div>
-
-          <HistoricoDropdown />
-        </div>
-      </section>
-
-      {/* ── Próximos eventos — só renderiza se houver torneios futuros ── */}
+      {/* ── Próximo torneio — só renderiza se houver ── */}
       {upcomingEvents.length > 0 && (
         <section ref={upcomingRef} className="py-section" style={{ backgroundColor: BG_DARK }}>
           <div className="container mx-auto px-6 lg:px-12">
@@ -750,21 +656,54 @@ export default function DamaSportsPage() {
                 className="font-display font-black leading-none tracking-tight"
                 style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: 'oklch(93% 0.006 58)' }}
               >
-                Próximos Torneios
+                Próximo torneio
               </h2>
-              <span
-                className="font-ui text-xs tracking-editorial uppercase"
-                style={{ color: SPORTS }}
+              <span className="font-ui text-xs tracking-editorial uppercase" style={{ color: SPORTS }}>
+                — em breve
+              </span>
+            </motion.div>
+            <NextEventCard event={upcomingEvents[0]} inView={upcomingInView} />
+          </div>
+        </section>
+      )}
+
+      {/* ── Último torneio (resumido) + lista de realizados ── */}
+      {pastEvents.length > 0 && (
+        <section ref={pastRef} className="py-section" style={{ backgroundColor: BG_LIGHT }}>
+          <div className="container mx-auto px-6 lg:px-12">
+
+            {/* Título da seção */}
+            <motion.div
+              className="flex items-baseline gap-4 mb-10"
+              initial={{ opacity: 0, x: -30 }}
+              animate={pastInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ duration: 0.7, ease: EASE }}
+            >
+              <h2
+                className="font-display font-black leading-none tracking-tight"
+                style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: FG_DARK }}
               >
-                — próximos torneios
+                Torneios realizados
+              </h2>
+              <span className="font-ui text-xs tracking-editorial uppercase" style={{ color: SPORTS }}>
+                — já aconteceu
               </span>
             </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {upcomingEvents.map((event, i) => (
-                <UpcomingEventCard key={event.id} event={event} index={i} inView={upcomingInView} />
-              ))}
-            </div>
+            {/* Último torneio — destaque resumido */}
+            <LastEventCard event={pastEvents[0]} inView={pastInView} />
+
+            {/* Lista dos demais torneios com página */}
+            {pastEvents.length > 1 && (
+              <div className="mt-10">
+                {pastEvents.slice(1).map((event, i) => (
+                  <EventListRow key={event.id} event={event} index={i} inView={pastInView} />
+                ))}
+              </div>
+            )}
+
+            {/* Histórico antigo sem página dedicada */}
+            <HistoricoDropdown />
           </div>
         </section>
       )}
