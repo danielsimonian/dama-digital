@@ -50,49 +50,67 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Mosaico de fotos — grid que preenche o espaço todo ───────
-// Divide o espaço em 6 células iguais (3 cols × 2 rows).
-// Fotos cobrem a célula com object-cover — recorte mínimo, sem espaço vazio.
-function PhotoMosaic({ images, eventName }: { images: string[]; eventName: string }) {
+// ── Mosaico de fotos — grid 4 colunas × 2 linhas ────────────
+// Portrait = ocupa 1 coluna, Landscape = ocupa 2 colunas.
+// grid-auto-flow: dense encaixa tudo em 2 linhas sem espaço vazio.
+function PhotoMosaic({ images, eventName }: {
+  images: { src: string; portrait?: boolean }[];
+  eventName: string;
+}) {
   const isPlaceholder = images.length === 0;
   const shades = [
     'oklch(16% 0.012 50)', 'oklch(14% 0.01 50)', 'oklch(18% 0.014 50)',
     'oklch(13% 0.008 50)', 'oklch(15% 0.011 50)', 'oklch(17% 0.013 50)',
   ];
-  const slots = isPlaceholder ? shades : images;
+  // Placeholders: 4 portrait + 2 landscape (alternados)
+  const placeholders = [
+    { portrait: true }, { portrait: false }, { portrait: false },
+    { portrait: true }, { portrait: true }, { portrait: true },
+  ];
+
+  const slots = isPlaceholder ? placeholders : images;
 
   return (
     <div
-      className="grid h-full w-full"
+      className="h-full w-full"
       style={{
-        gridTemplateColumns: 'repeat(3, 1fr)',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
         gridTemplateRows: 'repeat(2, 1fr)',
+        gridAutoFlow: 'dense',
         gap: '3px',
       }}
     >
-      {slots.map((item, i) => (
-        <div key={i} className="relative overflow-hidden">
-          {isPlaceholder ? (
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center gap-1"
-              style={{ backgroundColor: item as string }}
-            >
-              <Camera size={16} style={{ color: 'oklch(38% 0.02 48)' }} />
-              <span className="font-ui text-xs" style={{ color: 'oklch(35% 0.018 48)' }}>
-                Foto {i + 1}
-              </span>
-            </div>
-          ) : (
-            <Image
-              src={item as string}
-              alt={`${eventName} — foto ${i + 1}`}
-              fill
-              className="object-cover transition-opacity duration-300 hover:opacity-90"
-              sizes="(max-width: 768px) 33vw, 20vw"
-            />
-          )}
-        </div>
-      ))}
+      {slots.map((item, i) => {
+        const isPortrait = item.portrait !== false; // default portrait se não especificado
+        return (
+          <div
+            key={i}
+            className="relative overflow-hidden"
+            style={{ gridColumn: `span ${isPortrait ? 1 : 2}` }}
+          >
+            {isPlaceholder ? (
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center gap-1"
+                style={{ backgroundColor: shades[i] }}
+              >
+                <Camera size={16} style={{ color: 'oklch(38% 0.02 48)' }} />
+                <span className="font-ui text-xs" style={{ color: 'oklch(35% 0.018 48)' }}>
+                  Foto {i + 1}
+                </span>
+              </div>
+            ) : (
+              <Image
+                src={(item as { src: string }).src}
+                alt={`${eventName} — foto ${i + 1}`}
+                fill
+                className="object-cover transition-opacity duration-300 hover:opacity-90"
+                sizes="(max-width: 768px) 50vw, 25vw"
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -153,7 +171,7 @@ function ReelPlayer({ reel }: { reel: SportsEvent['reels'][number] }) {
 // ── Seção combinada: Reels + Mosaico ─────────────────────────
 function ReelsMosaic({ reels, images, eventName }: {
   reels: SportsEvent['reels'];
-  images: string[];
+  images: SportsEvent['gallery'];
   eventName: string;
 }) {
   if (reels.length === 0 && images.length === 0) return null;
@@ -166,9 +184,9 @@ function ReelsMosaic({ reels, images, eventName }: {
           Galeria
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {images.map((src, i) => (
+          {images.map((item, i) => (
             <div key={i} className="relative aspect-square overflow-hidden rounded-xl">
-              <Image src={src} alt={`${eventName} — foto ${i + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
+              <Image src={item.src} alt={`${eventName} — foto ${i + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
             </div>
           ))}
         </div>

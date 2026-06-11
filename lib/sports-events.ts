@@ -17,7 +17,7 @@ export type SportsEvent = {
   logo: string | null
   description: string
   stats: { label: string; value: string }[]
-  gallery: string[]
+  gallery: { src: string; portrait?: boolean }[]
   reels: { title: string; url: string }[]
   sponsors: { name: string; logo: string }[]
   status: SportsEventStatus
@@ -45,12 +45,12 @@ export const sportsEvents: SportsEvent[] = [
       { label: 'quadras', value: '7' },
     ],
     gallery: [
-      '/images/events/open-spfc/foto1.jpg',
-      '/images/events/open-spfc/foto2.jpg',
-      '/images/events/open-spfc/foto3.jpg',
-      '/images/events/open-spfc/foto4.jpeg',
-      '/images/events/open-spfc/foto5.jpeg',
-      '/images/events/open-spfc/foto6.jpeg',
+      { src: '/images/events/open-spfc/foto1.jpg',  portrait: true  },
+      { src: '/images/events/open-spfc/foto2.jpg',  portrait: false },
+      { src: '/images/events/open-spfc/foto3.jpg',  portrait: false },
+      { src: '/images/events/open-spfc/foto4.jpeg', portrait: true  },
+      { src: '/images/events/open-spfc/foto5.jpeg', portrait: true  },
+      { src: '/images/events/open-spfc/foto6.jpeg', portrait: true  },
     ],
     reels: [
       { title: 'Open SPFC 2026', url: '/videos/events/open-spfc/reel.mp4' },
