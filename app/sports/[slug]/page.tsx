@@ -50,49 +50,49 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Mosaico de fotos — colunas CSS (respeita proporção original) ──
-// Fotos verticais ficam altas, horizontais ficam largas — tudo encaixado.
+// ── Mosaico de fotos — grid que preenche o espaço todo ───────
+// Divide o espaço em 6 células iguais (3 cols × 2 rows).
+// Fotos cobrem a célula com object-cover — recorte mínimo, sem espaço vazio.
 function PhotoMosaic({ images, eventName }: { images: string[]; eventName: string }) {
   const isPlaceholder = images.length === 0;
-
-  // Placeholders simulam mix de proporções: 3:4 (vertical) e 4:3 (horizontal)
-  const placeholderRatios = ['75%', '133%', '75%', '133%', '75%', '133%'];
   const shades = [
     'oklch(16% 0.012 50)', 'oklch(14% 0.01 50)', 'oklch(18% 0.014 50)',
     'oklch(13% 0.008 50)', 'oklch(15% 0.011 50)', 'oklch(17% 0.013 50)',
   ];
-
-  const cols = images.length <= 2 ? 1 : 2;
+  const slots = isPlaceholder ? shades : images;
 
   return (
-    <div style={{ columns: cols, columnGap: '3px' }}>
-      {isPlaceholder
-        ? placeholderRatios.map((ratio, i) => (
-            <div key={i} style={{ breakInside: 'avoid', marginBottom: '3px' }}>
-              <div
-                className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-sm"
-                style={{ paddingBottom: ratio, position: 'relative', backgroundColor: shades[i] }}
-              >
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                  <Camera size={18} style={{ color: 'oklch(38% 0.02 48)' }} />
-                  <span className="font-ui text-xs" style={{ color: 'oklch(35% 0.018 48)' }}>Foto {i + 1}</span>
-                </div>
-              </div>
+    <div
+      className="grid h-full w-full"
+      style={{
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gridTemplateRows: 'repeat(2, 1fr)',
+        gap: '3px',
+      }}
+    >
+      {slots.map((item, i) => (
+        <div key={i} className="relative overflow-hidden">
+          {isPlaceholder ? (
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-1"
+              style={{ backgroundColor: item as string }}
+            >
+              <Camera size={16} style={{ color: 'oklch(38% 0.02 48)' }} />
+              <span className="font-ui text-xs" style={{ color: 'oklch(35% 0.018 48)' }}>
+                Foto {i + 1}
+              </span>
             </div>
-          ))
-        : images.map((src, i) => (
-            <div key={i} style={{ breakInside: 'avoid', marginBottom: '3px' }}>
-              <Image
-                src={src}
-                alt={`${eventName} — foto ${i + 1}`}
-                width={0}
-                height={0}
-                sizes="(max-width: 768px) 50vw, 30vw"
-                className="w-full h-auto block overflow-hidden rounded-sm hover:opacity-90 transition-opacity duration-300"
-              />
-            </div>
-          ))
-      }
+          ) : (
+            <Image
+              src={item as string}
+              alt={`${eventName} — foto ${i + 1}`}
+              fill
+              className="object-cover transition-opacity duration-300 hover:opacity-90"
+              sizes="(max-width: 768px) 33vw, 20vw"
+            />
+          )}
+        </div>
+      ))}
     </div>
   );
 }
