@@ -23,13 +23,14 @@ export function generateStaticParams() {
   return sportsEvents.map(e => ({ slug: e.slug }));
 }
 
-// ── Embed helper ─────────────────────────────────────────────
-function getEmbedUrl(url: string): string | null {
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-  const igMatch = url.match(/instagram\.com\/(?:reel|p)\/([A-Za-z0-9_-]+)/);
-  if (igMatch) return `https://www.instagram.com/p/${igMatch[1]}/embed`;
-  return null;
+// ── URL helpers ───────────────────────────────────────────────
+function isLocalVideo(url: string): boolean {
+  return url.startsWith('/') && /\.(mp4|webm|mov)$/i.test(url);
+}
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : null;
 }
 
 // ── Stat ─────────────────────────────────────────────────────
@@ -86,6 +87,10 @@ function Gallery({ images, eventName }: { images: string[]; eventName: string })
 }
 
 // ── Reels ────────────────────────────────────────────────────
+// Suporte a 3 tipos de fonte:
+//   1. Arquivo local  → /videos/events/open-spfc/reel.mp4  → <video> nativo
+//   2. YouTube        → youtube.com/watch?v=XXX            → iframe embed
+//   3. Qualquer outra → link externo com ícone
 function Reels({ reels }: { reels: SportsEvent['reels'] }) {
   if (reels.length === 0) return null;
   return (
@@ -95,27 +100,33 @@ function Reels({ reels }: { reels: SportsEvent['reels'] }) {
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {reels.map((reel, i) => {
-          const embedUrl = getEmbedUrl(reel.url);
+          const ytUrl   = getYouTubeEmbedUrl(reel.url);
+          const isLocal = isLocalVideo(reel.url);
+
           return (
-            <div key={i} className="w-full max-w-xs mx-auto sm:max-w-none">
-              {embedUrl ? (
-                <div>
-                  <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: '177.78%' }}>
-                    <iframe
-                      src={embedUrl}
-                      title={reel.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="absolute inset-0 w-full h-full"
-                    />
-                  </div>
-                  {reel.title && (
-                    <p className="font-ui text-sm mt-3" style={{ color: 'oklch(55% 0.02 48)' }}>
-                      {reel.title}
-                    </p>
-                  )}
+            <div key={i} className="w-full max-w-xs mx-auto sm:max-w-none flex flex-col gap-3">
+              {/* ── Vídeo local (mp4/webm/mov) ── */}
+              {isLocal ? (
+                <video
+                  src={reel.url}
+                  controls
+                  playsInline
+                  className="w-full rounded-2xl"
+                  style={{ aspectRatio: '9/16', objectFit: 'cover', backgroundColor: 'oklch(8% 0.008 50)' }}
+                />
+              ) : ytUrl ? (
+                /* ── YouTube embed ── */
+                <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: '177.78%' }}>
+                  <iframe
+                    src={ytUrl}
+                    title={reel.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0 w-full h-full"
+                  />
                 </div>
               ) : (
+                /* ── Link externo (fallback) ── */
                 <a
                   href={reel.url}
                   target="_blank"
@@ -134,6 +145,12 @@ function Reels({ reels }: { reels: SportsEvent['reels'] }) {
                   </span>
                   <ExternalLink size={14} className="flex-shrink-0" style={{ color: 'oklch(45% 0.02 48)' }} />
                 </a>
+              )}
+
+              {reel.title && (isLocal || ytUrl) && (
+                <p className="font-ui text-sm" style={{ color: 'oklch(55% 0.02 48)' }}>
+                  {reel.title}
+                </p>
               )}
             </div>
           );
