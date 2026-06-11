@@ -73,10 +73,10 @@ function PhotoPlaceholder({ index }: { index: number }) {
 
 // ── Mosaico de fotos (real ou placeholder) ────────────────────
 function PhotoMosaic({ images, eventName }: { images: string[]; eventName: string }) {
-  // Se não tiver fotos, mostra 4 placeholders
+  // Se não tiver fotos, mostra 6 placeholders
   const isPlaceholder = images.length === 0;
-  const count = isPlaceholder ? 4 : images.length;
-  const items = isPlaceholder ? [0, 1, 2, 3] : images.map((_, i) => i);
+  const count = isPlaceholder ? 6 : images.length;
+  const items = isPlaceholder ? [0, 1, 2, 3, 4, 5] : images.map((_, i) => i);
 
   // Layout do mosaico varia por quantidade
   if (count === 1) {
@@ -128,11 +128,11 @@ function PhotoMosaic({ images, eventName }: { images: string[]; eventName: strin
     );
   }
 
-  // 4+ fotos: grade 2×2 (exibe as 4 primeiras)
+  // 4+ fotos: grade 3×2 (exibe as 6 primeiras)
   return (
-    <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
-      {items.slice(0, 4).map((idx) => (
-        <div key={idx} className="relative overflow-hidden rounded-xl" style={{ minHeight: '120px' }}>
+    <div className="grid grid-cols-3 grid-rows-2 gap-2 h-full">
+      {items.slice(0, 6).map((idx) => (
+        <div key={idx} className="relative aspect-square overflow-hidden rounded-xl">
           {isPlaceholder ? <PhotoPlaceholder index={idx} /> : (
             <Image src={images[idx]} alt={`${eventName} — foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
           )}
