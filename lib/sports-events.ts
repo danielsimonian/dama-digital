@@ -48,8 +48,7 @@ export const sportsEvents: SportsEvent[] = [
       // '/images/events/open-spfc/foto1.jpg',
     ],
     reels: [
-      // { title: 'Highlights Open SPFC', url: 'https://www.youtube.com/watch?v=XXXXX' },
-      // { title: 'Reel Instagram', url: 'https://www.instagram.com/reel/XXXXX' },
+      { title: 'Open SPFC 2026', url: 'https://www.instagram.com/p/DZLAXd3IJYq/' },
     ],
     sponsors: [
       { name: 'SPFC', logo: '/images/clients/spfc.png' },
