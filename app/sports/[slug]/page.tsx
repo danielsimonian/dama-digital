@@ -50,94 +50,49 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-// ── Foto placeholder (enquanto não tem foto real) ────────────
-function PhotoPlaceholder({ index }: { index: number }) {
-  const shades = [
-    'oklch(16% 0.012 50)',
-    'oklch(14% 0.01 50)',
-    'oklch(18% 0.014 50)',
-    'oklch(13% 0.008 50)',
-  ];
-  return (
-    <div
-      className="w-full h-full flex flex-col items-center justify-center gap-2 rounded-xl"
-      style={{ backgroundColor: shades[index % shades.length] }}
-    >
-      <Camera size={22} style={{ color: 'oklch(38% 0.02 48)' }} />
-      <span className="font-ui text-xs" style={{ color: 'oklch(35% 0.018 48)' }}>
-        Foto {index + 1}
-      </span>
-    </div>
-  );
-}
-
-// ── Mosaico de fotos (real ou placeholder) ────────────────────
+// ── Mosaico de fotos — colunas CSS (respeita proporção original) ──
+// Fotos verticais ficam altas, horizontais ficam largas — tudo encaixado.
 function PhotoMosaic({ images, eventName }: { images: string[]; eventName: string }) {
-  // Se não tiver fotos, mostra 6 placeholders
   const isPlaceholder = images.length === 0;
-  const count = isPlaceholder ? 6 : images.length;
-  const items = isPlaceholder ? [0, 1, 2, 3, 4, 5] : images.map((_, i) => i);
 
-  // Layout do mosaico varia por quantidade
-  if (count === 1) {
-    return (
-      <div className="relative w-full h-full min-h-[200px] overflow-hidden rounded-xl">
-        {isPlaceholder ? (
-          <PhotoPlaceholder index={0} />
-        ) : (
-          <Image src={images[0]} alt={`${eventName} — foto 1`} fill className="object-cover" />
-        )}
-      </div>
-    );
-  }
+  // Placeholders simulam mix de proporções: 3:4 (vertical) e 4:3 (horizontal)
+  const placeholderRatios = ['75%', '133%', '75%', '133%', '75%', '133%'];
+  const shades = [
+    'oklch(16% 0.012 50)', 'oklch(14% 0.01 50)', 'oklch(18% 0.014 50)',
+    'oklch(13% 0.008 50)', 'oklch(15% 0.011 50)', 'oklch(17% 0.013 50)',
+  ];
 
-  if (count === 2) {
-    return (
-      <div className="grid grid-rows-2 gap-2 h-full">
-        {items.slice(0, 2).map((idx) => (
-          <div key={idx} className="relative overflow-hidden rounded-xl" style={{ minHeight: '120px' }}>
-            {isPlaceholder ? (
-              <PhotoPlaceholder index={idx} />
-            ) : (
-              <Image src={images[idx]} alt={`${eventName} — foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const cols = images.length <= 2 ? 1 : 2;
 
-  if (count === 3) {
-    return (
-      <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
-        {/* Foto grande à esquerda */}
-        <div className="relative row-span-2 overflow-hidden rounded-xl" style={{ minHeight: '200px' }}>
-          {isPlaceholder ? <PhotoPlaceholder index={0} /> : (
-            <Image src={images[0]} alt={`${eventName} — foto 1`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
-          )}
-        </div>
-        {/* Duas menores à direita */}
-        {items.slice(1, 3).map((idx) => (
-          <div key={idx} className="relative overflow-hidden rounded-xl">
-            {isPlaceholder ? <PhotoPlaceholder index={idx} /> : (
-              <Image src={images[idx]} alt={`${eventName} — foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  // 4+ fotos: grade 3×2 (exibe as 6 primeiras)
   return (
-    <div className="grid grid-cols-3 grid-rows-2 gap-2 h-full">
-      {items.slice(0, 6).map((idx) => (
-        <div key={idx} className="relative aspect-square overflow-hidden rounded-xl">
-          {isPlaceholder ? <PhotoPlaceholder index={idx} /> : (
-            <Image src={images[idx]} alt={`${eventName} — foto ${idx + 1}`} fill className="object-cover hover:scale-105 transition-transform duration-500" />
-          )}
-        </div>
-      ))}
+    <div style={{ columns: cols, columnGap: '3px' }}>
+      {isPlaceholder
+        ? placeholderRatios.map((ratio, i) => (
+            <div key={i} style={{ breakInside: 'avoid', marginBottom: '3px' }}>
+              <div
+                className="flex flex-col items-center justify-center gap-2 overflow-hidden rounded-sm"
+                style={{ paddingBottom: ratio, position: 'relative', backgroundColor: shades[i] }}
+              >
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <Camera size={18} style={{ color: 'oklch(38% 0.02 48)' }} />
+                  <span className="font-ui text-xs" style={{ color: 'oklch(35% 0.018 48)' }}>Foto {i + 1}</span>
+                </div>
+              </div>
+            </div>
+          ))
+        : images.map((src, i) => (
+            <div key={i} style={{ breakInside: 'avoid', marginBottom: '3px' }}>
+              <Image
+                src={src}
+                alt={`${eventName} — foto ${i + 1}`}
+                width={0}
+                height={0}
+                sizes="(max-width: 768px) 50vw, 30vw"
+                className="w-full h-auto block overflow-hidden rounded-sm hover:opacity-90 transition-opacity duration-300"
+              />
+            </div>
+          ))
+      }
     </div>
   );
 }
