@@ -108,21 +108,21 @@ function ReelPlayer({ reel }: { reel: SportsEvent['reels'][number] }) {
         src={reel.url}
         controls
         playsInline
-        className="w-full rounded-2xl"
-        style={{ aspectRatio: '9/16', objectFit: 'cover', backgroundColor: 'oklch(8% 0.008 50)' }}
+        className="w-full h-full rounded-2xl"
+        style={{ objectFit: 'cover', backgroundColor: 'oklch(8% 0.008 50)' }}
       />
     );
   }
 
   if (ytUrl) {
     return (
-      <div className="relative w-full rounded-2xl overflow-hidden" style={{ paddingBottom: '177.78%' }}>
+      <div className="w-full h-full rounded-2xl overflow-hidden">
         <iframe
           src={ytUrl}
           title={reel.title}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
-          className="absolute inset-0 w-full h-full"
+          className="w-full h-full"
         />
       </div>
     );
@@ -182,12 +182,15 @@ function ReelsMosaic({ reels, images, eventName }: {
         Highlights & Fotos
       </h2>
 
-      {/* Primeiro reel + mosaico lado a lado — mesma altura */}
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(0,_340px)_1fr] gap-[3px] items-stretch">
-        {/* Reel — define a altura da linha */}
-        <ReelPlayer reel={reels[0]} />
-        {/* Mosaico — clipado exatamente na altura do reel */}
-        <div className="overflow-hidden h-full">
+      {/* Primeiro reel + mosaico lado a lado */}
+      {/* Altura fixa = reel de 340px × (16/9) ≈ 604px. Galeria clipa nessa altura. */}
+      <div className="flex flex-col md:flex-row gap-[3px] md:h-[604px]">
+        {/* Reel — largura determinada pela proporção 9:16 da altura do container */}
+        <div className="flex-shrink-0 md:h-full" style={{ aspectRatio: '9/16' }}>
+          <ReelPlayer reel={reels[0]} />
+        </div>
+        {/* Mosaico — preenche o resto, clipado na mesma altura */}
+        <div className="flex-1 overflow-hidden md:h-full">
           <PhotoMosaic images={images} eventName={eventName} />
         </div>
       </div>
