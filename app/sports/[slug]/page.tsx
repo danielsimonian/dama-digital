@@ -72,14 +72,8 @@ function PhotoMosaic({ images, eventName }: {
 
   return (
     <div
-      className="h-full w-full"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, 1fr)',
-        gridTemplateRows: 'repeat(2, 1fr)',
-        gridAutoFlow: 'dense',
-        gap: '3px',
-      }}
+      className="grid grid-cols-2 md:grid-cols-4 grid-rows-2 grid-flow-dense h-full w-full"
+      style={{ gap: '3px' }}
     >
       {slots.map((item, i) => {
         const isPortrait = item.portrait !== false; // default portrait se não especificado
@@ -207,8 +201,8 @@ function ReelsMosaic({ reels, images, eventName }: {
         <div className="flex-shrink-0 md:h-full" style={{ aspectRatio: '9/16' }}>
           <ReelPlayer reel={reels[0]} />
         </div>
-        {/* Mosaico — preenche o resto, clipado na mesma altura */}
-        <div className="flex-1 overflow-hidden md:h-full">
+        {/* Mosaico — altura fixa no mobile, preenche o resto no desktop */}
+        <div className="h-[55vw] md:h-full md:flex-1 overflow-hidden">
           <PhotoMosaic images={images} eventName={eventName} />
         </div>
       </div>
