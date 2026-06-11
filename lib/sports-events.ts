@@ -19,7 +19,7 @@ export type SportsEvent = {
   stats: { label: string; value: string }[]
   gallery: { src: string; portrait?: boolean }[]
   reels: { title: string; url: string }[]
-  sponsors: { name: string; logo: string }[]
+  sponsors: { name: string; logo: string; zoom?: boolean }[]
   status: SportsEventStatus
   link?: { url: string; label: string }
   tag: string
@@ -28,15 +28,15 @@ export type SportsEvent = {
 export const sportsEvents: SportsEvent[] = [
   // ── Mais recente primeiro ─────────────────────────────────────
   {
-    id: 'open-spfc',
-    slug: 'open-spfc',
-    name: 'Open SPFC',
+    id: '6o-open-spfc',
+    slug: '6o-open-spfc',
+    name: '6º Open SPFC',
     subtitle: 'Beach Tennis',
     year: 2026,
     date: '29, 30 e 31 de maio de 2026',
     location: 'CT do São Paulo FC · São Paulo, SP',
     banner: null,
-    logo: '/images/clients/spfc.png',
+    logo: '/images/events/6o-open-spfc/6-open-spfc.png',
     description: 'O maior torneio de beach tennis já realizado no CT do São Paulo Futebol Clube. Estrutura completa, parceria com um dos maiores clubes do Brasil.',
     stats: [
       { label: 'atletas', value: '400+' },
@@ -45,18 +45,26 @@ export const sportsEvents: SportsEvent[] = [
       { label: 'quadras', value: '7' },
     ],
     gallery: [
-      { src: '/images/events/open-spfc/foto1.jpg',  portrait: true  },
-      { src: '/images/events/open-spfc/foto2.jpg',  portrait: false },
-      { src: '/images/events/open-spfc/foto3.jpg',  portrait: false },
-      { src: '/images/events/open-spfc/foto4.jpeg', portrait: true  },
-      { src: '/images/events/open-spfc/foto5.jpeg', portrait: true  },
-      { src: '/images/events/open-spfc/foto6.jpeg', portrait: true  },
+      { src: '/images/events/6o-open-spfc/foto1.jpg',  portrait: true  },
+      { src: '/images/events/6o-open-spfc/foto2.jpg',  portrait: false },
+      { src: '/images/events/6o-open-spfc/foto3.jpg',  portrait: false },
+      { src: '/images/events/6o-open-spfc/foto4.jpeg', portrait: true  },
+      { src: '/images/events/6o-open-spfc/foto5.jpeg', portrait: true  },
+      { src: '/images/events/6o-open-spfc/foto6.jpeg', portrait: true  },
     ],
     reels: [
-      { title: 'Open SPFC 2026', url: '/videos/events/open-spfc/reel.mp4' },
+      { title: 'Open SPFC 2026', url: '/videos/events/6o-open-spfc/reel.mp4' },
     ],
     sponsors: [
-      { name: 'SPFC', logo: '/images/clients/spfc.png' },
+      { name: 'SPFC',          logo: '/images/clients/spfc.png' },
+      { name: 'RKT & Co',        logo: '/images/clients/rktco.jpeg' },
+      { name: 'Nanda Bani',    logo: '/images/clients/nandabani.png',   zoom: true },
+      { name: 'Areia Bar',     logo: '/images/clients/areiabar.png' },
+      { name: 'Addera',        logo: '/images/clients/addera.png' },
+      { name: 'Corote Ice',    logo: '/images/clients/coroteice.png' },
+      { name: 'Mind Court',    logo: '/images/clients/mindcourt.png' },
+      { name: 'Saca e Corre',  logo: '/images/clients/sacaecorre.png',  zoom: true },
+      { name: 'Anglo Morumbi', logo: '/images/clients/anglo-morumbi.png' },
     ],
     status: 'realizado',
     tag: 'REALIZADO',

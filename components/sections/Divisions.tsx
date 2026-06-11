@@ -15,9 +15,9 @@ const STUDIO_ARTISTS = ['SAID', 'Raffa Pereira', 'Karina Cyrillo', 'André Simon
 const STUDIO_RELEASES = ['I Miss You', 'Canto pra Guerreira', 'Te Quis', 'Lança, Vol. 01', 'Alto Mar'];
 
 const SPORTS_EVENTS = [
-  { status: 'realizado', name: 'Open Santos ASSESP',        date: 'ABR 2026', stats: '250+ atletas · 14 cat · 13 quadras' },
-  { status: 'em breve',  name: 'Open SPFC de Beach Tennis', date: 'MAI 2026', stats: '400+ atletas previstos · 19 cat' },
-  { status: 'em breve',  name: 'Seletiva Seleção Brasileira', date: 'MAI 2026', stats: 'Pan-Americano IFBT · Santos, SP' },
+  { status: 'realizado', name: '6º Open SPFC',               date: 'MAI 2026', stats: '400+ atletas · 19 cat · 7 quadras' },
+  { status: 'realizado', name: 'Seletiva Seleção Brasileira', date: 'MAI 2026', stats: 'Pan-Americano IFBT · Santos, SP' },
+  { status: 'realizado', name: 'Open Santos ASSESP',          date: 'ABR 2026', stats: '250+ atletas · 14 cat · 13 quadras' },
 ];
 
 const divisions = [
@@ -235,39 +235,39 @@ export default function Divisions() {
                         className="font-ui text-[10px] tracking-widest uppercase font-bold"
                         style={{ color: 'oklch(65% 0.21 33)' }}
                       >
-                        ● Próximo torneio
+                        ✓ Último torneio
                       </span>
                       <span
                         className="font-display font-black text-xl lg:text-2xl leading-tight"
                         style={{ color: 'oklch(93% 0.015 33)' }}
                       >
-                        Seletiva Seleção Brasileira
+                        6º Open SPFC
                       </span>
                       <span
                         className="font-ui text-sm"
                         style={{ color: 'oklch(60% 0.08 33)' }}
                       >
-                        23–24 mai · Santos · Pan-Americano IFBT
+                        29–31 mai · CT São Paulo FC · 400+ atletas
                       </span>
                     </div>
 
                     {/* Outros torneios */}
                     <div className="flex flex-col gap-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between" style={{ opacity: 0.6 }}>
                         <span
-                          className="font-ui text-xs"
+                          className="font-ui text-xs line-through"
                           style={{ color: 'oklch(60% 0.08 33)' }}
                         >
-                          Open SPFC de Beach Tennis
+                          Seletiva Seleção Brasileira
                         </span>
                         <span
                           className="font-ui text-[10px] tracking-widest"
-                          style={{ color: 'oklch(45% 0.06 33)' }}
+                          style={{ color: 'oklch(65% 0.21 33)' }}
                         >
-                          MAI
+                          ✓ MAI
                         </span>
                       </div>
-                      <div className="flex items-center justify-between" style={{ opacity: 0.5 }}>
+                      <div className="flex items-center justify-between" style={{ opacity: 0.6 }}>
                         <span
                           className="font-ui text-xs line-through"
                           style={{ color: 'oklch(60% 0.08 33)' }}

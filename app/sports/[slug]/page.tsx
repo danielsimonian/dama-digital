@@ -72,7 +72,7 @@ function PhotoMosaic({ images, eventName }: {
 
   return (
     <div
-      className="grid grid-cols-2 md:grid-cols-4 grid-rows-2 grid-flow-dense h-full w-full"
+      className="grid grid-cols-2 md:grid-cols-4 md:grid-rows-2 grid-flow-dense md:h-full w-full"
       style={{ gap: '3px' }}
     >
       {slots.map((item, i) => {
@@ -80,7 +80,7 @@ function PhotoMosaic({ images, eventName }: {
         return (
           <div
             key={i}
-            className="relative overflow-hidden"
+            className={`relative overflow-hidden ${isPortrait ? 'aspect-[2/3] md:aspect-auto' : 'aspect-[3/2] md:aspect-auto'}`}
             style={{ gridColumn: `span ${isPortrait ? 1 : 2}` }}
           >
             {isPlaceholder ? (
@@ -118,8 +118,11 @@ function ReelPlayer({ reel }: { reel: SportsEvent['reels'][number] }) {
     return (
       <video
         src={reel.url}
-        controls
+        autoPlay
+        muted
+        loop
         playsInline
+        controls
         className="w-full h-full rounded-2xl"
         style={{ objectFit: 'cover', backgroundColor: 'oklch(8% 0.008 50)' }}
       />
@@ -201,8 +204,8 @@ function ReelsMosaic({ reels, images, eventName }: {
         <div className="flex-shrink-0 md:h-full" style={{ aspectRatio: '9/16' }}>
           <ReelPlayer reel={reels[0]} />
         </div>
-        {/* Mosaico — altura fixa no mobile, preenche o resto no desktop */}
-        <div className="h-[55vw] md:h-full md:flex-1 overflow-hidden">
+        {/* Mosaico — altura automática no mobile, preenche o resto no desktop */}
+        <div className="overflow-hidden md:flex-1 md:h-full">
           <PhotoMosaic images={images} eventName={eventName} />
         </div>
       </div>
@@ -240,19 +243,23 @@ function Sponsors({ sponsors }: { sponsors: SportsEvent['sponsors'] }) {
       <h2 className="font-display font-black text-2xl md:text-3xl mb-6" style={{ color: 'oklch(97% 0.009 52)' }}>
         Parceiros & patrocinadores
       </h2>
-      <div className="flex flex-wrap gap-6">
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-6 md:gap-10 lg:gap-12">
         {sponsors.map((s, i) => (
-          <div
-            key={i}
-            className="flex flex-col items-center gap-3 p-6 rounded-2xl"
-            style={{ backgroundColor: 'oklch(15% 0.01 50)' }}
-          >
-            <div className="relative w-16 h-16 overflow-hidden rounded-full bg-white">
-              <Image src={s.logo} alt={s.name} fill className="object-contain p-1.5" />
+          <div key={i} className="group flex items-center justify-center">
+            <div
+              className="w-full aspect-square shrink-0 rounded-full overflow-hidden flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+              style={{ border: '1px solid oklch(80% 0.01 58)', backgroundColor: 'oklch(90% 0.01 58)' }}
+            >
+              <div className="relative w-full h-full">
+                <Image
+                  src={s.logo}
+                  alt={s.name}
+                  fill
+                  className={`object-contain opacity-85 group-hover:opacity-100 transition-opacity duration-300 ${s.zoom ? 'scale-[1.35]' : ''}`}
+                  sizes="(max-width: 768px) 30vw, 15vw"
+                />
+              </div>
             </div>
-            <span className="font-ui text-xs font-medium" style={{ color: 'oklch(55% 0.02 48)' }}>
-              {s.name}
-            </span>
           </div>
         ))}
       </div>
@@ -311,7 +318,7 @@ export default async function TorneioPagina({ params }: { params: Promise<{ slug
           <div className="flex items-start gap-5 mb-6">
             {event.logo && (
               <div className="relative w-16 h-16 md:w-20 md:h-20 overflow-hidden rounded-full bg-white flex-shrink-0 mt-1">
-                <Image src={event.logo} alt={`Logo ${event.name}`} fill className="object-contain p-1" />
+                <Image src={event.logo} alt={`Logo ${event.name}`} fill className="object-contain scale-[1.25]" />
               </div>
             )}
             <div>

@@ -7,7 +7,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { ClipboardList, Flag, Volume2, Clapperboard, Trophy, Building2 } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import { getPastEvents, getUpcomingEvents, historico as historicoData, type SportsEvent } from '@/lib/sports-events';
+import { getPastEvents, getUpcomingEvents, historico as historicoData, sportsEvents, type SportsEvent } from '@/lib/sports-events';
 
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
@@ -15,7 +15,7 @@ const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 // ── Letras caindo como bolas com bounce ───────────────────────
 const events = [
   { title: 'Open Santos ASSESP',             subtitle: 'Santos, SP' },
-  { title: 'Open SPFC de Beach Tennis',      subtitle: 'São Paulo, SP' },
+  { title: '6º Open SPFC de Beach Tennis',    subtitle: 'São Paulo, SP' },
   { title: 'Seletiva Seleção Brasileira',      subtitle: 'Santos, SP' },
   { title: 'Open São Paulo de Beach Tennis', subtitle: 'São Paulo, SP' },
 ];
@@ -117,16 +117,21 @@ const services = [
   { number: '06', icon: Building2,     name: 'Estrutura Completa', description: 'Quadras, treliças, pódio, staff e tudo que o evento precisa para acontecer com excelência.' },
 ];
 
-const clients = [
-  { name: 'ASSESP',    logo: '/images/clients/assesp.jpeg' },
-  { name: 'RONYMOTORS',logo: '/images/clients/rony.png' },
-  { name: 'SPFC',      logo: '/images/clients/spfc.png' },
-  { name: 'TOMBEACH',  logo: '/images/clients/tombeach.png' },
-  { name: 'OPENSP',    logo: '/images/clients/opensp.webp' },
-  { name: 'HYDRA',     logo: '/images/clients/hydra.png' },
-  { name: 'GENIAL',    logo: '/images/clients/genial.png' },
-  { name: 'IFBT',      logo: '/images/clients/ifbt.jpg' },
+// Logos de eventos anteriores sem página própria
+const extraClients = [
+  { name: 'RONYMOTORS', logo: '/images/clients/rony.png' },
+  { name: 'TOMBEACH',   logo: '/images/clients/tombeach.png' },
+  { name: 'OPENSP',     logo: '/images/clients/opensp.webp' },
+  { name: 'HYDRA',      logo: '/images/clients/hydra.png' },
+  { name: 'GENIAL',     logo: '/images/clients/genial.png' },
 ];
+
+// Sponsors dos torneios + extras, deduplicados por logo path
+const clients = Array.from(
+  new Map(
+    [...sportsEvents.flatMap(e => e.sponsors), ...extraClients].map(s => [s.logo, s])
+  ).values()
+);
 
 // ── Histórico de torneios ─────────────────────────────────────
 function HistoricoDropdown() {
@@ -203,61 +208,70 @@ function LastEventCard({ event, inView }: { event: SportsEvent; inView: boolean 
       className="grid grid-cols-1 lg:grid-cols-2 gap-px"
       style={{ backgroundColor: 'oklch(82% 0.015 50 / 0.2)' }}
     >
-      {/* Info */}
-      <div className="flex flex-col gap-6 p-8 lg:p-10" style={{ backgroundColor: BG_LIGHT }}>
-        <div>
-          <span
-            className="inline-block font-ui text-2xs font-bold tracking-widest uppercase px-2 py-0.5 mb-3"
-            style={{ backgroundColor: 'oklch(88% 0.03 50)', color: 'oklch(42% 0.04 48)' }}
-          >
-            Último torneio
-          </span>
-          <p className="font-ui text-xs tracking-editorial uppercase mb-1" style={{ color: SPORTS }}>
-            {event.subtitle}
-          </p>
-          <h3
-            className="font-display font-black leading-none tracking-tight"
-            style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: FG_DARK }}
-          >
-            {event.name}
-          </h3>
-        </div>
-        <div className="flex flex-col gap-1">
-          <p className="font-ui text-sm" style={{ color: 'oklch(45% 0.02 48)' }}>{event.date}</p>
-          <p className="font-ui text-sm" style={{ color: 'oklch(55% 0.02 48)' }}>{event.location}</p>
-        </div>
-        <p className="font-body text-sm leading-relaxed" style={{ color: 'oklch(38% 0.015 48)' }}>
-          {event.description}
-        </p>
-        <Link
-          href={`/sports/${event.slug}`}
-          className="inline-flex items-center gap-2 font-ui text-sm font-semibold self-start transition-opacity duration-200 hover:opacity-70"
-          style={{ color: SPORTS }}
-        >
-          Ver fotos, reels e detalhes →
-        </Link>
-      </div>
-
-      {/* Stats grid */}
-      <div
-        className="grid gap-px"
-        style={{
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gridTemplateRows: `repeat(${Math.ceil(event.stats.length / 2)}, 1fr)`,
-          backgroundColor: 'oklch(82% 0.015 50 / 0.2)',
-        }}
-      >
-        {event.stats.map((stat, i) => (
-          <div key={i} className="flex flex-col justify-end gap-1 p-7" style={{ backgroundColor: BG_LIGHT }}>
-            <p className="font-display font-black leading-none" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', color: SPORTS }}>
-              {stat.value}
-            </p>
-            <p className="font-ui text-xs tracking-editorial uppercase" style={{ color: 'oklch(55% 0.025 48)' }}>
-              {stat.label}
-            </p>
+        {/* Info */}
+        <div className="flex flex-col gap-6 p-8 lg:p-10" style={{ backgroundColor: BG_LIGHT }}>
+          <div>
+            <span
+              className="inline-block font-ui text-2xs font-bold tracking-widest uppercase px-2 py-0.5 mb-4"
+              style={{ backgroundColor: 'oklch(88% 0.03 50)', color: 'oklch(42% 0.04 48)' }}
+            >
+              Último torneio
+            </span>
+            <div className="flex items-start gap-4">
+              {event.logo && (
+                <div className="relative w-16 h-16 rounded-full overflow-hidden bg-white flex-shrink-0 mt-1" style={{ border: '1px solid oklch(82% 0.01 55)' }}>
+                  <Image src={event.logo} alt={event.name} fill className="object-contain scale-[1.25]" sizes="64px" />
+                </div>
+              )}
+              <div>
+                <h3
+                  className="font-display font-black leading-none tracking-tight"
+                  style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: FG_DARK }}
+                >
+                  {event.name}
+                </h3>
+                <p className="font-ui text-xs tracking-editorial uppercase mt-1" style={{ color: SPORTS }}>
+                  {event.subtitle}
+                </p>
+              </div>
+            </div>
           </div>
-        ))}
-      </div>
+          <div className="flex flex-col gap-1">
+            <p className="font-ui text-sm" style={{ color: 'oklch(45% 0.02 48)' }}>{event.date}</p>
+            <p className="font-ui text-sm" style={{ color: 'oklch(55% 0.02 48)' }}>{event.location}</p>
+          </div>
+          <p className="font-body text-sm leading-relaxed" style={{ color: 'oklch(38% 0.015 48)' }}>
+            {event.description}
+          </p>
+          <Link
+            href={`/sports/${event.slug}`}
+            className="inline-flex items-center gap-2 font-ui text-sm font-semibold self-start transition-opacity duration-200 hover:opacity-70"
+            style={{ color: SPORTS }}
+          >
+            Ver fotos, reels e detalhes →
+          </Link>
+        </div>
+
+        {/* Stats grid */}
+        <div
+          className="grid gap-px"
+          style={{
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gridTemplateRows: `repeat(${Math.ceil(event.stats.length / 2)}, 1fr)`,
+            backgroundColor: 'oklch(82% 0.015 50 / 0.2)',
+          }}
+        >
+          {event.stats.map((stat, i) => (
+            <div key={i} className="flex flex-col justify-end gap-1 p-7" style={{ backgroundColor: BG_LIGHT }}>
+              <p className="font-display font-black leading-none" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', color: SPORTS }}>
+                {stat.value}
+              </p>
+              <p className="font-ui text-xs tracking-editorial uppercase" style={{ color: 'oklch(55% 0.025 48)' }}>
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
     </motion.div>
   );
 }
@@ -644,7 +658,7 @@ export default function DamaSportsPage() {
 
       {/* ── Próximo torneio — só renderiza se houver ── */}
       {upcomingEvents.length > 0 && (
-        <section ref={upcomingRef} className="py-section" style={{ backgroundColor: BG_DARK }}>
+        <section ref={upcomingRef} className="py-section-sm" style={{ backgroundColor: BG_DARK }}>
           <div className="container mx-auto px-6 lg:px-12">
             <motion.div
               className="flex items-baseline gap-4 mb-12"
@@ -669,7 +683,7 @@ export default function DamaSportsPage() {
 
       {/* ── Último torneio (resumido) + lista de realizados ── */}
       {pastEvents.length > 0 && (
-        <section ref={pastRef} className="py-section" style={{ backgroundColor: BG_LIGHT }}>
+        <section ref={pastRef} className="py-section-sm" style={{ backgroundColor: BG_LIGHT }}>
           <div className="container mx-auto px-6 lg:px-12">
 
             {/* Título da seção */}
@@ -710,7 +724,7 @@ export default function DamaSportsPage() {
 
       {/* ── Serviços ── */}
       <section
-        className="py-section"
+        className="py-section-sm"
         style={{ backgroundColor: BG_LIGHT, color: FG_DARK }}
         ref={servicesRef}
       >
@@ -798,7 +812,7 @@ export default function DamaSportsPage() {
 
       {/* ── Parceiros ── */}
       <section
-        className="py-section"
+        className="py-section-sm"
         style={{ backgroundColor: BG_LIGHT, color: FG_DARK }}
         ref={clientsRef}
       >
@@ -840,7 +854,7 @@ export default function DamaSportsPage() {
                       src={client.logo}
                       alt={client.name}
                       fill
-                      className="object-contain transition-transform duration-300 group-hover:scale-110"
+                      className={`object-contain transition-transform duration-300 group-hover:scale-110 ${client.zoom ? 'scale-[1.35]' : ''}`}
                       sizes="(max-width: 768px) 20vw, 10vw"
                     />
                   </div>
@@ -853,7 +867,7 @@ export default function DamaSportsPage() {
 
       {/* ── CTA ── */}
       <section
-        className="py-section"
+        className="py-section-sm"
         style={{ backgroundColor: SPORTS }}
         ref={ctaRef}
       >

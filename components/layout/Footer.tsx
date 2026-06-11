@@ -36,7 +36,7 @@ export default function Footer() {
               alt="DAMA Digital"
               width={300}
               height={100}
-              className="w-full h-auto object-contain"
+              className="w-36 md:w-full h-auto object-contain"
             />
           </div>
 
