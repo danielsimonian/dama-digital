@@ -1,36 +1,42 @@
 # STATUS.md — DAMA Digital
 
-**Last updated:** 2026-05-15
+**Last updated:** 2026-06-11
 
 ---
 
 ## Active Focus
 
-Site público — home redesign concluído. Próxima fase: redesign do admin/portal.
+Torneios DAMA Sports — páginas individuais e portfólio de eventos. Próxima fase: redesign do admin/portal.
 
 ---
 
-## Last Session Summary (15/05/2026)
+## Last Session Summary (11/06/2026)
 
-Um commit em `main`: `2d6ddfc` — redesign home + atualizações DAMA Sports
+Dois commits em `main`: `57b245d` + `d56f798`
+
+**DAMA Sports — páginas de torneio:**
+- Criada `lib/sports-events.ts` — fonte única de verdade para todos os torneios (tipo, slugs, galeria, reels, sponsors, stats)
+- Criada `app/sports/[slug]/page.tsx` — página individual de torneio com reel (autoplay muted loop), mosaico de fotos orientation-aware (portrait/landscape), stats, parceiros
+- Mosaico mobile: 4 linhas (landscape = linha inteira, 2 portraits = lado a lado) via `grid-cols-2` sem `grid-rows-N` + aspect-ratio por célula
+- Slug/pasta renomeados: `open-spfc` → `6o-open-spfc` em tudo (dados, imagens, vídeo)
+- Logos de parceiros: 8 novos em `/images/clients/` (addera, anglo-morumbi, areiabar, coroteice, mindcourt, nandabani, rktco, sacaecorre)
+- Campo `zoom?: boolean` em sponsors para logos quadrados que mostram fundo
+
+**DAMA Sports — `/sports`:**
+- Parceiros derivados automaticamente dos `sponsors` de todos os torneios + `extraClients` legados (deduplicados por logo path)
+- Todos os 3 torneios atualizados para `realizado`; seção "Torneios realizados" com logo + LastEventCard
 
 **Home:**
-- Hero reescrito: headline ciclante "Seu [evento/sistema/música] merece mais.", vídeo com overlay, stats bar, 3 CTAs por divisão
-- About redesenhado: layout editorial 2 colunas, retratos 3:4, stats globais (20+ anos · 3 divisões · 100+ projetos)
-- Portfolio: círculos corrigidos (object-contain + overflow-hidden + aspect-square), IFBT adicionado
-- Divisions: Seletiva Pan-Americano substituiu Open Tom Beach; badge "em breve" Studio removido; painel Studio com lista de 5 serviços
+- Painel Sports atualizado: "✓ Último torneio — 6º Open SPFC"; Seletiva + Open Santos riscados como realizados
 
-**DAMA Sports:**
-- Seletiva Seleção Brasileira Pan-Americano IFBT (23-24/mai) substituiu Open Tom Beach; link LetzPlay atualizado
-- Logo DAMA Sports no nav com inversão CSS (branco no hero via `brightness-0 invert`, preto ao rolar)
-- Parceiro IFBT adicionado (home + sports)
-- Círculos de logos corrigidos
+**Footer:** logo mobile reduzido para `w-36 md:w-full`
 
 ---
 
 ## Notes
 
 - No open PRs or branches; all work lands directly on `main`
-- Site público completo: home ✅ sports ✅ tech ✅ studio ✅
+- Site público completo: home ✅ sports ✅ tech ✅ studio ✅ sports/[slug] ✅
 - Pendências: vídeos reais (hero, tech, studio — sports já tem), configurar Resend no `/api/send`
 - Admin/portal redesign é a próxima grande fase
+- Vídeo `reel.mp4` (67MB) acima do limite de 50MB recomendado pelo GitHub — considerar Vercel Blob ou comprimir mais

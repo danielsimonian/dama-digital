@@ -27,23 +27,21 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 
 **Branch ativa:** `main` (produção)
 
-**Branch `main` — redesign completo em produção (merge de 23/04/2026), atualizado em 15/05/2026:**
+**Branch `main` — atualizado em 11/06/2026:**
+- `d56f798` — fix TypeScript: tipo explícito em extraClients (11/06/2026)
+- `57b245d` — feat: página de torneio 6º Open SPFC + redesign seção Sports (11/06/2026)
 - `2d6ddfc` — redesign home + atualizações DAMA Sports (15/05/2026)
-- `062678f` — merge redesign/publico → main (redesign completo do site público)
-- `08df077` — limpeza do repo: remoção de poker-pay-app/, poker-control-*.md, .claude/worktrees/
-- `72f3f60` — portfólio Studio completo + atualizações DAMA Tech (43 arquivos)
 
-**Home (`/`) — estado atual (15/05/2026):**
-- Hero: headline ciclante "Seu evento / Seu sistema / Sua música merece mais." com cor por divisão, vídeo placeholder, stats bar (20+ anos · 3 divisões · 100+ projetos), 3 CTAs por divisão
-- Divisions: spotlight interativo com painéis temáticos por divisão; Seletiva Pan-Americano substituiu Open Tom Beach; badge "em breve" do Studio removido; painel Studio lista 5 serviços
-- About: layout editorial 2 colunas — eyebrow+headline+texto+stats à esquerda, retratos 3:4 dos fundadores à direita
-- Portfolio: logos em círculos corrigidos (object-contain + overflow-hidden + aspect-square); IFBT adicionado
+**Home (`/`) — estado atual (11/06/2026):**
+- Divisions painel Sports: "✓ Último torneio — 6º Open SPFC" (29-31/mai · CT São Paulo FC · 400+ atletas); lista mostra Seletiva ✓ MAI + Open Santos ✓ ABR riscados
 
-**DAMA Sports (`/sports`) — estado atual (15/05/2026):**
-- Torneios: Seletiva Seleção Brasileira Pan-Americano IFBT (23-24/mai, Santos) substituiu Open Tom Beach; Open SPFC (29-31/mai) mantido; link LetzPlay: letzplay.me/assespgonzaga/tourneys/57445
-- Nav: logo DAMA Sports (`/images/dama-sports-logo.png`) — branco no hero (brightness-0 invert quando !scrolled), preto ao rolar
-- Parceiros: IFBT adicionado (`/images/clients/ifbt.jpg`)
-- Círculos de logos: mesma correção da home (object-contain + overflow-hidden)
+**DAMA Sports (`/sports`) — estado atual (11/06/2026):**
+- Todos os 3 torneios realizados: 6º Open SPFC (mai) · Seletiva Pan-Americano IFBT (mai) · Open Santos ASSESP (abr)
+- Página `/sports/[slug]` — rotas individuais por torneio (`generateStaticParams` + SSG)
+- Dados centralizados em `lib/sports-events.ts` (slugs, galeria, reels, stats, sponsors)
+- Parceiros: derivados automaticamente dos `sponsors` de todos os eventos + `extraClients` legados; deduplica por logo path
+- Logos com `zoom?: boolean` opcional para corrigir logos quadrados que mostram fundo
+- Footer mobile: logo `w-36 md:w-full` (era `w-full` — ficava enorme no celular)
 
 **Studio (`/studio` + `/studio/artistas`) — estado atual (13/05/2026):**
 - `/studio/artistas`: 15 artistas, 40+ releases com capas reais do Spotify, cards clicáveis → Spotify
@@ -101,7 +99,10 @@ app/
 ├── labs/
 │   ├── poker-pay/                # Cash game lobby, sessions, players, groups, ranking, report
 │   └── fidelidade/               # Loyalty store create + [slug] card view
-├── sports/ tech/                 # Division landing pages
+├── sports/
+│   ├── page.tsx                  # DAMA Sports landing (hero, torneios, serviços, parceiros, CTA)
+│   └── [slug]/page.tsx           # Página individual de torneio (galeria, reels, stats, parceiros)
+├── tech/                         # Division landing page
 ├── studio/
 │   ├── page.tsx                  # Studio landing (Hero, Produção, Último Lançamento, Portfólio, Aulas, Distribuição, CTA)
 │   └── artistas/page.tsx         # Portfólio completo — grid de 15 artistas, 40+ releases com capas Spotify
@@ -154,6 +155,7 @@ app/
 | `lib/auth-context.tsx` | Auth state provider + useAuth hook |
 | `lib/redis.ts` | Upstash Redis client |
 | `lib/constants.ts` | Services list, clients list, team, social links |
+| `lib/sports-events.ts` | Dados centralizados de todos os torneios Sports (slug, galeria, reels, sponsors, stats) |
 | `components/labs/CashGame.tsx` | Largest file (1,257 lines) — full poker cash game manager |
 | `components/BriefingForm.tsx` | 544 lines — client briefing intake form |
 | `app/cliente/[slug]/page.tsx` | Client portal with Sessões / Conteúdo / Financeiro / Serviços tabs |
