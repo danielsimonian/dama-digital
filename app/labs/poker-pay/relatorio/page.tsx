@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, type ReactNode } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   BarChart2, ArrowLeft, TrendingUp, TrendingDown,
@@ -91,6 +91,10 @@ function fmtLucro(v: number) {
 
 function fmtBRL(v: number) {
   return 'R$ ' + Math.abs(v).toFixed(0);
+}
+
+function fmtDataCurta(dateStr: string) {
+  return new Date(dateStr + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
 /* ─── tela de login ──────────────────────────────────────── */
@@ -203,7 +207,21 @@ function TabelaLucro({ ranking }: { ranking: RankingEntry[] }) {
 
 /* ─── estatísticas financeiras ───────────────────────────── */
 
+type StatExpandida = 'vitorias' | 'perdas';
+
+interface StatCard {
+  label: string;
+  value: string;
+  icon: ReactNode;
+  color: string;
+  bg: string;
+  sub?: string;
+  stat?: StatExpandida;
+}
+
 function EstatisticasFinanceiras({ ranking, sessoes }: { ranking: RankingEntry[]; sessoes: SessaoHistorico[] }) {
+  const [expandedStat, setExpandedStat] = useState<StatExpandida | null>(null);
+
   if (ranking.length === 0) return null;
 
   const totalEmCirculacao = sessoes.reduce((acc, s) => acc + (s.totalPot ?? 0), 0);
@@ -213,7 +231,15 @@ function EstatisticasFinanceiras({ ranking, sessoes }: { ranking: RankingEntry[]
   const totalPositivo  = ranking.filter(e => e.lucroTotal > 0).reduce((a, e) => a + e.lucroTotal, 0);
   const totalNegativo  = ranking.filter(e => e.lucroTotal < 0).reduce((a, e) => a + e.lucroTotal, 0);
 
-  const cards = [
+  const registros = sessoes.flatMap(s =>
+    s.jogadores.map(j => ({ nome: j.nome, balanco: j.balanco ?? 0, data: s.data }))
+  );
+  const maioresVitorias = registros.filter(r => r.balanco > 0).sort((a, b) => b.balanco - a.balanco);
+  const maioresPerdas   = registros.filter(r => r.balanco < 0).sort((a, b) => a.balanco - b.balanco);
+  const topVitoria = maioresVitorias[0] ?? null;
+  const topPerda   = maioresPerdas[0] ?? null;
+
+  const cards: StatCard[] = [
     {
       label: 'Total em Circulação',
       value: `R$ ${totalEmCirculacao.toFixed(0)}`,
@@ -258,7 +284,27 @@ function EstatisticasFinanceiras({ ranking, sessoes }: { ranking: RankingEntry[]
       color: 'text-red-400',
       bg: 'bg-red-500/10 border-red-500/20',
     },
+    {
+      label: 'Maior Vencedor (1 sessão)',
+      value: topVitoria ? `${topVitoria.nome} (+R$ ${topVitoria.balanco.toFixed(0)})` : '—',
+      sub: topVitoria ? fmtDataCurta(topVitoria.data) : undefined,
+      stat: topVitoria ? ('vitorias' as const) : undefined,
+      icon: <TrendingUp className="w-4 h-4" />,
+      color: 'text-green-400',
+      bg: 'bg-green-500/10 border-green-500/20',
+    },
+    {
+      label: 'Maior Perdedor (1 sessão)',
+      value: topPerda ? `${topPerda.nome} (-R$ ${Math.abs(topPerda.balanco).toFixed(0)})` : '—',
+      sub: topPerda ? fmtDataCurta(topPerda.data) : undefined,
+      stat: topPerda ? ('perdas' as const) : undefined,
+      icon: <TrendingDown className="w-4 h-4" />,
+      color: 'text-red-400',
+      bg: 'bg-red-500/10 border-red-500/20',
+    },
   ];
+
+  const listaExpandida = expandedStat === 'vitorias' ? maioresVitorias : maioresPerdas;
 
   return (
     <div className="space-y-2">
@@ -266,16 +312,73 @@ function EstatisticasFinanceiras({ ranking, sessoes }: { ranking: RankingEntry[]
         <BarChart2 className="w-4 h-4" /> Estatísticas Financeiras
       </h2>
       <div className="grid grid-cols-2 gap-2">
-        {cards.map(c => (
-          <div key={c.label} className={`rounded-xl p-3 border ${c.bg}`}>
-            <div className={`flex items-center gap-1.5 text-xs font-medium mb-1 ${c.color}`}>
-              {c.icon}
-              <span>{c.label}</span>
-            </div>
-            <div className="text-white font-bold text-sm leading-tight">{c.value}</div>
-          </div>
-        ))}
+        {cards.map(c => {
+          const conteudo = (
+            <>
+              <div className={`flex items-center gap-1.5 text-xs font-medium mb-1 ${c.color}`}>
+                {c.icon}
+                <span>{c.label}</span>
+              </div>
+              <div className="text-white font-bold text-sm leading-tight">{c.value}</div>
+              {c.sub && <div className="text-xs text-gray-500 mt-0.5">{c.sub}</div>}
+            </>
+          );
+
+          if (!c.stat) {
+            return (
+              <div key={c.label} className={`rounded-xl p-3 border ${c.bg}`}>
+                {conteudo}
+              </div>
+            );
+          }
+
+          const isOpen = expandedStat === c.stat;
+          return (
+            <button
+              key={c.label}
+              onClick={() => setExpandedStat(isOpen ? null : c.stat!)}
+              className={`relative rounded-xl p-3 border text-left cursor-pointer transition-all ${c.bg} ${
+                isOpen ? 'ring-1 ring-white/20' : ''
+              }`}
+            >
+              {conteudo}
+              {isOpen
+                ? <ChevronUp  className="absolute top-3 right-3 w-3.5 h-3.5 text-gray-400" />
+                : <ChevronDown className="absolute top-3 right-3 w-3.5 h-3.5 text-gray-500" />}
+            </button>
+          );
+        })}
       </div>
+
+      {expandedStat && listaExpandida.length > 0 && (
+        <div className="bg-gray-800 rounded-xl p-3 space-y-1.5">
+          <div className={`text-xs font-bold px-2 mb-1 flex items-center gap-1.5 ${
+            expandedStat === 'vitorias' ? 'text-green-400' : 'text-red-400'
+          }`}>
+            {expandedStat === 'vitorias'
+              ? <><TrendingUp className="w-3.5 h-3.5" /> Maiores vitórias em uma sessão</>
+              : <><TrendingDown className="w-3.5 h-3.5" /> Maiores perdas em uma sessão</>}
+          </div>
+          <div className="grid grid-cols-12 text-xs text-gray-500 px-2 mb-1">
+            <span className="col-span-1">#</span>
+            <span className="col-span-5">Jogador</span>
+            <span className="col-span-3 text-right">Resultado</span>
+            <span className="col-span-3 text-right">Data</span>
+          </div>
+          {listaExpandida.slice(0, 10).map((r, idx) => (
+            <div key={`${r.nome}-${r.data}-${idx}`} className="grid grid-cols-12 items-center bg-gray-700/50 rounded-lg px-3 py-2">
+              <span className="col-span-1 text-gray-500 text-xs font-bold">{idx + 1}</span>
+              <span className="col-span-5 text-white text-sm font-medium truncate">{r.nome}</span>
+              <span className={`col-span-3 text-right text-xs font-bold ${lucroColor(r.balanco)}`}>
+                {fmtLucro(r.balanco)}
+              </span>
+              <span className="col-span-3 text-right text-gray-400 text-xs">
+                {fmtDataCurta(r.data)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
