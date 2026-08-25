@@ -290,7 +290,7 @@ function TerminalCTA({ visible }: { visible: boolean }) {
         const res = await fetch('/api/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...formData, message: value }),
+          body: JSON.stringify({ ...formData, message: value, origem: 'tech' }),
         });
         setStep(res.ok ? 'done' : 'error');
       } catch {

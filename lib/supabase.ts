@@ -128,6 +128,8 @@ export const DIVISAO_CONFIG = {
   tech: {
     nome: 'DAMA Tech',
     gradiente: 'from-purple-500 to-pink-500',
+    hexInicio: '#A855F7',
+    hexFim: '#EC4899',
     bgLight: 'bg-purple-500/20',
     textColor: 'text-purple-400',
     borderColor: 'border-purple-500/30',
@@ -136,6 +138,8 @@ export const DIVISAO_CONFIG = {
   sports: {
     nome: 'DAMA Sports',
     gradiente: 'from-orange-500 to-red-500',
+    hexInicio: '#F97316',
+    hexFim: '#EF4444',
     bgLight: 'bg-orange-500/20',
     textColor: 'text-orange-400',
     borderColor: 'border-orange-500/30',
@@ -144,6 +148,8 @@ export const DIVISAO_CONFIG = {
   studio: {
     nome: 'DAMA Studio',
     gradiente: 'from-blue-500 to-cyan-400',
+    hexInicio: '#3B82F6',
+    hexFim: '#22D3EE',
     bgLight: 'bg-blue-500/20',
     textColor: 'text-blue-400',
     borderColor: 'border-blue-500/30',

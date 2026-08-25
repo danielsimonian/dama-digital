@@ -438,7 +438,7 @@ function FichaInscricao({ visible }: { visible: boolean }) {
       try {
         const res = await fetch('/api/send', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: values.name, email: values.email, phone: values.phone, message: value }),
+          body: JSON.stringify({ name: values.name, email: values.email, phone: values.phone, message: value, origem: 'sports' }),
         });
         setStep(res.ok ? 'done' : 'error');
       } catch { setStep('error'); }

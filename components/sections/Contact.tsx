@@ -24,6 +24,7 @@ export default function Contact() {
     email: '',
     phone: '',
     message: '',
+    website: '',
   });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
 
@@ -37,11 +38,11 @@ export default function Contact() {
       const response = await fetch('/api/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, origem: 'home' }),
       });
       if (response.ok) {
         setStatus('success');
-        setFormData({ name: '', email: '', phone: '', message: '' });
+        setFormData({ name: '', email: '', phone: '', message: '', website: '' });
         setTimeout(() => setStatus('idle'), 5000);
       } else {
         setStatus('error');
@@ -111,6 +112,17 @@ export default function Contact() {
             transition={{ duration: 0.7, delay: 0.18, ease: EASE }}
           >
             <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              {/* honeypot: invisivel para humanos, preenchido por bots */}
+              <input
+                type="text"
+                name="website"
+                value={formData.website}
+                onChange={handleChange}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="absolute -left-[9999px] h-px w-px opacity-0"
+              />
               <input
                 type="text"
                 name="name"
