@@ -175,6 +175,13 @@ Based on code state and recent commits, likely priorities:
 6. **Password hashing** for client portal access — currently plaintext in DB
 7. **Quote PDF polish** — print CSS export could use layout refinement
 8. **Home page** — ✅ redesign completo entregue em 15/05/2026
+9. **💡 Ideia futura — DAMA Sports Fotos (estilo Banlek)** — planejado em 30/09/2026, ainda não iniciado. Atleta tira selfie e vê todas as suas fotos do torneio; fotógrafos convidados pelo admin fazem login, cadastram torneio e sobem fotos.
+   - Fotos grátis no MVP (venda via Pix = fase 2)
+   - Stack 100% gratuita: `@vladmandic/human` (reconhecimento facial no navegador) + pgvector no Supabase (`halfvec(1024)`, RPC `buscar_fotos_por_rosto`) + Cloudflare R2 free (10 GB, egress grátis) com `aws4fetch` para URLs de upload assinadas — deps já aprovadas pelo Daniel
+   - Rotas previstas: `/fotografo/*` (painel, role `fotografo`), `/admin/fotografos` (convites), `/sports/fotos/[slug]` (atleta)
+   - LGPD: consentimento explícito (biometria, art. 11); selfie nunca sai do navegador nem é salva
+   - Setup manual pendente: conta Cloudflare + bucket R2 + CORS + envs (`R2_*`, `NEXT_PUBLIC_R2_PUBLIC_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
+   - Plano completo: `~/.claude/plans/quero-conversar-sobre-uma-cozy-torvalds.md`
 
 ---
 
