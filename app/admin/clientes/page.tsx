@@ -195,7 +195,8 @@ export default function ClientesPage() {
         notas: form.notas || null,
         areas: form.areas,
         slug: form.slug || gerarSlug(form.nome),
-        senha_acesso: form.senha_acesso || gerarSenha()
+        // a senha é guardada só como hash: em branco na edição mantém a atual
+        ...(form.senha_acesso || !editingCliente ? { senha_acesso: form.senha_acesso || gerarSenha() } : {})
       };
 
       if (editingCliente) {
@@ -485,7 +486,7 @@ export default function ClientesPage() {
                       type="text"
                       value={form.senha_acesso}
                       onChange={(e) => setForm({ ...form, senha_acesso: e.target.value })}
-                      placeholder="abc123"
+                      placeholder={editingCliente ? 'em branco = manter a atual' : 'abc123'}
                       className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:border-purple-500 text-white font-mono"
                     />
                     <button
