@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, UserPlus, MessageCircle, Pencil, FileText, Mail, ArrowUpRight } from 'lucide-react';
+import { Search, UserPlus, MessageCircle, Pencil, FileText, Mail } from 'lucide-react';
 import { supabase, type Cliente, type Divisao, type Lancamento, type Orcamento, type Papel, type PessoaStatus, type Responsavel } from '@/lib/supabase';
 import { cn, Button, Avatar, Alert, DivisionBadge } from '@/components/ds/primitives';
 import { Drawer, Modal, useToast } from '@/components/ds/interactive';
@@ -14,6 +14,7 @@ import { ScreenHeader, Chips } from '../_components/ui';
 import { ListaLancamentos } from '../_components/Lancamentos';
 import { AulasDaPessoa } from './_components/Aulas';
 import { PortalAcesso } from './_components/Portal';
+import { ConteudoDaPessoa } from './_components/Conteudo';
 import { whatsappUrl } from '../_lib';
 
 const PAPEIS: { id: Papel; label: string; desc: string }[] = [
@@ -205,11 +206,9 @@ function Ficha({ p, onEditar, onMudou }: { p: Cliente; onEditar: () => void; onM
         )}
       </div>
 
-      <PortalAcesso p={p} onMudou={onMudou} />
+      {((p.papeis ?? []).includes('aluno') || p.conteudo_visivel) && <ConteudoDaPessoa clienteId={p.id} />}
 
-      <a href={`/admin/clientes/${p.id}`} className="ds-annot inline-flex items-center gap-1 hover:text-ds-fg">
-        conteúdo das aulas no admin antigo <ArrowUpRight className="size-3" strokeWidth={1.5} aria-hidden />
-      </a>
+      <PortalAcesso p={p} onMudou={onMudou} />
     </div>
   );
 }

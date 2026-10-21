@@ -43,6 +43,36 @@ export type Cliente = {
   slug?: string | null;
   senha_hash?: string | null;
   senha_acesso?: string | null;
+  // o portal mostra a aba quando `aba_*` (padrão true) e `*_visivel` estão ligados
+  sessoes_visiveis?: boolean;
+  conteudo_visivel?: boolean;
+  financeiro_visivel?: boolean;
+  aba_sessoes?: boolean;
+  aba_servicos?: boolean;
+  aba_conteudo?: boolean;
+  aba_financeiro?: boolean;
+};
+
+export type TipoConteudo = 'video' | 'pdf' | 'exercicio' | 'link' | 'texto';
+
+export type AulaConteudo = {
+  id: string;
+  modulo_id: string;
+  tipo: TipoConteudo;
+  titulo: string;
+  descricao: string | null;
+  url: string | null;
+  conteudo: string | null;
+  ordem: number;
+};
+
+export type AulaModulo = {
+  id: string;
+  cliente_id: string;
+  titulo: string;
+  descricao: string | null;
+  ordem: number;
+  conteudos?: AulaConteudo[];
 };
 
 export type Papel = 'aluno' | 'estudio' | 'tech' | 'sports';

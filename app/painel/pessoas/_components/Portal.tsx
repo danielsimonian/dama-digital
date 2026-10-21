@@ -5,6 +5,7 @@ import { Copy, KeyRound, MessageCircle, RefreshCw } from 'lucide-react';
 import { supabase, type Cliente } from '@/lib/supabase';
 import { Button, buttonClass } from '@/components/ds/primitives';
 import { Modal, useToast } from '@/components/ds/interactive';
+import { Switch } from '@/components/ds/fields';
 import { whatsappUrl } from '../../_lib';
 
 // sem 0/o, 1/l/i: fácil de ditar e digitar no celular
@@ -90,7 +91,47 @@ export function PortalAcesso({ p, onMudou }: { p: Cliente; onMudou: () => void }
             </Button>
           ))}
       </div>
+      {temAcesso && <AbasDoPortal p={p} onMudou={onMudou} />}
       {modal && <NovaSenhaModal key={p.id} p={p} onClose={() => setModal(false)} onSalvo={onMudou} />}
+    </div>
+  );
+}
+
+const ABAS = [
+  { visivel: 'sessoes_visiveis', aba: 'aba_sessoes', label: 'Sessões de estúdio' },
+  { visivel: 'servicos_visivel', aba: 'aba_servicos', label: 'Cobranças' },
+  { visivel: 'conteudo_visivel', aba: 'aba_conteudo', label: 'Conteúdo das aulas' },
+] as const;
+
+function AbasDoPortal({ p, onMudou }: { p: Cliente; onMudou: () => void }) {
+  const toast = useToast();
+  // mostra na hora; a lista recarrega por trás
+  const [local, setLocal] = useState<{ id: string; valores: Record<string, boolean> }>({ id: p.id, valores: {} });
+  const valores = local.id === p.id ? local.valores : {};
+
+  const alternar = async (a: (typeof ABAS)[number], ligado: boolean) => {
+    setLocal({ id: p.id, valores: { ...valores, [a.visivel]: ligado } });
+    const { error } = await supabase
+      .from('clientes')
+      .update({ [a.visivel]: ligado, ...(ligado ? { [a.aba]: true } : {}) })
+      .eq('id', p.id);
+    if (error) toast({ tone: 'danger', title: 'Não foi possível salvar', description: error.message });
+    onMudou();
+  };
+
+  return (
+    <div className="mt-3">
+      <p className="ds-annot mb-1 uppercase">Abas no portal</p>
+      <div className="divide-y divide-ds-line border-y border-ds-line">
+        {ABAS.map((a) => (
+          <Switch
+            key={a.visivel}
+            label={a.label}
+            checked={valores[a.visivel] ?? ((p[a.aba] ?? true) && !!p[a.visivel])}
+            onChange={(e) => alternar(a, e.target.checked)}
+          />
+        ))}
+      </div>
     </div>
   );
 }
