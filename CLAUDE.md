@@ -116,7 +116,7 @@ app/
 
 1. **Single Next.js app** covers marketing site, admin, client portal, and labs — no separate services
 2. **Upstash Redis** for poker/loyalty: sessions are ephemeral and real-time; no need to persist in Postgres
-3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the old admin, the portal, the public quote page and the e-mails in `/api/send`
+3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the old admin, the portal and the public quote page. E-mail templates (`lib/email-templates.ts`) carry the DS accents as hex
 4. **Password-protected client portal** uses a slug URL + bcrypt-hashed password (not Supabase Auth per-client — only 3 of 14 clients have e-mail)
 5. **Auto-save** in CashGame: 1-second debounce writes session state to Redis on every change
 6. **Quote lifecycle**: `rascunho → enviado → visualizado → aprovado | recusado | expirado`
@@ -186,7 +186,7 @@ Likely priorities:
 - **Scope**: Make only the change asked. Do not refactor surrounding code, add comments, or "clean up" unless asked.
 - **Quote generation**: Always read `skills/orcamentos/SKILL.md` before producing quote content.
 - **Supabase types**: All DB types are defined in `lib/supabase.ts`. Extend there when adding new fields — do not redeclare inline.
-- **Division colors**: In new UI (site and `/painel`), use the DS accent via `data-divisao` + `ds-accent` tokens and `DIVISAO_LABEL` from `components/ds/primitives`. In the legacy screens and e-mails that still use it, use `DIVISAO_CONFIG` from `lib/supabase.ts`. Never hardcode division colors.
+- **Division colors**: In new UI (site and `/painel`), use the DS accent via `data-divisao` + `ds-accent` tokens and `DIVISAO_LABEL` from `components/ds/primitives`. In the legacy screens that still use it, use `DIVISAO_CONFIG` from `lib/supabase.ts`. Never hardcode division colors.
 - **Redis vs Supabase**: Poker and loyalty data lives in Redis. Client/quote/service data lives in Supabase. Don't mix.
 - **New pages**: Follow the existing App Router conventions — `page.tsx` inside a folder, `layout.tsx` only when needed.
 - **No mocks**: Do not mock Supabase or Redis in any code. Use the real clients.
