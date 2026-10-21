@@ -1,3 +1,4 @@
+// Conteúdo real do site (home e /designsystem) no formato dos componentes do Design System
 import { sportsEvents } from '@/lib/sports-events';
 import { clients, team } from '@/lib/constants';
 import type { Capability, Project, Tournament, Artist, Release, Service, Member, Partner } from '@/components/ds/cards';
