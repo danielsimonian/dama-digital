@@ -101,19 +101,30 @@ function Segmented<T extends string>({
   );
 }
 
-export function Shell({ groups, children }: { groups: NavGroup[]; children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark');
+export function Shell({
+  groups,
+  children,
+  section = 'site',
+  defaultTheme = 'dark',
+}: {
+  groups: NavGroup[];
+  children: ReactNode;
+  section?: 'site' | 'admin';
+  defaultTheme?: Theme;
+}) {
+  const themeKey = section === 'admin' ? 'dama-ds-theme-admin' : 'dama-ds-theme';
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
   const [accent, setAccent] = useState<Accent>('neutro');
   const [active, setActive] = useState(groups[0]?.items[0]?.id ?? '');
   const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
-    const t = read('dama-ds-theme');
+    const t = read(themeKey);
     const a = read('dama-ds-accent');
     // eslint-disable-next-line react-hooks/set-state-in-effect -- preferências locais só existem no cliente
     if (t === 'light' || t === 'dark') setTheme(t);
     if (a && ACCENTS.some((x) => x.id === a)) setAccent(a as Accent);
-  }, []);
+  }, [themeKey]);
 
   useEffect(() => {
     const ids = groups.flatMap((g) => g.items.map((i) => i.id));
@@ -131,7 +142,7 @@ export function Shell({ groups, children }: { groups: NavGroup[]; children: Reac
 
   const changeTheme = (t: Theme) => {
     setTheme(t);
-    write('dama-ds-theme', t);
+    write(themeKey, t);
   };
   const changeAccent = (a: Accent) => {
     setAccent(a);
@@ -147,7 +158,27 @@ export function Shell({ groups, children }: { groups: NavGroup[]; children: Reac
               <DamaLogo className="h-6" />
             </Link>
             <span className="hidden h-5 w-px bg-ds-line sm:block" aria-hidden />
-            <span className="ds-annot hidden uppercase sm:inline">Design System · v2.0</span>
+            <span className="ds-annot hidden uppercase xl:inline">Design System · v2.1</span>
+            <nav aria-label="Seções do design system" className="flex rounded-ds-sm border border-ds-line p-0.5">
+              {(
+                [
+                  ['site', 'Site', '/designsystem'],
+                  ['admin', 'Admin', '/designsystem/admin'],
+                ] as const
+              ).map(([id, label, href]) => (
+                <Link
+                  key={id}
+                  href={href}
+                  aria-current={section === id ? 'page' : undefined}
+                  className={cn(
+                    'inline-flex h-8 items-center rounded-ds-xs px-2.5 font-ds-mono text-[11px] uppercase tracking-wider transition-colors',
+                    section === id ? 'bg-ds-surface-3 text-ds-fg' : 'text-ds-subtle hover:text-ds-fg',
+                  )}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
             <div className="ml-auto flex items-center gap-2">
               <div className="hidden md:block">
                 <Segmented
