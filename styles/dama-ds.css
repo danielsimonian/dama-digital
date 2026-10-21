@@ -1,0 +1,237 @@
+/* ============================================================
+   DAMA Digital — Design System v2 ("Manual de campo")
+   Escopo: tudo vive sob .ds — não altera os tokens do site atual.
+   Tema:   escuro por padrão · claro via [data-theme="light"]
+   Acento: neutro por padrão · por divisão via [data-divisao]
+   Fontes: Geist (sans) + Geist Mono (anotações, números, CTAs)
+   ============================================================ */
+
+@theme inline {
+  --color-ds-bg:          var(--ds-bg);
+  --color-ds-surface:     var(--ds-surface);
+  --color-ds-surface-2:   var(--ds-surface-2);
+  --color-ds-surface-3:   var(--ds-surface-3);
+  --color-ds-line:        var(--ds-line);
+  --color-ds-line-strong: var(--ds-line-strong);
+  --color-ds-fg:          var(--ds-fg);
+  --color-ds-muted:       var(--ds-muted);
+  --color-ds-subtle:      var(--ds-subtle);
+
+  --color-ds-accent:      var(--ds-accent);
+  --color-ds-accent-fg:   var(--ds-accent-fg);
+  --color-ds-accent-soft: var(--ds-accent-soft);
+
+  --color-ds-tech:        var(--ds-tech);
+  --color-ds-sports:      var(--ds-sports);
+  --color-ds-studio:      var(--ds-studio);
+
+  --color-ds-success:      var(--ds-success);
+  --color-ds-success-soft: var(--ds-success-soft);
+  --color-ds-warning:      var(--ds-warning);
+  --color-ds-warning-soft: var(--ds-warning-soft);
+  --color-ds-danger:       var(--ds-danger);
+  --color-ds-danger-soft:  var(--ds-danger-soft);
+  --color-ds-info:         var(--ds-info);
+  --color-ds-info-soft:    var(--ds-info-soft);
+
+  --font-ds-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-ds-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+@theme {
+  /* Escala tipográfica (múltiplos de 4 nos tamanhos fixos, fluida nos grandes) */
+  --text-ds-annot:   0.6875rem;
+  --text-ds-annot--line-height: 1.4;
+  --text-ds-title:   clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem);
+  --text-ds-title--line-height: 1.05;
+  --text-ds-display: clamp(2.75rem, 1.6rem + 5vw, 5.5rem);
+  --text-ds-display--line-height: 0.98;
+  --text-ds-hero:    clamp(3.25rem, 1.5rem + 8vw, 8.5rem);
+  --text-ds-hero--line-height: 0.92;
+
+  --radius-ds-xs: 2px;
+  --radius-ds-sm: 4px;
+  --radius-ds-md: 6px;
+
+  --ease-ds-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-ds-inout:  cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-ds-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ---------- Tema escuro (padrão) ---------- */
+.ds {
+  --ds-bg:          oklch(15.5% 0.003 80);
+  --ds-surface:     oklch(18.5% 0.003 80);
+  --ds-surface-2:   oklch(21.5% 0.004 80);
+  --ds-surface-3:   oklch(25.5% 0.004 80);
+  --ds-line:        oklch(29% 0.004 80);
+  --ds-line-strong: oklch(40% 0.005 80);
+  --ds-fg:          oklch(94% 0.004 80);
+  --ds-muted:       oklch(74% 0.004 80);
+  --ds-subtle:      oklch(62% 0.004 80);
+
+  --ds-tech:   oklch(68% 0.17 266);
+  --ds-sports: oklch(68% 0.17 40);
+  --ds-studio: oklch(70% 0.13 152);
+
+  --ds-success: oklch(74% 0.13 158);
+  --ds-warning: oklch(82% 0.13 84);
+  --ds-danger:  oklch(68% 0.18 25);
+  --ds-info:    oklch(74% 0.09 236);
+
+  --ds-on-accent: oklch(15.5% 0.003 80);
+  --ds-accent:    var(--ds-fg);
+  --ds-accent-fg: var(--ds-bg);
+
+  color-scheme: dark;
+}
+
+/* ---------- Tema claro ---------- */
+.ds[data-theme="light"],
+.ds [data-theme="light"] {
+  --ds-bg:          oklch(97.5% 0.003 80);
+  --ds-surface:     oklch(95.5% 0.003 80);
+  --ds-surface-2:   oklch(93% 0.004 80);
+  --ds-surface-3:   oklch(90% 0.004 80);
+  --ds-line:        oklch(87% 0.004 80);
+  --ds-line-strong: oklch(74% 0.005 80);
+  --ds-fg:          oklch(19% 0.004 80);
+  --ds-muted:       oklch(40% 0.004 80);
+  --ds-subtle:      oklch(50% 0.004 80);
+
+  --ds-tech:   oklch(50% 0.2 266);
+  --ds-sports: oklch(54% 0.17 38);
+  --ds-studio: oklch(48% 0.12 152);
+
+  --ds-success: oklch(50% 0.12 158);
+  --ds-warning: oklch(56% 0.12 70);
+  --ds-danger:  oklch(52% 0.19 25);
+  --ds-info:    oklch(50% 0.11 240);
+
+  --ds-on-accent: oklch(99% 0 0);
+  --ds-accent:    var(--ds-fg);
+  --ds-accent-fg: var(--ds-bg);
+
+  color-scheme: light;
+}
+
+/* ---------- Derivados (recalculados em cada escopo) ---------- */
+.ds,
+.ds [data-theme],
+.ds [data-divisao] {
+  --ds-accent-soft:  color-mix(in oklch, var(--ds-accent) 12%, transparent);
+  --ds-success-soft: color-mix(in oklch, var(--ds-success) 14%, transparent);
+  --ds-warning-soft: color-mix(in oklch, var(--ds-warning) 14%, transparent);
+  --ds-danger-soft:  color-mix(in oklch, var(--ds-danger) 14%, transparent);
+  --ds-info-soft:    color-mix(in oklch, var(--ds-info) 14%, transparent);
+}
+
+/* ---------- Acento por divisão (troca só a cor, nunca a estrutura) ---------- */
+.ds [data-divisao="tech"]   { --ds-accent: var(--ds-tech);   --ds-accent-fg: var(--ds-on-accent); }
+.ds [data-divisao="sports"] { --ds-accent: var(--ds-sports); --ds-accent-fg: var(--ds-on-accent); }
+.ds [data-divisao="studio"] { --ds-accent: var(--ds-studio); --ds-accent-fg: var(--ds-on-accent); }
+
+.ds {
+  background-color: var(--ds-bg);
+  color: var(--ds-fg);
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+.ds h1, .ds h2, .ds h3, .ds h4 {
+  font-family: inherit;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.ds ::selection {
+  background-color: var(--ds-accent);
+  color: var(--ds-accent-fg);
+}
+
+.ds :focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+
+@layer utilities {
+  /* Rótulo técnico em mono — "r 155", "270°", "29–31 MAI" */
+  .ds-annot {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    color: var(--ds-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Grade de construção visível (12 colunas + linhas horizontais) */
+  .ds-grid-bg {
+    background-image:
+      linear-gradient(to right, color-mix(in oklch, var(--ds-line) 70%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklch, var(--ds-line) 70%, transparent) 1px, transparent 1px);
+    background-size: calc(100% / 12) 100%, 100% 96px;
+  }
+
+  /* Cantos marcados (colchetes) em vez de borda cheia */
+  .ds-corners {
+    --ds-corner: var(--ds-line-strong);
+    --ds-corner-size: 10px;
+    background-image:
+      linear-gradient(var(--ds-corner), var(--ds-corner)),
+      linear-gradient(var(--ds-corner), var(--ds-corner)),
+      linear-gradient(var(--ds-corner), var(--ds-corner)),
+      linear-gradient(var(--ds-corner), var(--ds-corner)),
+      linear-gradient(var(--ds-corner), var(--ds-corner)),
+      linear-gradient(var(--ds-corner), var(--ds-corner)),
+      linear-gradient(var(--ds-corner), var(--ds-corner)),
+      linear-gradient(var(--ds-corner), var(--ds-corner));
+    background-repeat: no-repeat;
+    background-position:
+      top left, top left, top right, top right,
+      bottom left, bottom left, bottom right, bottom right;
+    background-size:
+      var(--ds-corner-size) 1px, 1px var(--ds-corner-size),
+      var(--ds-corner-size) 1px, 1px var(--ds-corner-size),
+      var(--ds-corner-size) 1px, 1px var(--ds-corner-size),
+      var(--ds-corner-size) 1px, 1px var(--ds-corner-size);
+  }
+
+  /* Hairline tracejada (linhas-guia) */
+  .ds-dashed {
+    background-image: linear-gradient(to right, var(--ds-line-strong) 50%, transparent 50%);
+    background-size: 6px 1px;
+    background-repeat: repeat-x;
+  }
+
+  .ds-press {
+    transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .ds-press:active {
+    transform: scale(0.97);
+  }
+}
+
+@keyframes ds-shimmer {
+  from { background-position: 150% 0; }
+  to   { background-position: -50% 0; }
+}
+
+@keyframes ds-fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ds-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds *, .ds *::before, .ds *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
