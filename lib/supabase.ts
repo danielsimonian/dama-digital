@@ -150,6 +150,62 @@ export type Servico = {
   created_at: string;
 };
 
+/** dia 0 = segunda … 6 = domingo; hora "HH:MM" (horário de Brasília) */
+export type HorarioAula = { dia: number; hora: string };
+
+export type Matricula = {
+  id: string;
+  cliente_id: string;
+  instrumento: string | null;
+  responsavel: Responsavel | null;
+  modalidade: 'pacote' | 'avulsa';
+  aulas_por_pacote: number;
+  valor_pacote: number;
+  valor_aula: number;
+  duracao_min: number;
+  horarios: HorarioAula[];
+  inicio: string;
+  fim: string | null;
+  status: 'ativa' | 'pausada' | 'encerrada';
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PacoteAulas = {
+  id: string;
+  matricula_id: string;
+  numero: number;
+  total: number;
+  valor: number;
+  lancamento_id: string | null;
+  created_at: string;
+};
+
+export type PresencaAgenda = 'agendada' | 'realizada' | 'falta' | 'justificada';
+
+export type EventoAgenda = {
+  id: string;
+  tipo: 'aula' | 'sessao' | 'outro';
+  cliente_id: string | null;
+  matricula_id: string | null;
+  pacote_id: string | null;
+  orcamento_id: string | null;
+  lancamento_id: string | null;
+  titulo: string;
+  inicio: string;
+  fim: string;
+  responsavel: Responsavel | null;
+  presenca: PresencaAgenda;
+  cancelado: boolean;
+  reposicao_de: string | null;
+  slot_original: string | null;
+  valor_aula: number | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 // ============================================
 // FUNÇÕES AUXILIARES
 // ============================================

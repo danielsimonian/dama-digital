@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { UserPlus, CalendarDays, Wallet } from 'lucide-react';
+import { UserPlus } from 'lucide-react';
 import { supabase, type Orcamento } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { ButtonLink, Skeleton } from '@/components/ds/primitives';
 import { brl, KpiTile, QuoteTrack } from '@/components/ds/admin/display';
 import { ScreenHeader, Panel } from './_components/ui';
+import { HojePanel } from './_components/Hoje';
 import { hojeISO } from './_lib';
 
 type OrcAberto = Pick<Orcamento, 'id' | 'numero' | 'projeto_titulo' | 'divisao' | 'updated_at'> & {
@@ -97,6 +98,8 @@ export default function InicioPage() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
+          <HojePanel />
+
           <Panel
             title="Orçamentos abertos"
             action={
@@ -125,23 +128,6 @@ export default function InicioPage() {
                 ))}
               </ul>
             )}
-          </Panel>
-
-          <Panel title="Chegando no painel">
-            <ul className="-my-2 divide-y divide-ds-line text-sm">
-              {[
-                { icon: <CalendarDays />, t: 'Agenda', d: 'aulas e sessões com presença e recorrência' },
-                { icon: <Wallet />, t: 'Financeiro', d: 'todos os lançamentos, mensalidades e sessões num lugar só' },
-              ].map((x) => (
-                <li key={x.t} className="flex items-center gap-3 py-3">
-                  <span className="text-ds-subtle [&_svg]:size-4">{x.icon}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-ds-fg">{x.t}</span>
-                    <span className="ds-annot">{x.d}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
           </Panel>
         </div>
       </div>

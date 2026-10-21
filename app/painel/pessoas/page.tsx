@@ -12,6 +12,7 @@ import { PapelBadge } from '@/components/ds/admin/display';
 import { DataTable, type Column } from '@/components/ds/admin/table';
 import { ScreenHeader, Chips } from '../_components/ui';
 import { ListaLancamentos } from '../_components/Lancamentos';
+import { AulasDaPessoa } from './_components/Aulas';
 import { whatsappUrl } from '../_lib';
 
 const PAPEIS: { id: Papel; label: string; desc: string }[] = [
@@ -160,6 +161,8 @@ function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
           <p className="whitespace-pre-line text-sm text-ds-muted">{p.notas}</p>
         </div>
       )}
+
+      {(p.papeis ?? []).includes('aluno') && <AulasDaPessoa clienteId={p.id} instrumento={p.instrumento} onMudou={() => setVersao((v) => v + 1)} />}
 
       <div>
         <div className="mb-2 flex items-center justify-between gap-3">
