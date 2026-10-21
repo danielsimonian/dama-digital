@@ -1,6 +1,7 @@
 'use client';
 
-import { ContactForm, PRAZOS, type Briefing } from '@/components/ds/contact-form';
+import type { Divisao } from '@/lib/supabase';
+import { ContactForm, PRAZOS, type Briefing } from './contact-form';
 
 async function enviar(b: Briefing) {
   const prazo = PRAZOS.find((p) => p.value === b.prazo)?.label;
@@ -23,6 +24,7 @@ async function enviar(b: Briefing) {
   }
 }
 
-export function Contato() {
-  return <ContactForm onSubmit={enviar} />;
+/** Briefing com envio real pelo /api/send. `divisao` já deixa a divisão escolhida. */
+export function Contato({ divisao }: { divisao?: Divisao }) {
+  return <ContactForm onSubmit={enviar} divisaoInicial={divisao} />;
 }

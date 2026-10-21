@@ -62,7 +62,8 @@ const DATE_SHORT: Record<string, string> = {
 const COVER: Record<string, string | null> = {
   '6o-open-spfc': '/images/events/6o-open-spfc/foto2.jpg',
   'seletiva-pan-americano': null,
-  'open-santos-assesp': '/images/events/open-santos-assesp/banner.jpg',
+  // o banner é arte de divulgação (com cupom vencido): mostra o logo até ter fotos
+  'open-santos-assesp': null,
 };
 
 export const tournaments: Tournament[] = sportsEvents.map((e) => ({
@@ -70,9 +71,9 @@ export const tournaments: Tournament[] = sportsEvents.map((e) => ({
   modalidade: e.subtitle,
   dateShort: DATE_SHORT[e.slug] ?? String(e.year),
   location: e.location,
-  cover: COVER[e.slug] ?? e.banner,
+  cover: e.slug in COVER ? COVER[e.slug] : e.banner,
   logo: e.logo,
-  status: 'realizado',
+  status: e.status === 'em-breve' ? 'proximo' : e.status === 'inscricoes-abertas' ? 'inscricoes' : 'realizado',
   stats: e.stats,
   href: `/sports/${e.slug}`,
 }));
@@ -142,4 +143,28 @@ export const process: ProcessStep[] = [
   { title: 'Proposta', desc: 'Escopo, cronograma e orçamento detalhado por etapa.', note: '~ 2 dias' },
   { title: 'Produção', desc: 'Execução com checkpoints semanais e prévias.', note: '2–8 semanas' },
   { title: 'Entrega', desc: 'Publicação, arquivos finais e suporte pós-entrega.', note: '+ 30 dias de suporte' },
+];
+
+// Sports: patrocinadores de todos os torneios + clientes de eventos antigos, sem repetir logo
+const sportsExtras: Partner[] = [
+  { name: 'Rony Motors', logo: '/images/clients/rony.png' },
+  { name: 'Tom Beach', logo: '/images/clients/tombeach.png' },
+  { name: 'Open SP', logo: '/images/clients/opensp.webp' },
+  { name: 'Hydra', logo: '/images/clients/hydra.png' },
+  { name: 'Genial', logo: '/images/clients/genial.png' },
+];
+
+export const sportsPartners: Partner[] = Array.from(
+  new Map(
+    [...sportsEvents.flatMap((e) => e.sponsors.map((s) => ({ name: s.name, logo: s.logo }))), ...sportsExtras].map((p) => [p.logo, p]),
+  ).values(),
+);
+
+export const sportsServices = [
+  { name: 'Gestão do torneio', desc: 'Chaveamento, inscrições via LetzPlay e RankingBT, categorias e resultados do início ao fim.' },
+  { name: 'Arbitragem', desc: 'Árbitros certificados para torneios de qualquer porte, com fair play em todas as quadras.' },
+  { name: 'Locação de som', desc: 'Áudio profissional com operador incluso — da abertura à premiação.' },
+  { name: 'Cobertura audiovisual', desc: 'Fotografia, filmagem e imagens aéreas com drone. Reel pronto no mesmo dia.' },
+  { name: 'Troféus e medalhas', desc: 'Produção personalizada com a identidade visual do evento.' },
+  { name: 'Estrutura completa', desc: 'Quadras, treliças, pódio, staff e tudo que o evento precisa para acontecer.' },
 ];
