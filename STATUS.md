@@ -1,16 +1,31 @@
 # STATUS.md — DAMA Digital
 
-**Last updated:** 2026-10-20
+**Last updated:** 2026-10-21
 
 ---
 
 ## Active Focus
 
-Design System v2 ("manual de campo") pronto em `/designsystem` (site) e `/designsystem/admin` (admin + protótipo). Próxima fase: construir o admin novo em `/painel` a partir desses componentes — **só quando o Daniel pedir**.
+Admin novo em `/painel`: etapa 1 (base + Pessoas + Catálogo) no ar. Próxima: etapa 2 — gerador de orçamentos v2 puxando do Catálogo e gerando lançamentos.
 
 ---
 
-## Last Session Summary (20/10/2026)
+## Last Session Summary (21/10/2026)
+
+- **Supabase estava pausado** (free tier, inatividade) — reativado, dados intactos. Pausa de novo após ~1 semana sem uso.
+- **PR #1 — `/painel` etapa 1:** shell (sidebar, ⌘K, tema), login em `/painel/entrar`, Início, Pessoas (= `clientes` + `papeis`/`status`/`instrumento`/`responsavel`; `areas` sincronizada para o admin antigo e o portal), Catálogo (`catalogo_servicos`, começa vazio). Alunos de música precisam ser marcados como "aluno" à mão.
+- **PR #2 — segurança:** anon lia todos os clientes (com `senha_acesso`), sessões, pagamentos e serviços, e podia alterar qualquer orçamento. Agora:
+  - tabelas só para `public.equipe` (lista fixa: 3 contas) via `is_equipe()`
+  - portal: `portal_cliente` / `portal_entrar` (senha conferida no banco, token de 12 h em `portal_sessoes`) / `portal_dados` / `portal_sair`
+  - orçamento público: `orcamento_publico` / `orcamento_registrar_visualizacao` / `orcamento_aprovar`
+  - verificado com a chave anon: leitura e escrita direta retornam vazio; equipe continua vendo tudo
+- **Migrações versionadas** em `supabase/migrations/` (antes ficavam só no dashboard).
+- **Pendências manuais no dashboard do Supabase:** desligar "Allow new users to sign up"; ligar "Leaked password protection".
+- Usuário novo do admin precisa ser inserido em `public.equipe`, senão não vê nada.
+
+---
+
+## Previous Session (20/10/2026)
 
 Commits em `main`: `ec3af0a` (design system do site) + `ec38115` (design system do admin). Ambos no ar.
 
