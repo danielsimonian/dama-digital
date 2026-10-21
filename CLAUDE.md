@@ -14,9 +14,9 @@ Leia o arquivo da skill antes de responder qualquer pedido relacionado a orçame
 
 **DAMA Digital** is a Brazilian creative agency platform built and operated by founders Daniel Simonian and Marcella Lima. The app consolidates three product areas:
 
-1. **Agency Website** — public landing page for three divisions: DAMA Tech (purple/pink), DAMA Sports (orange/red), DAMA Studio (blue/cyan)
-2. **Admin Dashboard** — internal CRM for managing clients, quotes (orçamentos), and services
-3. **Client Portal** — password-gated per-client area with sessions, content, financials, and services tabs
+1. **Agency Website** — Home + three divisions: DAMA Tech (índigo), DAMA Sports (tijolo), DAMA Studio (musgo) — Design System v2
+2. **Admin (`/painel`)** — internal CRM: pessoas, agenda/aulas, financeiro, orçamentos, catálogo (the old `/admin` redirects here)
+3. **Client Portal** — password-gated per-client area with sessions, content and charges tabs
 4. **Labs** — experimental products: Poker Pay (cash game + tournament manager) and Fidelidade Digital (loyalty card system)
 
 The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL + Auth) for structured data, Upstash Redis for real-time/ephemeral data (poker sessions, loyalty stores).
@@ -25,46 +25,17 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 
 ## Current Status
 
-**Branch ativa:** `main` (produção)
+**Branch ativa:** `main` (produção) — domínio oficial: https://www.damadigitalcriativa.com.br
 
-**Branch `main` — atualizado em 20/10/2026:**
-- `ec38115` — feat: design system do admin em /designsystem/admin (20/10/2026)
-- `ec3af0a` — feat: design system v2 (manual de campo) em /designsystem (20/10/2026)
-- `d56f798` — fix TypeScript: tipo explícito em extraClients (11/06/2026)
-- `57b245d` — feat: página de torneio 6º Open SPFC + redesign seção Sports (11/06/2026)
-- `2d6ddfc` — redesign home + atualizações DAMA Sports (15/05/2026)
+**Atualizado em 21/10/2026** (detalhes em `STATUS.md`):
+- **Admin novo `/painel`** no ar (PRs #1–#8): Início, Pessoas, Agenda, Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K. `/admin` redireciona para o painel (`next.config.ts`); só `/admin/orcamentos/[id]` segue vivo para orçamentos com **pacotes**
+- **Segurança** (PRs #2, #7): RLS só para `public.equipe`; portal e orçamento público via funções SECURITY DEFINER; senha do portal com hash bcrypt
+- **Site público no Design System v2** (PRs #9, #10): Home, `/tech`, `/sports`, `/sports/[slug]`, `/studio`, `/studio/artistas`. Ainda no visual antigo: `/labs`
+- **Design System v2** em `/designsystem` e `/designsystem/admin` (catálogo; `noindex`). Linguagem "manual de campo": base monocromática, hairlines, cantos marcados, anotações em Geist Mono, acento só por divisão
+- Tokens escopados em `.ds` (`styles/dama-ds.css`); tema via `data-theme`, acento via `data-divisao`
+- Prompt de origem em `Design System/PROMPT DAMA.md` (pasta fora do git)
 
-**Design System v2 (`/designsystem` + `/designsystem/admin`) — estado atual (20/10/2026):**
-- Linguagem "manual de campo": base monocromática, hairlines, cantos marcados, anotações em Geist Mono, acento só por divisão (índigo/tijolo/musgo)
-- Tokens escopados em `.ds` (`styles/dama-ds.css`, importado no `globals.css`) — **não** alteram os tokens do site atual; tema via `data-theme`, acento via `data-divisao`
-- `/designsystem/admin`: componentes de admin + protótipo navegável (dados fictícios) do admin novo; nada grava no banco
-- Rotas com `noindex`; prompt de origem em `Design System/PROMPT DAMA.md` (pasta fora do git)
-
-**Home (`/`) — estado atual (11/06/2026):**
-- Divisions painel Sports: "✓ Último torneio — 6º Open SPFC" (29-31/mai · CT São Paulo FC · 400+ atletas); lista mostra Seletiva ✓ MAI + Open Santos ✓ ABR riscados
-
-**DAMA Sports (`/sports`) — estado atual (11/06/2026):**
-- Todos os 3 torneios realizados: 6º Open SPFC (mai) · Seletiva Pan-Americano IFBT (mai) · Open Santos ASSESP (abr)
-- Página `/sports/[slug]` — rotas individuais por torneio (`generateStaticParams` + SSG)
-- Dados centralizados em `lib/sports-events.ts` (slugs, galeria, reels, stats, sponsors)
-- Parceiros: derivados automaticamente dos `sponsors` de todos os eventos + `extraClients` legados; deduplica por logo path
-- Logos com `zoom?: boolean` opcional para corrigir logos quadrados que mostram fundo
-- Footer mobile: logo `w-36 md:w-full` (era `w-full` — ficava enorme no celular)
-
-**Studio (`/studio` + `/studio/artistas`) — estado atual (13/05/2026):**
-- `/studio/artistas`: 15 artistas, 40+ releases com capas reais do Spotify, cards clicáveis → Spotify
-- `/studio`: hero cicla 15 artistas com gênero, portfólio preview com 4 lançamentos 2026, stats atualizados (15 artistas · +40 lançamentos · 12+ anos), link "Ouvir no Spotify" no Último Lançamento
-- Padrão de imagens: `public/images/studio/[artista]-[release].jpg`
-- Spotify URLs em campo `spotify: string | null` — cards com link viram `<a>`, sem link ficam `<div>`
-
-**DAMA Tech (`/tech`) — estado atual (13/05/2026):**
-- Hero typewriter: 5 projetos → Maxwell Rodrigues + Escola Simonian de Música adicionados
-- Projetos: Maxwell URL → maxwellrodrigues.com · Escola Simonian adicionada com logo verde
-- Número decorativo "02" no hero removido
-
-**Branch `redesign/publico`** — ainda existe, mas já foi mergeada. Próximo uso: redesign do admin/portal.
-
-The system is **production-ready and actively used**. O redesign público está no ar no domínio oficial.
+**Fluxo de trabalho:** uma branch por entrega → PR para `main` → Daniel revisa no preview da Vercel e faz o merge. Push/PR só com o ok dele. O link do preview vem do comentário do bot da Vercel na PR (nomes longos são truncados — não montar a URL na mão).
 
 ---
 
@@ -95,44 +66,48 @@ The system is **production-ready and actively used**. O redesign público está 
 
 ```
 app/
-├── page.tsx                      # Public landing (Hero, Divisions, Portfolio, Contact)
-├── (admin)/                      # Admin area — requires Supabase auth
-│   ├── login/                    # Email/password login
-│   ├── page.tsx                  # Dashboard: quote stats, recent activity
-│   ├── orcamentos/               # Quote list + [id] editor
-│   ├── clientes/                 # Client list + [id] detail
-│   └── configuracoes/            # Settings
-├── cliente/[slug]/               # Client portal — password-gated per slug
-├── orcamento/[slug]/             # Public quote view/approval page
+├── page.tsx                      # Home (DS v2): hero, divisões, capacidades, números, processo, parceiros, fundadores, contato
+├── _home/Divisoes.tsx            # Destaque por divisão na Home
+├── painel/                       # Admin novo — requires Supabase auth + public.equipe
+│   ├── entrar/                   # Login
+│   ├── page.tsx                  # Início: KPIs, aulas de hoje, orçamentos abertos
+│   ├── pessoas/                  # Cadastro único (papéis aluno/estúdio/tech/sports) + ficha (aulas, orçamentos, financeiro, conteúdo, portal)
+│   ├── agenda/                   # Semana: aulas recorrentes, sessões, presença, reposição
+│   ├── financeiro/               # Lançamentos: recebido × a receber, atrasados
+│   ├── orcamentos/               # Lista + [id] editor v2 (QuoteBuilder)
+│   └── catalogo/                 # Serviços e preços por divisão
+├── admin/                        # Antigo — redireciona para /painel; só orcamentos/[id] (tipo pacotes) continua
+├── cliente/[slug]/               # Client portal — password-gated per slug (RPCs portal_*)
+├── orcamento/[slug]/             # Public quote view/approval page (RPCs orcamento_*)
 ├── labs/
 │   ├── poker-pay/                # Cash game lobby, sessions, players, groups, ranking, report
 │   └── fidelidade/               # Loyalty store create + [slug] card view
 ├── sports/
-│   ├── page.tsx                  # DAMA Sports landing (hero, torneios, serviços, parceiros, CTA)
-│   └── [slug]/page.tsx           # Página individual de torneio (galeria, reels, stats, parceiros)
-├── designsystem/
-│   ├── page.tsx                  # Catálogo do Design System v2 (site)
-│   └── admin/page.tsx            # Componentes de admin + protótipo navegável do admin novo
-├── tech/                         # Division landing page
+│   ├── page.tsx                  # DAMA Sports (DS v2): reel, torneios, histórico, serviços, parceiros, contato
+│   └── [slug]/page.tsx           # Página de torneio: números, reel + fotos, patrocinadores
 ├── studio/
-│   ├── page.tsx                  # Studio landing (Hero, Produção, Último Lançamento, Portfólio, Aulas, Distribuição, CTA)
-│   └── artistas/page.tsx         # Portfólio completo — grid de 15 artistas, 40+ releases com capas Spotify
+│   ├── page.tsx                  # DAMA Studio (DS v2): último lançamento, produção, artistas, aulas, distribuição
+│   └── artistas/page.tsx         # Catálogo completo de lançamentos, filtro por ano
+├── tech/page.tsx                 # DAMA Tech (DS v2): serviços, projetos, processo, Labs
+├── designsystem/                 # Catálogo do DS v2 (site + admin)
 └── api/
-    ├── send/                     # Contact form (Resend)
+    ├── send/                     # Contact/briefing form (Resend)
     ├── poker/                    # 7 endpoints: jogadores, session, grupos, inscricoes, historico
     └── fidelidade/               # 5 endpoints: loja, ponto, codigo, cliente, resgate
 ```
 
 ### Data layer
 
-- **Supabase** handles: `profiles`, `clientes`, `orcamentos`, `orcamento_itens`, `servicos`, and client portal content tables
+- **Supabase** handles: `clientes` (pessoas), `orcamentos`, `orcamento_itens`, `orcamento_versoes`, `catalogo_servicos`, `lancamentos`, `matriculas`, `pacotes_aulas`, `eventos_agenda`, `aulas_modulos`/`aulas_conteudos`, `equipe`, `portal_sessoes`. Legacy `servicos`, `sessoes`, `pagamentos` kept untouched (migrated to `lancamentos`/`eventos_agenda`)
 - **Redis** handles: poker player registry, poker sessions (7-day TTL), poker groups, loyalty shops
-- No migration files in repo — migrations managed via Supabase dashboard
+- **Migrations** are versioned in `supabase/migrations/` and applied via the Supabase MCP (`apply_migration`)
+- **Site content** (projects, tournaments, releases, services) lives in `lib/site-data.ts` + `lib/sports-events.ts` + `lib/constants.ts`
 
 ### Auth
 
 - `lib/auth-context.tsx` — `AuthProvider` wraps the app, exposes `useAuth()` hook
-- Admin routes check session; unauthenticated users redirect to `/admin/login`
+- `/painel` checks session; unauthenticated users redirect to `/painel/entrar`. RLS only lets accounts listed in `public.equipe` (via `is_equipe()`) read/write — a new admin user must be added there
+- Sign-ups are disabled in the Supabase dashboard
 - Client portal password is stored only as a bcrypt hash in `clientes.senha_hash` (trigger hashes anything written to `senha_acesso` and clears it); login via RPC `portal_entrar` (10 wrong attempts / 15 min lock)
 
 ---
@@ -141,8 +116,8 @@ app/
 
 1. **Single Next.js app** covers marketing site, admin, client portal, and labs — no separate services
 2. **Upstash Redis** for poker/loyalty: sessions are ephemeral and real-time; no need to persist in Postgres
-3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config (`DIVISAO_CONFIG` in `lib/supabase.ts`)
-4. **Password-protected client portal** uses a slug URL + password stored in DB (not Supabase Auth per-client)
+3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the old admin, the portal, the public quote page and the e-mails in `/api/send`
+4. **Password-protected client portal** uses a slug URL + bcrypt-hashed password (not Supabase Auth per-client — only 3 of 14 clients have e-mail)
 5. **Auto-save** in CashGame: 1-second debounce writes session state to Redis on every change
 6. **Quote lifecycle**: `rascunho → enviado → visualizado → aprovado | recusado | expirado`
 7. **Package quotes** (`tipo: 'pacotes'`): items can be tagged to a package, one package can be `pacote_destaque`
@@ -154,7 +129,7 @@ app/
 ## Repository
 
 - **Root:** `/Users/danielsimonian/Documents/Claude/Projects/dama-digital`
-- **Git remote:** not confirmed, assume GitHub
+- **Git remote:** GitHub `danielsimonian/dama-digital` (Vercel cria preview por PR)
 - **Branch:** `main`
 - **MCP:** Supabase MCP configurado em `.mcp.json` (gitignored) com personal access token — disponível neste projeto ao reiniciar o Claude Code
 
@@ -168,30 +143,30 @@ app/
 | `lib/constants.ts` | Services list, clients list, team, social links |
 | `lib/sports-events.ts` | Dados centralizados de todos os torneios Sports (slug, galeria, reels, sponsors, stats) |
 | `styles/dama-ds.css` | Tokens do Design System v2 (escopo `.ds`, temas, acentos por divisão) |
-| `components/ds/` | Componentes do Design System v2 (site); `components/ds/admin/` = componentes do admin novo |
+| `components/ds/` | Componentes do Design System v2 (site); `components/ds/page.tsx` = `SitePage`/`SiteSection`/`ContactSection`; `components/ds/admin/` = componentes do admin |
+| `lib/site-data.ts` | Conteúdo do site no formato dos componentes do DS (projetos, torneios, lançamentos, serviços) |
+| `supabase/migrations/` | Migrações SQL versionadas (RLS, painel, portal) |
 | `components/labs/CashGame.tsx` | Largest file (1,257 lines) — full poker cash game manager |
 | `components/BriefingForm.tsx` | 544 lines — client briefing intake form |
 | `app/cliente/[slug]/page.tsx` | Client portal with Sessões / Conteúdo / Financeiro / Serviços tabs |
-| `app/admin/orcamentos/[id]/page.tsx` | Full quote editor with drag-to-reorder, PDF preview |
+| `app/painel/` | Admin novo (ver Routing structure) |
 
 ---
 
 ## Next Steps
 
-Based on code state and recent commits, likely priorities:
+Likely priorities:
 
-1. **Admin novo em `/painel`** — visual em `/designsystem/admin`; construir só quando o Daniel pedir. Plano (telas, tabelas novas, ordem) no `STATUS.md` → "Plano do admin novo". Alunos = música da DAMA Studio; usuários = Daniel e Marcella; pagamento marcado manualmente; o `/admin` atual fica até a troca
-2. **RLS completo no Supabase** — `servicos` com RLS ativo (anon SELECT + authenticated ALL); outras tabelas precisam de auditoria
-3. **Vídeos reais** — placeholders ainda em produção (hero, tech, studio — sports já tem vídeo real)
-4. **Capas dos artistas** — `/studio` e `/studio/artistas` usam placeholder de iniciais; Daniel vai inserindo as imagens reais (salvar em `public/images/studio/`)
-5. **Configurar Resend** — `/api/send` existe mas não está configurado para envio em produção (formulários Tech terminal + Sports FichaInscricao)
-6. ~~Password hashing~~ — ✅ feito em 21/10/2026 (bcrypt, etapa 5 do /painel)
-7. **Quote PDF polish** — print CSS export could use layout refinement
-8. **Home page** — ✅ redesign completo entregue em 15/05/2026
-9. **💡 Ideia futura — DAMA Sports Fotos (estilo Banlek)** — planejado em 30/09/2026, ainda não iniciado. Atleta tira selfie e vê todas as suas fotos do torneio; fotógrafos convidados pelo admin fazem login, cadastram torneio e sobem fotos.
+1. **Labs no Design System** — `/labs`, Poker Pay e Fidelidade ainda no visual antigo
+2. **Limpeza de código antigo** — `components/sections/*`, `components/layout/Header|Footer` (só o `/labs` usa), `/admin` (depois dos 2 orçamentos com pacotes; ou trazer o modo pacotes para o editor do painel)
+3. **Configurar Resend** — `/api/send` precisa de `RESEND_API_KEY` na Vercel; sem isso o briefing mostra erro + WhatsApp
+4. **Preços ilustrativos** no `/designsystem` (trocar por reais ou remover)
+5. **Vídeos reais** — Home e divisões novas já não usam os placeholders
+6. **Quote PDF polish** — print CSS export could use layout refinement
+7. **💡 Ideia futura — DAMA Sports Fotos (estilo Banlek)** — planejado em 30/09/2026, ainda não iniciado. Atleta tira selfie e vê todas as suas fotos do torneio; fotógrafos convidados pelo admin fazem login, cadastram torneio e sobem fotos.
    - Fotos grátis no MVP (venda via Pix = fase 2)
    - Stack 100% gratuita: `@vladmandic/human` (reconhecimento facial no navegador) + pgvector no Supabase (`halfvec(1024)`, RPC `buscar_fotos_por_rosto`) + Cloudflare R2 free (10 GB, egress grátis) com `aws4fetch` para URLs de upload assinadas — deps já aprovadas pelo Daniel
-   - Rotas previstas: `/fotografo/*` (painel, role `fotografo`), `/admin/fotografos` (convites), `/sports/fotos/[slug]` (atleta)
+   - Rotas previstas: `/fotografo/*` (painel, role `fotografo`), convites no `/painel`, `/sports/fotos/[slug]` (atleta)
    - LGPD: consentimento explícito (biometria, art. 11); selfie nunca sai do navegador nem é salva
    - Setup manual pendente: conta Cloudflare + bucket R2 + CORS + envs (`R2_*`, `NEXT_PUBLIC_R2_PUBLIC_URL`, `SUPABASE_SERVICE_ROLE_KEY`)
    - Plano completo: `~/.claude/plans/quero-conversar-sobre-uma-cozy-torvalds.md`
@@ -200,11 +175,8 @@ Based on code state and recent commits, likely priorities:
 
 ## Open Questions
 
-- Are there SQL migration files stored externally (e.g., in Supabase dashboard or a separate repo)?
-- Is there a staging/preview environment or is everything deployed directly to production on `main`?
 - Are poker player records meant to eventually migrate from Redis to Supabase?
 - What is the intended scope of the Fidelidade system — personal project or client-deliverable product?
-- Should the client portal use Supabase Auth per client instead of the current slug+password scheme?
 
 ---
 
@@ -214,10 +186,10 @@ Based on code state and recent commits, likely priorities:
 - **Scope**: Make only the change asked. Do not refactor surrounding code, add comments, or "clean up" unless asked.
 - **Quote generation**: Always read `skills/orcamentos/SKILL.md` before producing quote content.
 - **Supabase types**: All DB types are defined in `lib/supabase.ts`. Extend there when adding new fields — do not redeclare inline.
-- **Division colors**: Use `DIVISAO_CONFIG` from `lib/supabase.ts` for division-specific gradients and labels — never hardcode them.
+- **Division colors**: In new UI (site and `/painel`), use the DS accent via `data-divisao` + `ds-accent` tokens and `DIVISAO_LABEL` from `components/ds/primitives`. In the legacy screens and e-mails that still use it, use `DIVISAO_CONFIG` from `lib/supabase.ts`. Never hardcode division colors.
 - **Redis vs Supabase**: Poker and loyalty data lives in Redis. Client/quote/service data lives in Supabase. Don't mix.
 - **New pages**: Follow the existing App Router conventions — `page.tsx` inside a folder, `layout.tsx` only when needed.
 - **No mocks**: Do not mock Supabase or Redis in any code. Use the real clients.
 - **No extra dependencies**: Prefer using existing packages (Lucide for icons, jsPDF for PDFs, dnd-kit for drag). Ask before adding new deps.
-- **Passwords**: Do not make the plaintext password situation worse. Flag it but don't silently add more plaintext password storage.
+- **Passwords**: Never store passwords in plaintext. Portal passwords go through `senha_acesso` only as write input (the trigger hashes and clears it); never read or display them.
 - **Prompts para execução**: Sempre que gerar um prompt para ser copiado e colado no Claude Code ou outro terminal, envolva o conteúdo inteiro em um bloco de código markdown (``` ... ```) para facilitar a cópia.

@@ -6,22 +6,31 @@
 
 ## Active Focus
 
-Admin novo em `/painel`: etapa 1 (base + Pessoas + Catálogo) no ar. Próxima: etapa 2 — gerador de orçamentos v2 puxando do Catálogo e gerando lançamentos.
+Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design System v2 — tudo em produção. Próximos: Labs no DS, limpeza do código antigo, Resend.
 
 ---
 
 ## Last Session Summary (21/10/2026)
 
-- **Supabase estava pausado** (free tier, inatividade) — reativado, dados intactos. Pausa de novo após ~1 semana sem uso.
-- **PR #1 — `/painel` etapa 1:** shell (sidebar, ⌘K, tema), login em `/painel/entrar`, Início, Pessoas (= `clientes` + `papeis`/`status`/`instrumento`/`responsavel`; `areas` sincronizada para o admin antigo e o portal), Catálogo (`catalogo_servicos`, começa vazio). Alunos de música precisam ser marcados como "aluno" à mão.
-- **PR #2 — segurança:** anon lia todos os clientes (com `senha_acesso`), sessões, pagamentos e serviços, e podia alterar qualquer orçamento. Agora:
-  - tabelas só para `public.equipe` (lista fixa: 3 contas) via `is_equipe()`
-  - portal: `portal_cliente` / `portal_entrar` (senha conferida no banco, token de 12 h em `portal_sessoes`) / `portal_dados` / `portal_sair`
-  - orçamento público: `orcamento_publico` / `orcamento_registrar_visualizacao` / `orcamento_aprovar`
-  - verificado com a chave anon: leitura e escrita direta retornam vazio; equipe continua vendo tudo
-- **Migrações versionadas** em `supabase/migrations/` (antes ficavam só no dashboard).
-- **Pendências manuais no dashboard do Supabase:** desligar "Allow new users to sign up"; ligar "Leaked password protection".
-- Usuário novo do admin precisa ser inserido em `public.equipe`, senão não vê nada.
+**`/painel` — admin novo (PRs #1, #3–#8), substitui o `/admin`:**
+- Telas: Início (hoje, KPIs), Pessoas (ficha com aulas, orçamentos, financeiro, conteúdo das aulas, acesso ao portal), Agenda (semana, presença, reposição), Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K
+- Banco (`supabase/migrations/`): `catalogo_servicos`, `orcamento_versoes`, `lancamentos` (gatilho gera parcelas ao aprovar orçamento), `matriculas`, `pacotes_aulas`, `eventos_agenda` (`gerar_aulas` materializa aulas semanais; `aplicar_presenca` consome crédito)
+- Regras das aulas: pacote antecipado de 4 aulas (R$ 400) ou avulsa (R$ 130); horário fixo semanal; uma sala; realizada e falta gastam crédito, justificada não (permite reposição)
+- Histórico migrado: `servicos` (23) e `sessoes` (54) → `lancamentos`/`eventos_agenda` (coluna `legado`); tabelas antigas intactas. Orçamentos aprovados antes do painel não geraram lançamentos
+- Portal do cliente lê das tabelas novas (`portal_dados`)
+- `/admin` redireciona para o `/painel` (`next.config.ts`); só `/admin/orcamentos/[id]` segue vivo para orçamentos com **pacotes** (2 em aberto)
+
+**Segurança (PR #2 e #7):**
+- RLS: tabelas só para `public.equipe` (3 contas) via `is_equipe()`; portal e orçamento público só por funções SECURITY DEFINER
+- Senha do portal com hash bcrypt (`clientes.senha_hash`; gatilho `clientes_protege_senha` converte o que for gravado em `senha_acesso` e apaga o texto). Ninguém vê a senha — a equipe gera outra na ficha da pessoa. Bloqueio após 10 erros em 15 min
+- Dashboard: signup desligado; leaked password protection exige plano Pro (fica desligado)
+- Usuário novo do admin precisa entrar em `public.equipe`
+
+**Site público no DS v2 (PRs #9 e #10):**
+- Home, `/tech`, `/sports`, `/sports/[slug]`, `/studio`, `/studio/artistas` usam `components/ds` (`SitePage`, `SiteSection`, `ContactSection` em `components/ds/page.tsx`)
+- Conteúdo centralizado em `lib/site-data.ts` (projetos, torneios, catálogo de 40 lançamentos, serviços…)
+- Briefing com envio real pelo `/api/send` e a divisão já escolhida em cada página
+- Ainda no visual antigo: `/labs` (e Poker Pay / Fidelidade)
 
 ---
 
@@ -45,18 +54,13 @@ Commits em `main`: `ec3af0a` (design system do site) + `ec38115` (design system 
 
 ---
 
-## Plano do admin novo (`/painel`)
+## Pendências
 
-Respostas do Daniel: alunos = música da DAMA Studio · usuários = só Daniel e Marcella · pagamento marcado manualmente · construir em `/painel` ao lado do `/admin` e trocar quando pronto. O `/admin` atual é considerado desatualizado — não reaproveitar a estrutura de abas.
-
-- **Telas:** Início · Pessoas (cadastro único com papéis aluno/estúdio/tech/sports) · Agenda (aulas + sessões, recorrência, presença) · Financeiro (lançamentos) · Orçamentos (gerador v2) · Catálogo · ⌘K.
-- **Tabelas novas (Supabase):** `catalogo_servicos`, `planos`, `matriculas`, `eventos_agenda` (tipo aula/sessão, presença), `pacotes_horas`, `lancamentos` (origem: orçamento/mensalidade/sessão/pacote/avulso), `orcamento_versoes`.
-- **Migração depois:** `sessoes`, `pagamentos`, `servicos` → `eventos_agenda`/`lancamentos` em etapa separada.
-- **Portal:** Supabase Auth por cliente/aluno (acaba com `senha_acesso` em texto puro).
-- **Ordem:** base + Pessoas + Catálogo → gerador v2 gerando lançamentos → agenda/aulas → financeiro + migração → portal.
-- **Paleta:** admin usa a paleta do DS (índigo/tijolo/musgo) — decidido em 21/10/2026.
-- **Fluxo:** trabalho na branch `redesign/painel`, uma PR por etapa para `main` (preview da Vercel para revisar).
-- **Em aberto:** preços ilustrativos no `/designsystem`.
+- **Resend:** `/api/send` depende de `RESEND_API_KEY` na Vercel — sem isso o briefing cai no estado de erro (com WhatsApp)
+- **Código antigo para apagar:** seções da Home antiga (`components/sections/*`), `components/layout/Header|Footer` (só o `/labs` usa), `/admin` (depois dos 2 orçamentos com pacotes)
+- **Labs** no Design System
+- Preços ilustrativos no `/designsystem` (R$ 3.900 / 4.700 / 2.480)
+- Vídeos reais (`tech-placeholder.mp4`, `studio-placeholder.mp4` não são mais usados nas páginas novas)
 
 ---
 
@@ -85,8 +89,6 @@ Dois commits em `main`: `57b245d` + `d56f798`
 
 ## Notes
 
-- No open PRs or branches; all work lands directly on `main`
-- Site público completo: home ✅ sports ✅ tech ✅ studio ✅ sports/[slug] ✅
-- Pendências: vídeos reais (hero, tech, studio — sports já tem), configurar Resend no `/api/send`
-- Admin/portal redesign: visual proposto em `/designsystem/admin` (aguardando aprovação); construção em `/painel` é a próxima grande fase
+- Fluxo: uma branch por entrega → PR para `main` → Daniel revisa no preview da Vercel e faz o merge. Link do preview: pegar no comentário do bot da Vercel na PR (nomes longos são truncados)
+- Supabase free tier pausa após ~1 semana sem uso
 - Vídeo `reel.mp4` (67MB) acima do limite de 50MB recomendado pelo GitHub — considerar Vercel Blob ou comprimir mais
