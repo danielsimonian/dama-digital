@@ -1,15 +1,18 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, UserPlus, MessageCircle, Pencil, FileText, Mail, ArrowUpRight } from 'lucide-react';
-import { supabase, type Cliente, type Divisao, type Orcamento, type Papel, type PessoaStatus, type Responsavel } from '@/lib/supabase';
+import { supabase, type Cliente, type Divisao, type Lancamento, type Orcamento, type Papel, type PessoaStatus, type Responsavel } from '@/lib/supabase';
 import { cn, Button, Avatar, Alert, DivisionBadge } from '@/components/ds/primitives';
 import { Drawer, Modal, useToast } from '@/components/ds/interactive';
 import { TextField, TextArea, SelectField, Checkbox } from '@/components/ds/fields';
 import { PapelBadge } from '@/components/ds/admin/display';
 import { DataTable, type Column } from '@/components/ds/admin/table';
 import { ScreenHeader, Chips } from '../_components/ui';
+import { ListaLancamentos } from '../_components/Lancamentos';
+import { whatsappUrl } from '../_lib';
 
 const PAPEIS: { id: Papel; label: string; desc: string }[] = [
   { id: 'aluno', label: 'Aluno', desc: 'aulas de música · DAMA Studio' },
@@ -72,12 +75,6 @@ function areasDosPapeis(papeis: Papel[]): Divisao[] {
   return [...areas];
 }
 
-function whatsappUrl(telefone: string) {
-  const digitos = telefone.replace(/\D/g, '');
-  if (digitos.length < 10) return null;
-  return `https://wa.me/${digitos.length <= 11 ? '55' : ''}${digitos}`;
-}
-
 function formatarDesde(data: string) {
   return new Date(data).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '').replace(' de ', ' ');
 }
@@ -87,17 +84,21 @@ function formatarDesde(data: string) {
 /* ------------------------------------------------------------------ */
 
 function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
-  const [carregados, setCarregados] = useState<{ id: string; lista: OrcResumo[] } | null>(null);
-  const orcs = carregados?.id === p.id ? carregados.lista : null;
+  const [carregados, setCarregados] = useState<{ id: string; orcs: OrcResumo[]; lancs: Lancamento[] } | null>(null);
+  const [versao, setVersao] = useState(0);
+  const atual = carregados?.id === p.id ? carregados : null;
+  const orcs = atual?.orcs ?? null;
 
   useEffect(() => {
-    supabase
-      .from('orcamentos')
-      .select('id, numero, projeto_titulo, status, divisao, data_emissao')
-      .eq('cliente_id', p.id)
-      .order('data_emissao', { ascending: false })
-      .then(({ data }) => setCarregados({ id: p.id, lista: data ?? [] }));
-  }, [p.id]);
+    Promise.all([
+      supabase
+        .from('orcamentos')
+        .select('id, numero, projeto_titulo, status, divisao, data_emissao')
+        .eq('cliente_id', p.id)
+        .order('data_emissao', { ascending: false }),
+      supabase.from('lancamentos').select('*').eq('cliente_id', p.id).order('vencimento'),
+    ]).then(([o, l]) => setCarregados({ id: p.id, orcs: o.data ?? [], lancs: (l.data as Lancamento[] | null) ?? [] }));
+  }, [p.id, versao]);
 
   const wa = p.telefone ? whatsappUrl(p.telefone) : null;
 
@@ -161,7 +162,12 @@ function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
       )}
 
       <div>
-        <p className="ds-annot mb-2 uppercase">Orçamentos</p>
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <p className="ds-annot uppercase">Orçamentos</p>
+          <Link href={`/painel/orcamentos/novo?cliente=${p.id}`} className="ds-annot hover:text-ds-fg">
+            + novo orçamento
+          </Link>
+        </div>
         {orcs === null ? (
           <p className="ds-annot">carregando…</p>
         ) : orcs.length === 0 ? (
@@ -170,7 +176,7 @@ function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
           <ul className="divide-y divide-ds-line border-y border-ds-line">
             {orcs.map((o) => (
               <li key={o.id} data-divisao={o.divisao}>
-                <a href={`/admin/orcamentos/${o.id}`} className="flex items-center gap-3 py-2.5 hover:bg-ds-surface">
+                <Link href={`/painel/orcamentos/${o.id}`} className="flex items-center gap-3 py-2.5 hover:bg-ds-surface">
                   <FileText className="size-4 shrink-0 text-ds-subtle" strokeWidth={1.5} aria-hidden />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-ds-fg">{o.projeto_titulo}</span>
@@ -179,15 +185,24 @@ function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
                     </span>
                   </span>
                   <DivisionBadge divisao={o.divisao} />
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
         )}
       </div>
 
+      <div>
+        <p className="ds-annot mb-2 uppercase">Financeiro</p>
+        {atual ? (
+          <ListaLancamentos lancamentos={atual.lancs} onMudou={() => setVersao((v) => v + 1)} vazio="Nenhum lançamento ainda." />
+        ) : (
+          <p className="ds-annot">carregando…</p>
+        )}
+      </div>
+
       <a href={`/admin/clientes/${p.id}`} className="ds-annot inline-flex items-center gap-1 hover:text-ds-fg">
-        sessões, conteúdo e financeiro no admin antigo <ArrowUpRight className="size-3" strokeWidth={1.5} aria-hidden />
+        sessões e conteúdo no admin antigo <ArrowUpRight className="size-3" strokeWidth={1.5} aria-hidden />
       </a>
     </div>
   );

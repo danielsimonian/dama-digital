@@ -82,6 +82,10 @@ export type Orcamento = {
   aprovado_em: string | null;
   created_at: string;
   updated_at: string;
+  // plano de pagamento do /painel (null em orçamentos antigos)
+  entrada_pct?: number | null;
+  parcelas?: number | null;
+  versao?: number;
   cliente?: Cliente;
   itens?: OrcamentoItem[];
 };
@@ -100,6 +104,37 @@ export type OrcamentoItem = {
   pacote_destaque: boolean;
   valor_mensal: number | null;
   descricao_mensal: string | null;
+  catalogo_id?: string | null;
+  unidade?: CatalogoUnidade | null;
+};
+
+export type OrcamentoVersao = {
+  id: string;
+  orcamento_id: string;
+  versao: number;
+  snapshot: { orcamento: Partial<Orcamento>; itens: Partial<OrcamentoItem>[] };
+  criado_por: string | null;
+  created_at: string;
+};
+
+export type LancamentoOrigem = 'orcamento' | 'mensalidade' | 'sessao' | 'pacote' | 'avulso';
+export type LancamentoForma = 'Pix' | 'Cartão' | 'Dinheiro' | 'Boleto' | 'Transferência';
+
+export type Lancamento = {
+  id: string;
+  cliente_id: string | null;
+  orcamento_id: string | null;
+  descricao: string;
+  origem: LancamentoOrigem;
+  divisao: Divisao;
+  valor: number;
+  vencimento: string;
+  status: 'pendente' | 'pago' | 'cancelado';
+  pago_em: string | null;
+  forma: LancamentoForma | null;
+  observacoes: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Servico = {

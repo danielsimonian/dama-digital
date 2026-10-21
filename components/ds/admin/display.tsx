@@ -59,12 +59,14 @@ const ORC: Record<OrcamentoStatus, { label: string; step: number }> = {
   visualizado: { label: 'Visualizado', step: 2 },
   aprovado: { label: 'Aprovado', step: 3 },
   recusado: { label: 'Recusado', step: 3 },
+  expirado: { label: 'Expirado', step: 3 },
 };
 
 /** Trilha do orçamento: rascunho → enviado → visualizado → aprovado. */
 export function QuoteTrack({ status, compact }: { status: OrcamentoStatus; compact?: boolean }) {
   const step = ORC[status].step;
-  const steps = ['Rascunho', 'Enviado', 'Visualizado', status === 'recusado' ? 'Recusado' : 'Aprovado'];
+  const fechado = status === 'recusado' || status === 'expirado';
+  const steps = ['Rascunho', 'Enviado', 'Visualizado', fechado ? ORC[status].label : 'Aprovado'];
   if (compact) {
     return (
       <span className="inline-flex items-center gap-2">
@@ -74,7 +76,7 @@ export function QuoteTrack({ status, compact }: { status: OrcamentoStatus; compa
               key={i}
               className={cn(
                 'h-1.5 w-3',
-                i <= step ? (status === 'recusado' && i === 3 ? 'bg-ds-danger' : status === 'aprovado' ? 'bg-ds-success' : 'bg-ds-fg') : 'bg-ds-line',
+                i <= step ? (fechado && i === 3 ? 'bg-ds-danger' : status === 'aprovado' ? 'bg-ds-success' : 'bg-ds-fg') : 'bg-ds-line',
               )}
             />
           ))}

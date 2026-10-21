@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Plus, Search, Trash2, Minus, Send, FileText, Repeat } from 'lucide-react';
 import type { Divisao } from '@/lib/supabase';
 import { cn, Button, DivisionBadge, DIVISAO_LABEL, Kbd } from '../primitives';
@@ -8,7 +8,20 @@ import { SelectField } from '../fields';
 import { brl, QuoteTrack } from './display';
 import type { CatalogoItem, OrcamentoStatus } from './types';
 
-type Linha = { id: string; nome: string; valor: number; qtd: number; unidade: CatalogoItem['unidade']; divisao: Divisao };
+type Linha = {
+  id: string;
+  nome: string;
+  valor: number;
+  qtd: number;
+  unidade: CatalogoItem['unidade'];
+  divisao: Divisao;
+  // repassados sem edição ao salvar (itens vindos do catálogo ou do editor antigo)
+  catalogoId?: string | null;
+  descricao?: string | null;
+  detalhes?: { texto: string; valor: number | null }[] | null;
+};
+
+export type QuoteDraft = { titulo: string; clienteId: string; divisao: Divisao; linhas: Linha[]; desconto: number; entrada: number; parcelas: number };
 
 const isMensal = (l: Linha) => l.unidade === 'mês';
 
@@ -17,22 +30,48 @@ export function QuoteBuilder({
   clientes,
   inicial,
   onSend,
+  onSave,
+  saving,
+  readOnly,
+  children,
+  aside,
 }: {
   catalogo: CatalogoItem[];
   clientes: { id: string; nome: string }[];
-  inicial: { numero: string; titulo: string; clienteId: string; divisao: Divisao; linhas: Linha[]; desconto: number; status: OrcamentoStatus; versao: number };
+  inicial: {
+    numero: string;
+    titulo: string;
+    clienteId: string;
+    divisao: Divisao;
+    linhas: Linha[];
+    desconto: number;
+    status: OrcamentoStatus;
+    versao: number;
+    entrada?: number;
+    parcelas?: number;
+  };
+  /** protótipo: só avisa */
   onSend?: (msg: string) => void;
+  /** uso real: grava; o status vem de `inicial` depois de recarregar */
+  onSave?: (d: QuoteDraft, acao: 'rascunho' | 'enviar') => void;
+  saving?: boolean;
+  readOnly?: boolean;
+  /** campos extras na coluna do editor (descrição, validade…) */
+  children?: ReactNode;
+  /** conteúdo extra no fim do resumo */
+  aside?: ReactNode;
 }) {
   const [titulo, setTitulo] = useState(inicial.titulo);
   const [clienteId, setClienteId] = useState(inicial.clienteId);
   const [divisao, setDivisao] = useState<Divisao>(inicial.divisao);
   const [linhas, setLinhas] = useState<Linha[]>(inicial.linhas);
   const [desconto, setDesconto] = useState(inicial.desconto);
-  const [entrada, setEntrada] = useState(50);
-  const [parcelas, setParcelas] = useState(1);
+  const [entrada, setEntrada] = useState(inicial.entrada ?? 50);
+  const [parcelas, setParcelas] = useState(inicial.parcelas ?? 1);
   const [busca, setBusca] = useState('');
   const [aberto, setAberto] = useState(false);
-  const [status, setStatus] = useState<OrcamentoStatus>(inicial.status);
+  const [statusLocal, setStatus] = useState<OrcamentoStatus>(inicial.status);
+  const status = onSave ? inicial.status : statusLocal;
   const buscaRef = useRef<HTMLInputElement>(null);
   const listId = useId();
 
@@ -48,8 +87,16 @@ export function QuoteBuilder({
     setLinhas((ls) => {
       const found = ls.find((l) => l.id === c.id);
       if (found) return ls.map((l) => (l.id === c.id ? { ...l, qtd: l.qtd + 1 } : l));
-      return [...ls, { id: c.id, nome: c.nome, valor: c.valor, qtd: 1, unidade: c.unidade, divisao: c.divisao }];
+      return [...ls, { id: c.id, nome: c.nome, valor: c.valor, qtd: 1, unidade: c.unidade, divisao: c.divisao, catalogoId: c.id }];
     });
+    setBusca('');
+    setAberto(false);
+    buscaRef.current?.focus();
+  };
+  const addAvulso = () => {
+    const nome = busca.trim();
+    if (!nome) return;
+    setLinhas((ls) => [...ls, { id: `avulso-${ls.length}-${nome}`, nome, valor: 0, qtd: 1, unidade: 'projeto', divisao }]);
     setBusca('');
     setAberto(false);
     buscaRef.current?.focus();
@@ -65,17 +112,18 @@ export function QuoteBuilder({
   const valorParcela = parcelas ? resto / parcelas : 0;
   const nLanc = (entrada > 0 ? 1 : 0) + (resto > 0 ? parcelas : 0) + (mensal > 0 ? 1 : 0);
   const enviado = status !== 'rascunho';
+  const draft: QuoteDraft = { titulo, clienteId, divisao, linhas, desconto, entrada, parcelas };
 
   return (
     <div data-divisao={divisao} className="@container">
       <div className="grid gap-6 @4xl:grid-cols-[1fr_19rem]">
         {/* ---------------- editor ---------------- */}
-        <div className="@container min-w-0 space-y-6">
+        <fieldset disabled={readOnly} className="@container min-w-0 space-y-6">
           <div className="flex flex-wrap items-center gap-3">
             <span className="font-ds-mono text-xs text-ds-subtle">#{inicial.numero}</span>
             <span className="rounded-ds-xs border border-ds-line px-1.5 font-ds-mono text-[10px] text-ds-muted">v{inicial.versao}</span>
             <DivisionBadge divisao={divisao} />
-            {enviado && <span className="ds-annot">editar depois de enviado cria a v{inicial.versao + 1}</span>}
+            {enviado && !readOnly && <span className="ds-annot">reenviar depois de editar cria a v{inicial.versao + 1}</span>}
           </div>
 
           <input
@@ -86,7 +134,13 @@ export function QuoteBuilder({
           />
 
           <div className="grid gap-4 @md:grid-cols-2">
-            <SelectField label="Cliente" value={clienteId} onChange={(e) => setClienteId(e.target.value)} options={clientes.map((c) => ({ value: c.id, label: c.nome }))} />
+            <SelectField
+              label="Cliente"
+              value={clienteId}
+              placeholder="Escolha o cliente"
+              onChange={(e) => setClienteId(e.target.value)}
+              options={clientes.map((c) => ({ value: c.id, label: c.nome }))}
+            />
             <SelectField
               label="Divisão"
               value={divisao}
@@ -116,7 +170,8 @@ export function QuoteBuilder({
                         por {l.unidade}
                       </p>
                     </div>
-                    <div className="col-start-2 flex items-center gap-1 @xl:col-start-auto" aria-label={`Quantidade de ${l.nome}`}>
+                    <div className="col-start-2 flex flex-wrap items-center gap-2 @xl:contents">
+                    <div className="flex items-center gap-1" aria-label={`Quantidade de ${l.nome}`}>
                       <button onClick={() => upd(l.id, { qtd: Math.max(1, l.qtd - 1) })} aria-label="Diminuir" className="inline-flex size-8 items-center justify-center border border-ds-line text-ds-muted hover:text-ds-fg">
                         <Minus className="size-3" strokeWidth={1.5} />
                       </button>
@@ -125,7 +180,7 @@ export function QuoteBuilder({
                         <Plus className="size-3" strokeWidth={1.5} />
                       </button>
                     </div>
-                    <label className="relative hidden @xl:block">
+                    <label className="relative block w-28 @xl:w-auto">
                       <span className="sr-only">Valor unitário de {l.nome}</span>
                       <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 font-ds-mono text-[11px] text-ds-subtle">R$</span>
                       <input
@@ -136,6 +191,7 @@ export function QuoteBuilder({
                         className="h-8 w-full rounded-ds-xs border border-ds-line bg-ds-surface pl-7 pr-2 text-right font-ds-mono text-sm tabular-nums outline-none focus:border-ds-accent"
                       />
                     </label>
+                    </div>
                     <p className="row-start-1 col-start-3 text-right font-ds-mono text-sm tabular-nums text-ds-fg @xl:col-start-auto @xl:row-start-auto">
                       {brl(l.valor * l.qtd)}
                       {isMensal(l) && <span className="text-ds-subtle">/mês</span>}
@@ -164,6 +220,9 @@ export function QuoteBuilder({
                   if (e.key === 'Enter' && sugestoes[0]) {
                     e.preventDefault();
                     add(sugestoes[0]);
+                  } else if (e.key === 'Enter' && busca.trim()) {
+                    e.preventDefault();
+                    addAvulso();
                   }
                   if (e.key === 'Escape') setAberto(false);
                 }}
@@ -177,7 +236,7 @@ export function QuoteBuilder({
               <span className="absolute right-3 top-1/2 -translate-y-1/2">
                 <Kbd>↵</Kbd>
               </span>
-              {aberto && sugestoes.length > 0 && (
+              {aberto && (sugestoes.length > 0 || busca.trim()) && (
                 <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-20 mt-1 max-h-64 overflow-auto rounded-ds-sm border border-ds-line bg-ds-surface-2 p-1 shadow-[0_12px_32px_-12px_oklch(0%_0_0/0.4)]">
                   {sugestoes.map((c, i) => (
                     <li key={c.id} role="option" aria-selected={i === 0}>
@@ -196,6 +255,17 @@ export function QuoteBuilder({
                       </button>
                     </li>
                   ))}
+                  {busca.trim() && (
+                    <li role="option" aria-selected={sugestoes.length === 0}>
+                      <button
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={addAvulso}
+                        className={cn('flex w-full items-center gap-2 rounded-ds-xs px-3 py-2 text-left text-sm text-ds-muted hover:bg-ds-surface-3', sugestoes.length === 0 && 'bg-ds-surface-3/60')}
+                      >
+                        <Plus className="size-3.5" strokeWidth={1.5} aria-hidden /> Adicionar “{busca.trim()}” como item avulso
+                      </button>
+                    </li>
+                  )}
                 </ul>
               )}
             </div>
@@ -247,7 +317,9 @@ export function QuoteBuilder({
               </select>
             </label>
           </div>
-        </div>
+
+          {children}
+        </fieldset>
 
         {/* ---------------- resumo ---------------- */}
         <aside className="min-w-0">
@@ -302,20 +374,27 @@ export function QuoteBuilder({
               <QuoteTrack status={status} />
             </div>
 
-            <div className="mt-5 grid gap-2">
-              <Button
-                onClick={() => {
-                  setStatus('enviado');
-                  onSend?.(`#${inicial.numero} enviado para ${clientes.find((c) => c.id === clienteId)?.nome ?? 'o cliente'}`);
-                }}
-                disabled={!linhas.length}
-              >
-                <Send className="size-4" strokeWidth={1.5} aria-hidden /> {enviado ? 'Reenviar link' : 'Enviar ao cliente'}
-              </Button>
-              <Button variant="ghost" onClick={() => onSend?.('Rascunho salvo')}>
-                Salvar rascunho
-              </Button>
-            </div>
+            {!readOnly && (
+              <div className="mt-5 grid gap-2">
+                <Button
+                  onClick={() => {
+                    if (onSave) return onSave(draft, 'enviar');
+                    setStatus('enviado');
+                    onSend?.(`#${inicial.numero} enviado para ${clientes.find((c) => c.id === clienteId)?.nome ?? 'o cliente'}`);
+                  }}
+                  disabled={!linhas.length || !clienteId || saving}
+                  loading={saving}
+                >
+                  <Send className="size-4" strokeWidth={1.5} aria-hidden /> {enviado ? 'Salvar e reenviar' : 'Enviar ao cliente'}
+                </Button>
+                {!enviado && (
+                  <Button variant="ghost" disabled={saving} onClick={() => (onSave ? onSave(draft, 'rascunho') : onSend?.('Rascunho salvo'))}>
+                    Salvar rascunho
+                  </Button>
+                )}
+              </div>
+            )}
+            {aside}
           </div>
         </aside>
       </div>

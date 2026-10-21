@@ -57,7 +57,7 @@ export type Lancamento = {
   pagoEm?: string;
 };
 
-export type OrcamentoStatus = 'rascunho' | 'enviado' | 'visualizado' | 'aprovado' | 'recusado';
+export type OrcamentoStatus = 'rascunho' | 'enviado' | 'visualizado' | 'aprovado' | 'recusado' | 'expirado';
 
 export type OrcamentoResumo = {
   numero: string;

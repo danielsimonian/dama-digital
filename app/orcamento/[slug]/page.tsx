@@ -467,12 +467,14 @@ export default function OrcamentoPublicoPage() {
                           </div>
                           <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2">
                             <div className="text-right">
-                              <p className="text-xl font-semibold">
-                                {formatarMoeda(Number(item.valor) * Number(item.quantidade))}
-                              </p>
+                              {(Number(item.valor) > 0 || !(item.valor_mensal > 0)) && (
+                                <p className="text-xl font-semibold">
+                                  {formatarMoeda(Number(item.valor) * Number(item.quantidade))}
+                                </p>
+                              )}
                               {item.valor_mensal > 0 && (
                                 <p className={`text-sm font-medium ${itemConfig.textColor}`}>
-                                  + {formatarMoeda(Number(item.valor_mensal))}/mês
+                                  {Number(item.valor) > 0 && '+ '}{formatarMoeda(Number(item.valor_mensal))}/mês
                                   {item.descricao_mensal && (
                                     <span className={`font-normal ml-1 ${temaClaro ? 'text-gray-500' : 'text-gray-400'}`}>
                                       ({item.descricao_mensal})

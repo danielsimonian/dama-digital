@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutGrid, Users, Tags, UserPlus, Plus, LogOut, Moon, Sun, Loader2 } from 'lucide-react';
+import { LayoutGrid, Users, Tags, UserPlus, Plus, LogOut, Moon, Sun, Loader2, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { cn, Avatar } from '@/components/ds/primitives';
@@ -15,6 +15,7 @@ type Theme = 'light' | 'dark';
 const NAV: (NavItem & { href: string })[] = [
   { id: 'inicio', href: '/painel', label: 'Início', icon: <LayoutGrid /> },
   { id: 'pessoas', href: '/painel/pessoas', label: 'Pessoas', icon: <Users /> },
+  { id: 'orcamentos', href: '/painel/orcamentos', label: 'Orçamentos', icon: <FileText /> },
   { id: 'catalogo', href: '/painel/catalogo', label: 'Catálogo', icon: <Tags /> },
 ];
 
@@ -109,6 +110,7 @@ export function PainelShell({ children }: { children: ReactNode }) {
     const active = activeId(pathname);
     const commands: Command[] = [
       { id: 'n-pessoa', group: 'Criar', label: 'Nova pessoa', icon: <UserPlus />, run: () => router.push('/painel/pessoas?novo=1') },
+      { id: 'n-orc', group: 'Criar', label: 'Novo orçamento', icon: <FileText />, run: () => router.push('/painel/orcamentos/novo') },
       { id: 'n-item', group: 'Criar', label: 'Novo item no catálogo', icon: <Plus />, run: () => router.push('/painel/catalogo?novo=1') },
       ...NAV.map((n) => ({ id: `go-${n.id}`, group: 'Ir para', label: n.label, icon: n.icon, run: () => router.push(n.href) })),
       ...pessoas.map((p) => ({ id: `p-${p.id}`, group: 'Pessoas', label: p.nome, icon: <Users />, run: () => router.push(`/painel/pessoas?id=${p.id}`) })),
