@@ -27,10 +27,18 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 
 **Branch ativa:** `main` (produção)
 
-**Branch `main` — atualizado em 11/06/2026:**
+**Branch `main` — atualizado em 20/10/2026:**
+- `ec38115` — feat: design system do admin em /designsystem/admin (20/10/2026)
+- `ec3af0a` — feat: design system v2 (manual de campo) em /designsystem (20/10/2026)
 - `d56f798` — fix TypeScript: tipo explícito em extraClients (11/06/2026)
 - `57b245d` — feat: página de torneio 6º Open SPFC + redesign seção Sports (11/06/2026)
 - `2d6ddfc` — redesign home + atualizações DAMA Sports (15/05/2026)
+
+**Design System v2 (`/designsystem` + `/designsystem/admin`) — estado atual (20/10/2026):**
+- Linguagem "manual de campo": base monocromática, hairlines, cantos marcados, anotações em Geist Mono, acento só por divisão (índigo/tijolo/musgo)
+- Tokens escopados em `.ds` (`styles/dama-ds.css`, importado no `globals.css`) — **não** alteram os tokens do site atual; tema via `data-theme`, acento via `data-divisao`
+- `/designsystem/admin`: componentes de admin + protótipo navegável (dados fictícios) do admin novo; nada grava no banco
+- Rotas com `noindex`; prompt de origem em `Design System/PROMPT DAMA.md` (pasta fora do git)
 
 **Home (`/`) — estado atual (11/06/2026):**
 - Divisions painel Sports: "✓ Último torneio — 6º Open SPFC" (29-31/mai · CT São Paulo FC · 400+ atletas); lista mostra Seletiva ✓ MAI + Open Santos ✓ ABR riscados
@@ -102,6 +110,9 @@ app/
 ├── sports/
 │   ├── page.tsx                  # DAMA Sports landing (hero, torneios, serviços, parceiros, CTA)
 │   └── [slug]/page.tsx           # Página individual de torneio (galeria, reels, stats, parceiros)
+├── designsystem/
+│   ├── page.tsx                  # Catálogo do Design System v2 (site)
+│   └── admin/page.tsx            # Componentes de admin + protótipo navegável do admin novo
 ├── tech/                         # Division landing page
 ├── studio/
 │   ├── page.tsx                  # Studio landing (Hero, Produção, Último Lançamento, Portfólio, Aulas, Distribuição, CTA)
@@ -156,6 +167,8 @@ app/
 | `lib/redis.ts` | Upstash Redis client |
 | `lib/constants.ts` | Services list, clients list, team, social links |
 | `lib/sports-events.ts` | Dados centralizados de todos os torneios Sports (slug, galeria, reels, sponsors, stats) |
+| `styles/dama-ds.css` | Tokens do Design System v2 (escopo `.ds`, temas, acentos por divisão) |
+| `components/ds/` | Componentes do Design System v2 (site); `components/ds/admin/` = componentes do admin novo |
 | `components/labs/CashGame.tsx` | Largest file (1,257 lines) — full poker cash game manager |
 | `components/BriefingForm.tsx` | 544 lines — client briefing intake form |
 | `app/cliente/[slug]/page.tsx` | Client portal with Sessões / Conteúdo / Financeiro / Serviços tabs |
@@ -167,7 +180,7 @@ app/
 
 Based on code state and recent commits, likely priorities:
 
-1. **Redesign do admin/portal** — próxima fase: novo visual + migração para Supabase Auth por cliente
+1. **Admin novo em `/painel`** — visual em `/designsystem/admin`; construir só quando o Daniel pedir. Plano (telas, tabelas novas, ordem) no `STATUS.md` → "Plano do admin novo". Alunos = música da DAMA Studio; usuários = Daniel e Marcella; pagamento marcado manualmente; o `/admin` atual fica até a troca
 2. **RLS completo no Supabase** — `servicos` com RLS ativo (anon SELECT + authenticated ALL); outras tabelas precisam de auditoria
 3. **Vídeos reais** — placeholders ainda em produção (hero, tech, studio — sports já tem vídeo real)
 4. **Capas dos artistas** — `/studio` e `/studio/artistas` usam placeholder de iniciais; Daniel vai inserindo as imagens reais (salvar em `public/images/studio/`)
