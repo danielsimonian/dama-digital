@@ -56,16 +56,20 @@ function maskPhone(v: string) {
 export function ContactForm({
   simulateError = false,
   onSubmit,
+  divisaoInicial,
 }: {
   simulateError?: boolean;
+  /** já escolhe a divisão e começa no passo de contato */
+  divisaoInicial?: Divisao;
   /** envio real; devolve `true` quando deu certo */
   onSubmit?: (briefing: Briefing) => Promise<boolean>;
 }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(divisaoInicial ? 1 : 0);
   const [status, setStatus] = useState<Status>('idle');
   const [errors, setErrors] = useState<Errors>({});
   const [protocol, setProtocol] = useState('');
-  const [data, setData] = useState<Data>({ divisao: null, nome: '', email: '', whatsapp: '', mensagem: '', prazo: '', lgpd: false });
+  const vazio: Data = { divisao: divisaoInicial ?? null, nome: '', email: '', whatsapp: '', mensagem: '', prazo: '', lgpd: false };
+  const [data, setData] = useState<Data>(vazio);
   const formRef = useRef<HTMLFormElement>(null);
   const [website, setWebsite] = useState(''); // honeypot contra spam
 
@@ -108,11 +112,11 @@ export function ContactForm({
   };
 
   const reset = () => {
-    setStep(0);
+    setStep(divisaoInicial ? 1 : 0);
     setStatus('idle');
     setProtocol('');
     setErrors({});
-    setData({ divisao: null, nome: '', email: '', whatsapp: '', mensagem: '', prazo: '', lgpd: false });
+    setData(vazio);
   };
 
   if (status === 'success') {
