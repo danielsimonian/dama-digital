@@ -168,3 +168,95 @@ export const sportsServices = [
   { name: 'Troféus e medalhas', desc: 'Produção personalizada com a identidade visual do evento.' },
   { name: 'Estrutura completa', desc: 'Quadras, treliças, pódio, staff e tudo que o evento precisa para acontecer.' },
 ];
+
+// Studio: todos os lançamentos produzidos no estúdio (mais recente primeiro)
+const SP = 'https://open.spotify.com/album/';
+
+export const studioReleases: Release[] = [
+  { artist: 'Fernando Silveyra', title: 'Confiança', year: 2026, type: 'Álbum', cover: '/images/studio/fernando-silveyra-confianca.jpg', spotify: `${SP}67dv685dARviuHRS8K5jVF` },
+  { artist: 'Fábio Zulli', title: 'Nico Manezinho', year: 2026, type: 'Single', cover: '/images/studio/fabio-zulli-nico-manezinho.jpg', spotify: `${SP}7Ly3VKT8LgL0TULQpIfvO5` },
+  { artist: 'SAID', title: 'Find Love', year: 2026, type: 'Single', cover: '/images/studio/said-find-love.jpg', spotify: `${SP}2Fmk8IR5DvSVZhWEXdKrnU` },
+  { artist: 'Antonio Eduardo', title: 'MRB — Revisitando Guerra Peixe', year: 2026, type: 'Álbum', cover: '/images/studio/antonio-eduardo-revisitando-guerra-peixe.jpg', spotify: `${SP}73qBHEp5bTTe6f3QvKvFVe` },
+  { artist: 'Antonio Eduardo', title: 'MRB — Miniaturas Secretas de Harry Crowl', year: 2026, type: 'EP', cover: '/images/studio/antonio-eduardo-miniaturas-secretas.jpg', spotify: `${SP}64zyVmjoOZq6tZbbWUh3Kj` },
+  { artist: 'Antonio Eduardo', title: 'MRB — Compositores Baianos', year: 2026, type: 'Single', cover: '/images/studio/antonio-eduardo-compositores-baianos.jpg', spotify: `${SP}7577b5w14KGTojPpKKuJW8` },
+  { artist: 'André Simonian', title: 'Manifesto', year: 2025, type: 'Single', cover: '/images/studio/andre-simonian-manifesto.jpg', spotify: `${SP}1MzPmMFTOFKqG0Hk13zpJ0` },
+  { artist: 'André Simonian', title: 'Nosso Grande Alento', year: 2025, type: 'Single', cover: '/images/studio/andre-simonian-nosso-grande-alento.jpg', spotify: `${SP}5k98tQ1r7mN09SCkj7w8Rz` },
+  { artist: 'SAID', title: 'Tik Tok', year: 2025, type: 'Single', cover: '/images/studio/said-tik-tok.jpg', spotify: `${SP}0PsMhzZxCD95ucZ1LVIi5m` },
+  { artist: 'SAID', title: 'Vontade Louca', year: 2025, type: 'Single', cover: '/images/studio/said-vontade-louca.jpg', spotify: `${SP}6ak4VamDvkhS1ABem0Guxj` },
+  { artist: 'José Simonian', title: 'Houve as Nossas Canções', year: 2024, type: 'Álbum', cover: '/images/studio/jose-simonian-houve-as-nossas-cancoes.jpg', spotify: `${SP}02d1YLgTKflDku4qvTZ9px` },
+  { artist: 'André Simonian', title: 'Notícias do Brasil', year: 2024, type: 'Single', cover: '/images/studio/andre-simonian-noticias-do-brasil.jpg', spotify: `${SP}6VOpqlnhDgiQVG96v724nA` },
+  { artist: 'SAID', title: 'My Head', year: 2024, type: 'Single', cover: '/images/studio/said-my-head.jpg', spotify: `${SP}2ZiCJ3KFbqNHeK9JzWKXIQ` },
+  { artist: 'SAID', title: 'Impact', year: 2024, type: 'EP', cover: '/images/studio/said-impact.jpg', spotify: `${SP}2FiObNM2Ofmi8iJAMb0vQy` },
+  { artist: 'SAID', title: 'I Miss You', year: 2023, type: 'Single', cover: '/images/studio/said-i-miss-you.jpg', spotify: `${SP}59E6uGIkrEsmcHJBgrNEZD` },
+  { artist: 'Fábio Zulli', title: 'Cantando Poeminhas', year: 2023, type: 'Álbum', cover: '/images/studio/fabio-zulli-cantando-poeminhas.jpg', spotify: `${SP}4cTFV6okjccoHws49DWqjm` },
+  { artist: 'Raffa Pereira', title: 'Canto pra Guerreira', year: 2022, type: 'Single', cover: '/images/studio/raffa-pereira-canto-pra-guerreira.jpg', spotify: `${SP}29jva9tHQt3oEN16jj1S7c` },
+  { artist: 'André Simonian', title: 'Davi', year: 2022, type: 'Single', cover: '/images/studio/andre-simonian-davi.jpg', spotify: `${SP}70zO6tf122ISeDYj5qTuXy` },
+  { artist: 'André Simonian', title: 'Lança, Vol. 01', year: 2022, type: 'EP', cover: '/images/studio/andre-simonian-lanca-vol-01.jpg', spotify: `${SP}4ow20X22JNmtQ79eguZEBi` },
+  { artist: 'André Simonian', title: 'Porta Aberta', year: 2022, type: 'Single', cover: '/images/studio/andre-simonian-porta-aberta.jpg', spotify: `${SP}4NhrlydeGdVofo2oZImRAl` },
+  { artist: 'SAID', title: 'Le Petit', year: 2022, type: 'Single', cover: '/images/studio/said-le-petit.jpg', spotify: `${SP}05rHHXhl6P9L3TyCbzEfsK` },
+  { artist: 'SAID', title: 'Pode Falar', year: 2022, type: 'Single', cover: '/images/studio/said-pode-falar.jpg', spotify: `${SP}7ugyDTQKie5NdqmrVfhjK6` },
+  { artist: 'Karina Cyrillo', title: 'Te Quis', year: 2022, type: 'Single', cover: '/images/studio/karina-cyrillo-te-quis.jpg', spotify: `${SP}3WzDvd9SCgBkM07JAqTp3Z` },
+  { artist: 'Caio Jack', title: 'Alto Mar', year: 2022, type: 'Single', cover: '/images/studio/caio-jack-alto-mar.jpg', spotify: `${SP}5dO6YvY2Jn4zOVgp69kKoI` },
+  { artist: 'Caio Jack', title: 'Dia de Sol', year: 2022, type: 'Single', cover: '/images/studio/caio-jack-dia-de-sol.jpg', spotify: `${SP}5ydCucHC5INf5CDd3rGFTc` },
+  { artist: 'Karina Cyrillo', title: 'Ella', year: 2021, type: 'Single', cover: '/images/studio/karina-cyrillo-ella.jpg', spotify: `${SP}1zPhcya15SVrFsHtu1bPa0` },
+  { artist: 'Karina Cyrillo', title: 'Passarinho', year: 2021, type: 'Single', cover: '/images/studio/karina-cyrillo-passarinho.jpg', spotify: `${SP}6KUFOCJy12OvFKYIFnfE3k` },
+  { artist: 'Raffa Pereira', title: 'Ai Amor', year: 2021, type: 'Single', cover: '/images/studio/raffa-pereira-ai-amor.jpg', spotify: `${SP}4j8hnS5S74opp7vfPtHlNA` },
+  { artist: 'Raffa Pereira', title: 'Liberdade Dança', year: 2021, type: 'Single', cover: '/images/studio/raffa-pereira-liberdade-danca.jpg', spotify: `${SP}4UDoKOwmykXxaWZ0a1t9Bk` },
+  { artist: 'Lopes.Inc', title: 'Amor de Carnaval', year: 2021, type: 'Single', cover: '/images/studio/lopes-inc-amor-de-carnaval.jpg', spotify: `${SP}4X0DyS8vgnj4UNfpgSguoR` },
+  { artist: 'Caio Simonian', title: 'Voz, violão e vassoura', year: 2021, type: 'Álbum', cover: '/images/studio/caio-simonian-voz-violao-e-vassoura.jpg', spotify: `${SP}36wB8Ss6R8cOjKvIEvgYv6` },
+  { artist: 'Karina Cyrillo', title: 'Cicatrizes', year: 2020, type: 'Single', cover: '/images/studio/karina-cyrillo-cicatrizes.jpg', spotify: `${SP}4kWeggaKmaDk3EgYICk1iL` },
+  { artist: 'Karina Cyrillo', title: 'Acústicas', year: 2020, type: 'EP', cover: '/images/studio/karina-cyrillo-acusticas.jpg', spotify: `${SP}5Wj422coBpJpNVZzjatY4l` },
+  { artist: 'Intemporal', title: 'Anseio', year: 2020, type: 'Single', cover: '/images/studio/intemporal-anseio.jpg', spotify: `${SP}4bEMPiBcCmD6GlrI5NmZhc` },
+  { artist: 'Intemporal', title: 'Espelho', year: 2020, type: 'Single', cover: '/images/studio/intemporal-espelho.jpg', spotify: `${SP}6wiL2pjHPkdaJzn2r8jSxL` },
+  { artist: 'Intemporal', title: 'Não Dá Mais', year: 2020, type: 'Single', cover: '/images/studio/intemporal-nao-da-mais.jpg', spotify: `${SP}45VqKZ1MQ6uFQ0dBLw0ryA` },
+  { artist: 'Daniel Simonian & Marcella Lima', title: 'Temporal (Acústico)', year: 2020, type: 'Single', cover: '/images/studio/daniel-marcella-temporal-acustico.jpg', spotify: `${SP}4y0hnnmdJbGh8JKqjCzt3B` },
+  { artist: 'Marcos Alves', title: 'Amanhecerá', year: 2016, type: 'Álbum', cover: '/images/studio/marcos-alves-amanhacera.jpg', spotify: `${SP}0LxOuQHgwSduQyHYj1AAdS` },
+  { artist: 'Fernando Silveyra', title: 'Labaredas', year: 2015, type: 'Álbum', cover: '/images/studio/fernando-silveyra-labaredas.jpg', spotify: `${SP}7G5RewztShPZLZnH1mifjR` },
+  { artist: 'Kayoko Yamabe', title: 'Lembrança do Brasil', year: 2012, type: 'Álbum', cover: null, spotify: null },
+];
+
+export const studioArtists: { name: string; genre: string }[] = [
+  { name: 'Fernando Silveyra', genre: 'MPB' },
+  { name: 'SAID', genre: 'Pop' },
+  { name: 'Antonio Eduardo', genre: 'Música Clássica Brasileira' },
+  { name: 'André Simonian', genre: 'Pop / MPB' },
+  { name: 'José Simonian', genre: 'MPB / Clássico' },
+  { name: 'Fábio Zulli', genre: 'Música Infantil' },
+  { name: 'Raffa Pereira', genre: 'MPB & Jazz' },
+  { name: 'Karina Cyrillo', genre: 'Pop' },
+  { name: 'Caio Jack', genre: 'Pop' },
+  { name: 'Lopes.Inc', genre: 'Pop' },
+  { name: 'Caio Simonian', genre: 'Jazz / MPB' },
+  { name: 'Intemporal', genre: 'Rock' },
+  { name: 'Daniel Simonian & Marcella Lima', genre: 'MPB' },
+  { name: 'Marcos Alves', genre: 'MPB' },
+  { name: 'Kayoko Yamabe', genre: 'Música Clássica' },
+];
+
+export const studioIncludes = [
+  'Gravação em estúdio tratado acusticamente',
+  'Edição e comping de takes',
+  'Arranjo e direção musical',
+  'Mixagem',
+  'Masterização em padrão de mercado',
+  'Distribuição digital (150+ plataformas)',
+  'Registro de ISRC',
+];
+
+export const studioAulas = [
+  { name: 'Violão', desc: 'Do básico ao avançado — acordes, técnica, harmonia e repertório.' },
+  { name: 'Guitarra', desc: 'Rock, blues, jazz e além — técnica, improviso e sonoridade.' },
+  { name: 'Produção musical', desc: 'DAW, arranjo, gravação e lançamento — do zero ao release.' },
+];
+
+export const studioDistribuicao = [
+  { value: 'ISRC', label: 'por faixa', note: 'Código internacional que identifica cada gravação.' },
+  { value: '150+', label: 'plataformas', note: 'Spotify, Apple Music, Deezer, YouTube Music e mais.' },
+  { value: 'UPC', label: 'por álbum', note: 'Código de barras para distribuição física e digital.' },
+];
+
+export const studioCaminhos = [
+  { name: 'Gravar', desc: 'Tem um projeto musical e quer produzir com qualidade.', cta: 'Falar sobre gravação' },
+  { name: 'Aprender', desc: 'Quer começar do zero ou evoluir no instrumento ou na produção.', cta: 'Agendar aula experimental' },
+  { name: 'Lançar', desc: 'Já tem a música gravada e quer distribuir e registrar.', cta: 'Falar sobre distribuição' },
+];

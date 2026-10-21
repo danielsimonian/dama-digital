@@ -280,12 +280,25 @@ export function Pagination({ total, initial = 1 }: { total: number; initial?: nu
 /* Chips de filtro                                                     */
 /* ------------------------------------------------------------------ */
 
-export function FilterChips({ options, multiple = false }: { options: string[]; multiple?: boolean }) {
+export function FilterChips({
+  options,
+  multiple = false,
+  onChange,
+  label,
+}: {
+  options: string[];
+  multiple?: boolean;
+  onChange?: (selected: string[]) => void;
+  label?: string;
+}) {
   const [selected, setSelected] = useState<string[]>([options[0]]);
-  const toggle = (o: string) =>
-    setSelected((s) => (multiple ? (s.includes(o) ? s.filter((x) => x !== o) : [...s, o]) : [o]));
+  const toggle = (o: string) => {
+    const next = multiple ? (selected.includes(o) ? selected.filter((x) => x !== o) : [...selected, o]) : [o];
+    setSelected(next);
+    onChange?.(next);
+  };
   return (
-    <div className="flex flex-wrap gap-2" role="group">
+    <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
       {options.map((o) => {
         const on = selected.includes(o);
         return (
