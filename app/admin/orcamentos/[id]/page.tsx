@@ -165,6 +165,12 @@ export default function OrcamentoFormPage() {
 
     if (orcError) throw orcError;
 
+    // só orçamentos com pacotes continuam aqui; o resto é editado no /painel
+    if (orc && (orc.tipo || 'simples') !== 'pacotes') {
+      router.replace(`/painel/orcamentos/${orc.id}`);
+      return;
+    }
+
     const { data: itensData, error: itensError } = await supabase
       .from('orcamento_itens')
       .select('*')
