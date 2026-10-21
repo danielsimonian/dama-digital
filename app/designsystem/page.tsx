@@ -76,7 +76,7 @@ import {
   members,
   partners,
   process,
-} from './_data';
+} from '@/lib/site-data';
 
 /* ------------------------------------------------------------------ */
 /* Índice                                                              */

@@ -19,8 +19,16 @@ const DIVISOES: { id: Divisao; desc: string; art: keyof typeof LINE_ART }[] = [
 type Data = { divisao: Divisao | null; nome: string; email: string; whatsapp: string; mensagem: string; prazo: string; lgpd: boolean };
 type Errors = Partial<Record<keyof Data, string>>;
 type Status = 'idle' | 'sending' | 'success' | 'error';
+export type Briefing = Omit<Data, 'divisao' | 'lgpd'> & { divisao: Divisao; website: string };
 
 const STEPS = ['Divisão', 'Contato', 'Projeto'];
+
+export const PRAZOS = [
+  { value: 'urgente', label: 'Menos de 15 dias' },
+  { value: '1mes', label: 'Em até 1 mês' },
+  { value: '3meses', label: 'De 1 a 3 meses' },
+  { value: 'aberto', label: 'Sem pressa' },
+];
 
 function validate(step: number, d: Data): Errors {
   const e: Errors = {};
@@ -44,14 +52,22 @@ function maskPhone(v: string) {
   return `(${n.slice(0, 2)}) ${n.slice(2, n.length - 4)}-${n.slice(-4)}`;
 }
 
-/** Formulário de briefing em 3 etapas. Envio simulado — `simulateError` força a falha. */
-export function ContactForm({ simulateError = false }: { simulateError?: boolean }) {
+/** Formulário de briefing em 3 etapas. Sem `onSubmit` o envio é simulado — `simulateError` força a falha. */
+export function ContactForm({
+  simulateError = false,
+  onSubmit,
+}: {
+  simulateError?: boolean;
+  /** envio real; devolve `true` quando deu certo */
+  onSubmit?: (briefing: Briefing) => Promise<boolean>;
+}) {
   const [step, setStep] = useState(0);
   const [status, setStatus] = useState<Status>('idle');
   const [errors, setErrors] = useState<Errors>({});
   const [protocol, setProtocol] = useState('');
   const [data, setData] = useState<Data>({ divisao: null, nome: '', email: '', whatsapp: '', mensagem: '', prazo: '', lgpd: false });
   const formRef = useRef<HTMLFormElement>(null);
+  const [website, setWebsite] = useState(''); // honeypot contra spam
 
   const set = <K extends keyof Data>(k: K, v: Data[K]) => {
     setData((d) => ({ ...d, [k]: v }));
@@ -80,6 +96,12 @@ export function ContactForm({ simulateError = false }: { simulateError?: boolean
       return;
     }
     setStatus('sending');
+    if (onSubmit && data.divisao) {
+      const { nome, email, whatsapp, mensagem, prazo, divisao } = data;
+      const ok = await onSubmit({ nome, email, whatsapp, mensagem, prazo, divisao, website });
+      setStatus(ok ? 'success' : 'error');
+      return;
+    }
     await new Promise((r) => setTimeout(r, 1400));
     if (!simulateError) setProtocol(`DAMA-${new Date().getFullYear()}-${String(Date.now()).slice(-4)}`);
     setStatus(simulateError ? 'error' : 'success');
@@ -88,6 +110,7 @@ export function ContactForm({ simulateError = false }: { simulateError?: boolean
   const reset = () => {
     setStep(0);
     setStatus('idle');
+    setProtocol('');
     setErrors({});
     setData({ divisao: null, nome: '', email: '', whatsapp: '', mensagem: '', prazo: '', lgpd: false });
   };
@@ -100,7 +123,7 @@ export function ContactForm({ simulateError = false }: { simulateError?: boolean
         <p className="mt-2 max-w-sm text-sm text-ds-muted">
           A equipe da {data.divisao && DIVISAO_LABEL[data.divisao]} responde em até 1 dia útil pelo WhatsApp {data.whatsapp}.
         </p>
-        <p className="ds-annot mt-4">PROTOCOLO · {protocol}</p>
+        {protocol && <p className="ds-annot mt-4">PROTOCOLO · {protocol}</p>}
         <Button variant="bracket" className="mt-6" onClick={reset}>
           Enviar outro briefing
         </Button>
@@ -109,7 +132,19 @@ export function ContactForm({ simulateError = false }: { simulateError?: boolean
   }
 
   return (
-    <form ref={formRef} onSubmit={submit} noValidate data-divisao={data.divisao ?? undefined} className="flex flex-col">
+    <form ref={formRef} onSubmit={submit} noValidate data-divisao={data.divisao ?? undefined} className="relative flex flex-col">
+      {onSubmit && (
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+          className="absolute -left-[9999px] size-px opacity-0"
+        />
+      )}
       {/* progresso */}
       <ol className="mb-8 grid grid-cols-3 gap-2" aria-label="Etapas">
         {STEPS.map((label, i) => (
@@ -200,12 +235,7 @@ export function ContactForm({ simulateError = false }: { simulateError?: boolean
                 value={data.prazo}
                 onChange={(e) => set('prazo', e.target.value)}
                 placeholder="Selecione"
-                options={[
-                  { value: 'urgente', label: 'Menos de 15 dias' },
-                  { value: '1mes', label: 'Em até 1 mês' },
-                  { value: '3meses', label: 'De 1 a 3 meses' },
-                  { value: 'aberto', label: 'Sem pressa' },
-                ]}
+                options={PRAZOS}
               />
               <div>
                 <Checkbox
