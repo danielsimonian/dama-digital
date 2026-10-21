@@ -212,12 +212,12 @@ function Editor() {
             tone="info"
             title="Orçamento com pacotes"
             action={
-              <ButtonLink size="sm" variant="secondary" href={`/admin/orcamentos/${orc.id}`}>
-                Abrir no admin antigo <ArrowUpRight className="size-4" strokeWidth={1.5} aria-hidden />
+              <ButtonLink size="sm" variant="secondary" href={`/orcamento/${orc.slug}`} target="_blank">
+                Ver como o cliente vê <ArrowUpRight className="size-4" strokeWidth={1.5} aria-hidden />
               </ButtonLink>
             }
           >
-            O gerador v2 ainda não monta pacotes. {orc.projeto_titulo} continua editável no admin antigo.
+            O gerador v2 não monta pacotes, então {orc.projeto_titulo} fica só para consulta pelo link público.
           </Alert>
         </div>
       </>

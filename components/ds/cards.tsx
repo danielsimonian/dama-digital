@@ -262,6 +262,8 @@ export type Service = {
   unit: string;
   items: string[];
   highlight?: boolean;
+  /** valor ilustrativo, só para o catálogo do design system */
+  exemplo?: boolean;
 };
 
 export function ServiceCard({ service }: { service: Service }) {
@@ -285,6 +287,7 @@ export function ServiceCard({ service }: { service: Service }) {
           <span className="whitespace-nowrap text-3xl font-medium tabular-nums tracking-tight">{service.from}</span>
           <span className="ds-annot">/{service.unit}</span>
         </p>
+        {service.exemplo && <p className="ds-annot mt-1 uppercase">valor de exemplo</p>}
       </div>
       <ul className="mt-6 space-y-2 border-t border-ds-line pt-5">
         {service.items.map((it) => (

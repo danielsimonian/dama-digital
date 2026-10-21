@@ -28,9 +28,9 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 **Branch ativa:** `main` (produção) — domínio oficial: https://www.damadigitalcriativa.com.br
 
 **Atualizado em 21/10/2026** (detalhes em `STATUS.md`):
-- **Admin novo `/painel`** no ar (PRs #1–#8): Início, Pessoas, Agenda, Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K. `/admin` redireciona para o painel (`next.config.ts`); só `/admin/orcamentos/[id]` segue vivo para orçamentos com **pacotes**
+- **Admin novo `/painel`** no ar (PRs #1–#8): Início, Pessoas, Agenda, Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K. o `/admin` antigo foi apagado — os endereços antigos redirecionam para o painel (`next.config.ts`)
 - **Segurança** (PRs #2, #7): RLS só para `public.equipe`; portal e orçamento público via funções SECURITY DEFINER; senha do portal com hash bcrypt
-- **Site público no Design System v2** (PRs #9, #10): Home, `/tech`, `/sports`, `/sports/[slug]`, `/studio`, `/studio/artistas`. Ainda no visual antigo: `/labs`
+- **Site público no Design System v2** (PRs #9, #10): Home, `/tech`, `/sports`, `/sports/[slug]`, `/studio`, `/studio/artistas`. `/labs` (índice) também; Poker Pay e Fidelidade mantêm a interface própria
 - **Design System v2** em `/designsystem` e `/designsystem/admin` (catálogo; `noindex`). Linguagem "manual de campo": base monocromática, hairlines, cantos marcados, anotações em Geist Mono, acento só por divisão
 - Tokens escopados em `.ds` (`styles/dama-ds.css`); tema via `data-theme`, acento via `data-divisao`
 - Prompt de origem em `Design System/PROMPT DAMA.md` (pasta fora do git)
@@ -76,7 +76,6 @@ app/
 │   ├── financeiro/               # Lançamentos: recebido × a receber, atrasados
 │   ├── orcamentos/               # Lista + [id] editor v2 (QuoteBuilder)
 │   └── catalogo/                 # Serviços e preços por divisão
-├── admin/                        # Antigo — redireciona para /painel; só orcamentos/[id] (tipo pacotes) continua
 ├── cliente/[slug]/               # Client portal — password-gated per slug (RPCs portal_*)
 ├── orcamento/[slug]/             # Public quote view/approval page (RPCs orcamento_*)
 ├── labs/
@@ -116,7 +115,7 @@ app/
 
 1. **Single Next.js app** covers marketing site, admin, client portal, and labs — no separate services
 2. **Upstash Redis** for poker/loyalty: sessions are ephemeral and real-time; no need to persist in Postgres
-3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the old admin, the portal and the public quote page. E-mail templates (`lib/email-templates.ts`) carry the DS accents as hex
+3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the portal and the public quote page. E-mail templates (`lib/email-templates.ts`) carry the DS accents as hex
 4. **Password-protected client portal** uses a slug URL + bcrypt-hashed password (not Supabase Auth per-client — only 3 of 14 clients have e-mail)
 5. **Auto-save** in CashGame: 1-second debounce writes session state to Redis on every change
 6. **Quote lifecycle**: `rascunho → enviado → visualizado → aprovado | recusado | expirado`
@@ -157,13 +156,12 @@ app/
 
 Likely priorities:
 
-1. **Labs no Design System** — `/labs`, Poker Pay e Fidelidade ainda no visual antigo
-2. **Limpeza de código antigo** — `components/sections/*`, `components/layout/Header|Footer` (só o `/labs` usa), `/admin` (depois dos 2 orçamentos com pacotes; ou trazer o modo pacotes para o editor do painel)
-3. **Testar o Resend** — `RESEND_API_KEY` já está na Vercel; falta um envio real pelo briefing para confirmar o remetente
-4. **Preços ilustrativos** no `/designsystem` (trocar por reais ou remover)
-5. **Vídeos reais** — Home e divisões novas já não usam os placeholders
-6. **Quote PDF polish** — print CSS export could use layout refinement
-7. **💡 Ideia futura — DAMA Sports Fotos (estilo Banlek)** — planejado em 30/09/2026, ainda não iniciado. Atleta tira selfie e vê todas as suas fotos do torneio; fotógrafos convidados pelo admin fazem login, cadastram torneio e sobem fotos.
+1. **Orçamentos com pacotes** — o gerador v2 não monta pacotes; se voltar a usar esse formato, trazer para o editor do `/painel` (os 2 antigos foram marcados como expirados em 21/10/2026)
+2. **Testar o Resend** — `RESEND_API_KEY` já está na Vercel; falta um envio real pelo briefing para confirmar o remetente
+3. **Catálogo de preços** do `/painel` ainda vazio (o `/designsystem` mostra "valor de exemplo")
+4. **Vídeos reais** — Home e divisões novas já não usam os placeholders
+5. **Quote PDF polish** — print CSS export could use layout refinement
+6. **💡 Ideia futura — DAMA Sports Fotos (estilo Banlek)** — planejado em 30/09/2026, ainda não iniciado. Atleta tira selfie e vê todas as suas fotos do torneio; fotógrafos convidados pelo admin fazem login, cadastram torneio e sobem fotos.
    - Fotos grátis no MVP (venda via Pix = fase 2)
    - Stack 100% gratuita: `@vladmandic/human` (reconhecimento facial no navegador) + pgvector no Supabase (`halfvec(1024)`, RPC `buscar_fotos_por_rosto`) + Cloudflare R2 free (10 GB, egress grátis) com `aws4fetch` para URLs de upload assinadas — deps já aprovadas pelo Daniel
    - Rotas previstas: `/fotografo/*` (painel, role `fotografo`), convites no `/painel`, `/sports/fotos/[slug]` (atleta)
