@@ -33,6 +33,31 @@ export type Cliente = {
   notas: string | null;
   created_at: string;
   servicos_visivel?: boolean;
+  areas?: Divisao[];
+  // campos do /painel (cadastro único de pessoas)
+  papeis?: Papel[];
+  status?: PessoaStatus;
+  instrumento?: string | null;
+  responsavel?: Responsavel | null;
+};
+
+export type Papel = 'aluno' | 'estudio' | 'tech' | 'sports';
+export type PessoaStatus = 'ativo' | 'pausado' | 'lead';
+export type Responsavel = 'daniel' | 'marcella';
+
+export type CatalogoUnidade = 'aula' | 'mês' | 'hora' | 'pacote' | 'faixa' | 'projeto' | 'evento' | 'dia' | 'atleta';
+
+export type CatalogoServico = {
+  id: string;
+  nome: string;
+  divisao: Divisao;
+  valor: number;
+  unidade: CatalogoUnidade;
+  descricao: string | null;
+  ativo: boolean;
+  ordem: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Orcamento = {
