@@ -6,8 +6,9 @@ import { UserPlus, CalendarDays, Wallet } from 'lucide-react';
 import { supabase, type Orcamento } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { ButtonLink, Skeleton } from '@/components/ds/primitives';
-import { KpiTile, QuoteTrack } from '@/components/ds/admin/display';
+import { brl, KpiTile, QuoteTrack } from '@/components/ds/admin/display';
 import { ScreenHeader, Panel } from './_components/ui';
+import { hojeISO } from './_lib';
 
 type OrcAberto = Pick<Orcamento, 'id' | 'numero' | 'projeto_titulo' | 'divisao' | 'updated_at'> & {
   status: 'rascunho' | 'enviado' | 'visualizado';
@@ -19,7 +20,8 @@ type Resumo = {
   alunos: number;
   leads: number;
   aprovadosAno: number;
-  catalogo: number;
+  aReceber: number;
+  atrasado: number;
   abertos: OrcAberto[];
 };
 
@@ -37,7 +39,7 @@ export default function InicioPage() {
     Promise.all([
       supabase.from('clientes').select('papeis, status'),
       supabase.from('orcamentos').select('id', { count: 'exact', head: true }).eq('status', 'aprovado').gte('aprovado_em', inicioAno),
-      supabase.from('catalogo_servicos').select('id', { count: 'exact', head: true }).eq('ativo', true),
+      supabase.from('lancamentos').select('valor, vencimento').eq('status', 'pendente'),
       supabase
         .from('orcamentos')
         .select('id, numero, projeto_titulo, divisao, status, updated_at, cliente:clientes(nome)')
@@ -45,14 +47,17 @@ export default function InicioPage() {
         .order('updated_at', { ascending: false })
         .limit(8)
         .returns<OrcAberto[]>(),
-    ]).then(([pessoas, aprovados, catalogo, abertos]) => {
+    ]).then(([pessoas, aprovados, pendentes, abertos]) => {
       const lista = pessoas.data ?? [];
+      const hoje = hojeISO();
+      const lancs = pendentes.data ?? [];
       setR({
         pessoas: lista.filter((p) => p.status !== 'lead').length,
         alunos: lista.filter((p) => p.status === 'ativo' && (p.papeis ?? []).includes('aluno')).length,
         leads: lista.filter((p) => p.status === 'lead').length,
         aprovadosAno: aprovados.count ?? 0,
-        catalogo: catalogo.count ?? 0,
+        aReceber: lancs.reduce((s, l) => s + Number(l.valor), 0),
+        atrasado: lancs.filter((l) => l.vencimento < hoje).reduce((s, l) => s + Number(l.valor), 0),
         abertos: abertos.data ?? [],
       });
     });
@@ -79,7 +84,12 @@ export default function InicioPage() {
               <KpiTile label="Pessoas" value={String(r.pessoas)} note={r.leads ? `+ ${r.leads} lead${r.leads === 1 ? '' : 's'}` : 'cadastradas'} />
               <KpiTile label="Alunos ativos" value={String(r.alunos)} note="DAMA Studio · música" />
               <KpiTile label="Orçamentos abertos" value={String(r.abertos.length)} note={`${r.aprovadosAno} aprovado${r.aprovadosAno === 1 ? '' : 's'} em ${new Date().getFullYear()}`} />
-              <KpiTile label="Catálogo" value={String(r.catalogo)} note="itens ativos" />
+              <KpiTile
+                label="A receber"
+                value={brl(r.aReceber)}
+                note={r.atrasado ? `${brl(r.atrasado)} em atraso` : 'lançamentos pendentes'}
+                tone={r.atrasado ? 'danger' : undefined}
+              />
             </>
           ) : (
             [0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)
@@ -90,8 +100,8 @@ export default function InicioPage() {
           <Panel
             title="Orçamentos abertos"
             action={
-              <Link href="/admin/orcamentos" className="ds-annot hover:text-ds-fg">
-                no admin →
+              <Link href="/painel/orcamentos" className="ds-annot hover:text-ds-fg">
+                todos →
               </Link>
             }
           >
@@ -103,7 +113,7 @@ export default function InicioPage() {
               <ul className="-my-2 divide-y divide-ds-line">
                 {r.abertos.map((o) => (
                   <li key={o.id} data-divisao={o.divisao}>
-                    <Link href={`/admin/orcamentos/${o.id}`} className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 py-3 text-left">
+                    <Link href={`/painel/orcamentos/${o.id}`} className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 py-3 text-left">
                       <span className="font-ds-mono text-xs text-ds-subtle">#{o.numero}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm text-ds-fg">{o.projeto_titulo}</span>
@@ -121,7 +131,7 @@ export default function InicioPage() {
             <ul className="-my-2 divide-y divide-ds-line text-sm">
               {[
                 { icon: <CalendarDays />, t: 'Agenda', d: 'aulas e sessões com presença e recorrência' },
-                { icon: <Wallet />, t: 'Financeiro', d: 'mensalidades, sessões e orçamentos viram lançamentos' },
+                { icon: <Wallet />, t: 'Financeiro', d: 'todos os lançamentos, mensalidades e sessões num lugar só' },
               ].map((x) => (
                 <li key={x.t} className="flex items-center gap-3 py-3">
                   <span className="text-ds-subtle [&_svg]:size-4">{x.icon}</span>
