@@ -6,7 +6,7 @@
 
 ## Active Focus
 
-Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design System v2 — tudo em produção. Próximos: Labs no DS, limpeza do código antigo, Resend.
+Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design System v2 — tudo em produção. Próximos: Labs no DS, limpeza do código antigo.
 
 ---
 
@@ -56,7 +56,7 @@ Commits em `main`: `ec3af0a` (design system do site) + `ec38115` (design system 
 
 ## Pendências
 
-- **Resend:** `/api/send` depende de `RESEND_API_KEY` na Vercel — sem isso o briefing cai no estado de erro (com WhatsApp)
+- **Resend:** `RESEND_API_KEY` já está na Vercel (conferido em 21/10/2026 sem enviar e-mail); falta só um envio de teste real pelo site para confirmar o domínio remetente
 - **Código antigo para apagar:** seções da Home antiga (`components/sections/*`), `components/layout/Header|Footer` (só o `/labs` usa), `/admin` (depois dos 2 orçamentos com pacotes)
 - **Labs** no Design System
 - Preços ilustrativos no `/designsystem` (R$ 3.900 / 4.700 / 2.480)

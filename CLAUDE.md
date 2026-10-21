@@ -159,7 +159,7 @@ Likely priorities:
 
 1. **Labs no Design System** — `/labs`, Poker Pay e Fidelidade ainda no visual antigo
 2. **Limpeza de código antigo** — `components/sections/*`, `components/layout/Header|Footer` (só o `/labs` usa), `/admin` (depois dos 2 orçamentos com pacotes; ou trazer o modo pacotes para o editor do painel)
-3. **Configurar Resend** — `/api/send` precisa de `RESEND_API_KEY` na Vercel; sem isso o briefing mostra erro + WhatsApp
+3. **Testar o Resend** — `RESEND_API_KEY` já está na Vercel; falta um envio real pelo briefing para confirmar o remetente
 4. **Preços ilustrativos** no `/designsystem` (trocar por reais ou remover)
 5. **Vídeos reais** — Home e divisões novas já não usam os placeholders
 6. **Quote PDF polish** — print CSS export could use layout refinement
