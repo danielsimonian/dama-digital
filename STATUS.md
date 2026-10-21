@@ -39,7 +39,9 @@ Respostas do Daniel: alunos = música da DAMA Studio · usuários = só Daniel e
 - **Migração depois:** `sessoes`, `pagamentos`, `servicos` → `eventos_agenda`/`lancamentos` em etapa separada.
 - **Portal:** Supabase Auth por cliente/aluno (acaba com `senha_acesso` em texto puro).
 - **Ordem:** base + Pessoas + Catálogo → gerador v2 gerando lançamentos → agenda/aulas → financeiro + migração → portal.
-- **Em aberto:** qual paleta de divisão vale no admin (DS vs `DIVISAO_CONFIG`); preços ilustrativos no `/designsystem`.
+- **Paleta:** admin usa a paleta do DS (índigo/tijolo/musgo) — decidido em 21/10/2026.
+- **Fluxo:** trabalho na branch `redesign/painel`, uma PR por etapa para `main` (preview da Vercel para revisar).
+- **Em aberto:** preços ilustrativos no `/designsystem`.
 
 ---
 
