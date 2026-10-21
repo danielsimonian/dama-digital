@@ -9,35 +9,63 @@ import { SelectField, TextField } from '@/components/ds/fields';
 import { brl, LancamentoStatusLabel } from '@/components/ds/admin/display';
 import { dataCurta, hojeISO } from '../_lib';
 
-const FORMAS: LancamentoForma[] = ['Pix', 'Cartão', 'Dinheiro', 'Boleto', 'Transferência'];
+export const FORMAS: LancamentoForma[] = ['Pix', 'Cartão', 'Dinheiro', 'Boleto', 'Transferência'];
 
 export function statusVisual(l: Pick<Lancamento, 'status' | 'vencimento'>) {
   if (l.status === 'pago') return 'pago' as const;
   return l.vencimento < hojeISO() ? ('atrasado' as const) : ('pendente' as const);
 }
 
-export function ListaLancamentos({ lancamentos, onMudou, vazio }: { lancamentos: Lancamento[]; onMudou: () => void; vazio?: string }) {
+/** Registrar recebimento: forma + data. Montar com `key` para reiniciar os campos. */
+export function PagarModal({ lancamento, onClose, onPago }: { lancamento: Lancamento | null; onClose: () => void; onPago: () => void }) {
   const toast = useToast();
-  const [pagar, setPagar] = useState<Lancamento | null>(null);
   const [forma, setForma] = useState<LancamentoForma>('Pix');
   const [data, setData] = useState(hojeISO());
   const [salvando, setSalvando] = useState(false);
 
-  const visiveis = lancamentos.filter((l) => l.status !== 'cancelado');
-
   const confirmar = async () => {
-    if (!pagar) return;
+    if (!lancamento) return;
     setSalvando(true);
-    const { error } = await supabase.from('lancamentos').update({ status: 'pago', forma, pago_em: data }).eq('id', pagar.id);
+    const { error } = await supabase.from('lancamentos').update({ status: 'pago', forma, pago_em: data }).eq('id', lancamento.id);
     setSalvando(false);
     if (error) {
       toast({ tone: 'danger', title: 'Não foi possível registrar', description: error.message });
       return;
     }
-    toast({ tone: 'success', title: `${brl(Number(pagar.valor), true)} recebido`, description: forma });
-    setPagar(null);
-    onMudou();
+    toast({ tone: 'success', title: `${brl(Number(lancamento.valor), true)} recebido`, description: forma });
+    onPago();
   };
+
+  return (
+    <Modal
+      open={!!lancamento}
+      onClose={onClose}
+      index={lancamento ? `venc. ${dataCurta(lancamento.vencimento)}` : undefined}
+      title={lancamento ? `Registrar ${brl(Number(lancamento.valor), true)}` : ''}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={confirmar} loading={salvando}>
+            <Receipt className="size-4" strokeWidth={1.5} aria-hidden /> Confirmar recebimento
+          </Button>
+        </>
+      }
+    >
+      <p className="mb-4">{lancamento?.descricao}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Forma" value={forma} onChange={(e) => setForma(e.target.value as LancamentoForma)} options={FORMAS.map((f) => ({ value: f, label: f }))} />
+        <TextField label="Recebido em" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+      </div>
+    </Modal>
+  );
+}
+
+export function ListaLancamentos({ lancamentos, onMudou, vazio }: { lancamentos: Lancamento[]; onMudou: () => void; vazio?: string }) {
+  const [pagar, setPagar] = useState<Lancamento | null>(null);
+
+  const visiveis = lancamentos.filter((l) => l.status !== 'cancelado');
 
   if (!visiveis.length) return <p className="text-sm text-ds-subtle">{vazio ?? 'Nenhum lançamento.'}</p>;
 
@@ -61,14 +89,7 @@ export function ListaLancamentos({ lancamentos, onMudou, vazio }: { lancamentos:
               </span>
               <span className="font-ds-mono text-sm tabular-nums">{brl(Number(l.valor), Number(l.valor) % 1 !== 0)}</span>
               {l.status !== 'pago' && (
-                <Button
-                  size="sm"
-                  variant={s === 'atrasado' ? 'primary' : 'secondary'}
-                  onClick={() => {
-                    setPagar(l);
-                    setData(hojeISO());
-                  }}
-                >
+                <Button size="sm" variant={s === 'atrasado' ? 'primary' : 'secondary'} onClick={() => setPagar(l)}>
                   Marcar pago
                 </Button>
               )}
@@ -77,28 +98,15 @@ export function ListaLancamentos({ lancamentos, onMudou, vazio }: { lancamentos:
         })}
       </ul>
 
-      <Modal
-        open={!!pagar}
+      <PagarModal
+        key={pagar?.id ?? 'nenhum'}
+        lancamento={pagar}
         onClose={() => setPagar(null)}
-        index={pagar ? `venc. ${dataCurta(pagar.vencimento)}` : undefined}
-        title={pagar ? `Registrar ${brl(Number(pagar.valor), true)}` : ''}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setPagar(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={confirmar} loading={salvando}>
-              <Receipt className="size-4" strokeWidth={1.5} aria-hidden /> Confirmar recebimento
-            </Button>
-          </>
-        }
-      >
-        <p className="mb-4">{pagar?.descricao}</p>
-        <div className="grid grid-cols-2 gap-3">
-          <SelectField label="Forma" value={forma} onChange={(e) => setForma(e.target.value as LancamentoForma)} options={FORMAS.map((f) => ({ value: f, label: f }))} />
-          <TextField label="Recebido em" type="date" value={data} onChange={(e) => setData(e.target.value)} />
-        </div>
-      </Modal>
+        onPago={() => {
+          setPagar(null);
+          onMudou();
+        }}
+      />
     </>
   );
 }

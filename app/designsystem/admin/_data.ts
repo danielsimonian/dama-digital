@@ -199,13 +199,13 @@ export const lancamentos: Lancamento[] = [
 ];
 
 export const meses: MesFinanceiro[] = [
-  { mes: 'mai', recebido: 11240, aReceber: 0 },
-  { mes: 'jun', recebido: 13870, aReceber: 0 },
-  { mes: 'jul', recebido: 9960, aReceber: 0 },
-  { mes: 'ago', recebido: 12415, aReceber: 0 },
-  { mes: 'set', recebido: 14380, aReceber: 0 },
-  { mes: 'out', recebido: 9870, aReceber: 3140 },
-  { mes: 'nov', recebido: 0, aReceber: 12960 },
+  { mes: 'mai', ano: 2026, recebido: 11240, aReceber: 0 },
+  { mes: 'jun', ano: 2026, recebido: 13870, aReceber: 0 },
+  { mes: 'jul', ano: 2026, recebido: 9960, aReceber: 0 },
+  { mes: 'ago', ano: 2026, recebido: 12415, aReceber: 0 },
+  { mes: 'set', ano: 2026, recebido: 14380, aReceber: 0 },
+  { mes: 'out', ano: 2026, recebido: 9870, aReceber: 3140 },
+  { mes: 'nov', ano: 2026, recebido: 0, aReceber: 12960 },
 ];
 
 export const orcamentos: OrcamentoResumo[] = [

@@ -205,7 +205,7 @@ function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
       </div>
 
       <a href={`/admin/clientes/${p.id}`} className="ds-annot inline-flex items-center gap-1 hover:text-ds-fg">
-        sessões e conteúdo no admin antigo <ArrowUpRight className="size-3" strokeWidth={1.5} aria-hidden />
+        conteúdo das aulas no admin antigo <ArrowUpRight className="size-3" strokeWidth={1.5} aria-hidden />
       </a>
     </div>
   );

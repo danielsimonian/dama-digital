@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutGrid, Users, Tags, UserPlus, Plus, LogOut, Moon, Sun, Loader2, FileText, CalendarDays } from 'lucide-react';
+import { LayoutGrid, Users, Tags, UserPlus, Plus, LogOut, Moon, Sun, Loader2, FileText, CalendarDays, Wallet } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 import { cn, Avatar } from '@/components/ds/primitives';
@@ -16,6 +16,7 @@ const NAV: (NavItem & { href: string })[] = [
   { id: 'inicio', href: '/painel', label: 'Início', icon: <LayoutGrid /> },
   { id: 'pessoas', href: '/painel/pessoas', label: 'Pessoas', icon: <Users /> },
   { id: 'agenda', href: '/painel/agenda', label: 'Agenda', icon: <CalendarDays /> },
+  { id: 'financeiro', href: '/painel/financeiro', label: 'Financeiro', icon: <Wallet /> },
   { id: 'orcamentos', href: '/painel/orcamentos', label: 'Orçamentos', icon: <FileText /> },
   { id: 'catalogo', href: '/painel/catalogo', label: 'Catálogo', icon: <Tags /> },
 ];

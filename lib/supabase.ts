@@ -133,6 +133,8 @@ export type Lancamento = {
   pago_em: string | null;
   forma: LancamentoForma | null;
   observacoes: string | null;
+  /** origem no admin antigo (ex.: "sessoes:<id>"), quando migrado */
+  legado?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -202,6 +204,7 @@ export type EventoAgenda = {
   slot_original: string | null;
   valor_aula: number | null;
   observacoes: string | null;
+  legado?: string | null;
   created_at: string;
   updated_at: string;
 };
