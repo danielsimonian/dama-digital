@@ -14,8 +14,8 @@ const HATCH =
  */
 export function MonthlyBars({ data, current }: { data: MesFinanceiro[]; current: string }) {
   const [hover, setHover] = useState<number | null>(null);
-  const max = Math.max(...data.map((d) => d.recebido + d.aReceber));
-  const top = Math.ceil(max / 5000) * 5000;
+  const max = Math.max(0, ...data.map((d) => d.recebido + d.aReceber));
+  const top = Math.max(5000, Math.ceil(max / 5000) * 5000);
   const ticks = [top, top / 2, 0];
   const H = 168;
 
@@ -54,7 +54,7 @@ export function MonthlyBars({ data, current }: { data: MesFinanceiro[]; current:
               const on = hover === i;
               return (
                 <div
-                  key={d.mes}
+                  key={`${d.mes}-${d.ano ?? ''}`}
                   className="group relative flex h-full flex-1 cursor-default flex-col justify-end"
                   onMouseEnter={() => setHover(i)}
                   onMouseLeave={() => setHover(null)}
@@ -69,7 +69,9 @@ export function MonthlyBars({ data, current }: { data: MesFinanceiro[]; current:
                   </div>
                   {on && (
                     <div className={cn('pointer-events-none absolute bottom-full z-20 mb-2 w-44 rounded-ds-sm border border-ds-line bg-ds-surface-2 p-3 text-xs shadow-[0_12px_32px_-12px_oklch(0%_0_0/0.4)]', i === 0 ? 'left-0' : i >= data.length - 2 ? 'right-0' : 'left-1/2 -translate-x-1/2')}>
-                      <p className="ds-annot uppercase">{d.mes} 2026</p>
+                      <p className="ds-annot uppercase">
+                        {d.mes} {d.ano ?? ''}
+                      </p>
                       <dl className="mt-2 space-y-1">
                         <div className="flex justify-between gap-3">
                           <dt className="text-ds-muted">Recebido</dt>
@@ -94,7 +96,7 @@ export function MonthlyBars({ data, current }: { data: MesFinanceiro[]; current:
         <span />
         <div className="flex gap-2 px-1 pt-2 sm:gap-4" aria-hidden>
           {data.map((d) => (
-            <span key={d.mes} className={cn('ds-annot flex-1 text-center uppercase', d.mes === current && 'text-ds-fg')}>
+            <span key={`${d.mes}-${d.ano ?? ''}`} className={cn('ds-annot flex-1 text-center uppercase', d.mes === current && 'text-ds-fg')}>
               {d.mes}
             </span>
           ))}
@@ -112,7 +114,7 @@ export function MonthlyBars({ data, current }: { data: MesFinanceiro[]; current:
         </thead>
         <tbody>
           {data.map((d) => (
-            <tr key={d.mes}>
+            <tr key={`${d.mes}-${d.ano ?? ''}`}>
               <td>{d.mes}</td>
               <td>{brl(d.recebido)}</td>
               <td>{brl(d.aReceber)}</td>

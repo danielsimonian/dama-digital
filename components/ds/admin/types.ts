@@ -79,4 +79,4 @@ export type CatalogoItem = {
   descricao: string;
 };
 
-export type MesFinanceiro = { mes: string; recebido: number; aReceber: number };
+export type MesFinanceiro = { mes: string; ano?: number; recebido: number; aReceber: number };

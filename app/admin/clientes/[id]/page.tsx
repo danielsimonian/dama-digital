@@ -1665,6 +1665,14 @@ export default function ClienteDetalhesPage() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {(activeTab === 'sessoes' || activeTab === 'financeiro' || activeTab === 'servicos') && (
+          <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            Sessões e cobranças agora ficam no painel novo — o que for criado aqui não aparece no portal do cliente.{' '}
+            <Link href={`/painel/pessoas?id=${clienteId}`} className="underline">
+              Abrir no /painel
+            </Link>
+          </div>
+        )}
         {/* Tab: Sobre */}
         {activeTab === 'sobre' && (
           <div className="space-y-6">
