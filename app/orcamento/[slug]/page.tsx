@@ -41,27 +41,17 @@ export default function OrcamentoPublicoPage() {
 
   async function fetchOrcamento() {
     try {
-      const { data: orc, error: orcError } = await supabase
-        .from('orcamentos')
-        .select(`*, cliente:clientes(*)`)
-        .eq('slug', slug)
-        .single();
+      const { data: orc, error: orcError } = await supabase.rpc('orcamento_publico', { p_slug: slug });
 
-      if (orcError) { setError('not_found'); setLoading(false); return; }
+      if (orcError || !orc) { setError('not_found'); setLoading(false); return; }
 
       if (orc.status === 'rascunho') { setError('rascunho'); setLoading(false); return; }
 
-      const { data: itens } = await supabase
-        .from('orcamento_itens')
-        .select('*')
-        .eq('orcamento_id', orc.id)
-        .order('ordem');
-
-      setOrcamento({ ...orc, itens: itens || [] });
+      setOrcamento(orc);
 
       if (orc.status === 'enviado' && !viewRegistered.current) {
         viewRegistered.current = true;
-        registrarVisualizacao(orc.id);
+        registrarVisualizacao();
       }
 
       setLoading(false);
@@ -71,13 +61,10 @@ export default function OrcamentoPublicoPage() {
     }
   }
 
-  async function registrarVisualizacao(orcamentoId: string) {
+  async function registrarVisualizacao() {
     try {
-      const { error } = await supabase
-        .from('orcamentos')
-        .update({ status: 'visualizado', visualizado_em: new Date().toISOString() })
-        .eq('id', orcamentoId);
-      if (!error) setOrcamento((prev: any) => prev ? { ...prev, status: 'visualizado' } : prev);
+      const { data: ok, error } = await supabase.rpc('orcamento_registrar_visualizacao', { p_slug: slug });
+      if (!error && ok) setOrcamento((prev: any) => prev ? { ...prev, status: 'visualizado' } : prev);
     } catch (err) {
       console.error('Erro ao registrar visualização:', err);
     }
@@ -91,20 +78,12 @@ export default function OrcamentoPublicoPage() {
   async function aprovarOrcamento() {
     setAprovando(true);
     try {
-      const updateData: any = {
-        status: 'aprovado',
-        aprovado_em: new Date().toISOString(),
-      };
-      if (pacoteParaAprovar) {
-        updateData.pacote_escolhido = pacoteParaAprovar;
-      }
+      const { data: ok, error } = await supabase.rpc('orcamento_aprovar', {
+        p_slug: slug,
+        p_pacote: pacoteParaAprovar ?? null,
+      });
 
-      const { error } = await supabase
-        .from('orcamentos')
-        .update(updateData)
-        .eq('id', orcamento.id);
-
-      if (error) {
+      if (error || !ok) {
         alert('Erro ao aprovar orçamento. Tente novamente.');
         setAprovando(false);
         return;

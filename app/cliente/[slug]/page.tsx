@@ -43,20 +43,28 @@ type Area = 'tech' | 'sports' | 'studio';
 type Tab = 'sessoes' | 'conteudo' | 'financeiro' | 'servicos';
 type TipoConteudo = 'video' | 'pdf' | 'exercicio' | 'link' | 'texto';
 
+// antes do login só id e nome; o resto vem de portal_dados
 interface Cliente {
   id: string;
   nome: string;
-  areas: Area[];
-  slug: string;
-  senha_acesso: string;
-  sessoes_visiveis: boolean;
-  conteudo_visivel: boolean;
-  financeiro_visivel: boolean;
-  servicos_visivel: boolean;
-  aba_sessoes: boolean;
-  aba_servicos: boolean;
-  aba_conteudo: boolean;
-  aba_financeiro: boolean;
+  areas?: Area[];
+  slug?: string;
+  sessoes_visiveis?: boolean;
+  conteudo_visivel?: boolean;
+  financeiro_visivel?: boolean;
+  servicos_visivel?: boolean;
+  aba_sessoes?: boolean;
+  aba_servicos?: boolean;
+  aba_conteudo?: boolean;
+  aba_financeiro?: boolean;
+}
+
+interface PortalDados {
+  cliente: Cliente;
+  sessoes: Sessao[];
+  modulos: Modulo[];
+  pagamentos: Pagamento[];
+  servicos: Servico[];
 }
 
 interface Sessao {
@@ -165,23 +173,16 @@ export default function ClientePublicoPage() {
   }, [slug]);
 
   useEffect(() => {
-    // Verificar se já está autenticado (sessionStorage)
-    if (cliente) {
-      const savedAuth = sessionStorage.getItem(`cliente_auth_${cliente.id}`);
-      if (savedAuth === 'true') {
-        setAutenticado(true);
-        fetchDados();
-      }
+    // Verificar se já está autenticado (token da sessão no sessionStorage)
+    if (cliente && !autenticado) {
+      const token = sessionStorage.getItem(`portal_token_${slug}`);
+      if (token) fetchDados(token);
     }
   }, [cliente]);
 
   async function fetchCliente() {
     try {
-      const { data, error } = await supabase
-        .from('clientes')
-        .select('id, nome, areas, slug, senha_acesso, sessoes_visiveis, conteudo_visivel, financeiro_visivel, servicos_visivel, aba_sessoes, aba_servicos, aba_conteudo, aba_financeiro')
-        .eq('slug', slug)
-        .single();
+      const { data, error } = await supabase.rpc('portal_cliente', { p_slug: slug });
 
       if (error || !data) {
         setCliente(null);
@@ -195,76 +196,46 @@ export default function ClientePublicoPage() {
     }
   }
 
-  async function fetchDados() {
-    if (!cliente) return;
+  // Sessões, módulos (com conteúdos), pagamentos e serviços vêm juntos e já ordenados
+  async function fetchDados(token: string) {
+    const { data, error } = await supabase.rpc('portal_dados', { p_token: token });
+    const dados = data as PortalDados | null;
 
-    // Buscar sessões
-    const { data: sessoesData } = await supabase
-      .from('sessoes')
-      .select('*')
-      .eq('cliente_id', cliente.id)
-      .order('data', { ascending: false });
+    if (error || !dados) {
+      // token expirado ou inválido: volta para a senha
+      sessionStorage.removeItem(`portal_token_${slug}`);
+      setAutenticado(false);
+      return false;
+    }
 
-    setSessoes(sessoesData || []);
-
-    // Buscar módulos com conteúdos
-    const { data: modulosData } = await supabase
-      .from('aulas_modulos')
-      .select(`
-        *,
-        conteudos:aulas_conteudos(*)
-      `)
-      .eq('cliente_id', cliente.id)
-      .order('ordem', { ascending: true });
-
-    const modulosOrdenados = (modulosData || []).map(m => ({
-      ...m,
-      conteudos: m.conteudos?.sort((a: Conteudo, b: Conteudo) => a.ordem - b.ordem) || []
-    }));
-
-    setModulos(modulosOrdenados);
-
-    // Buscar pagamentos
-    const { data: pagamentosData } = await supabase
-      .from('pagamentos')
-      .select('*')
-      .eq('cliente_id', cliente.id)
-      .order('data', { ascending: false });
-
-    setPagamentos(pagamentosData || []);
-
-    // Buscar serviços
-    const { data: servicosData } = await supabase
-      .from('servicos')
-      .select('*')
-      .eq('cliente_id', cliente.id)
-      .order('data', { ascending: false });
-
-    setServicos(servicosData || []);
+    setCliente(dados.cliente);
+    setSessoes(dados.sessoes);
+    setModulos(dados.modulos);
+    setPagamentos(dados.pagamentos);
+    setServicos(dados.servicos);
+    setAutenticado(true);
+    return true;
   }
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setVerificandoSenha(true);
     setErroSenha(false);
 
-    // Simular delay para feedback visual
-    setTimeout(() => {
-      if (senha === cliente?.senha_acesso) {
-        setAutenticado(true);
-        sessionStorage.setItem(`cliente_auth_${cliente.id}`, 'true');
-        fetchDados();
-      } else {
-        setErroSenha(true);
-      }
-      setVerificandoSenha(false);
-    }, 500);
+    const { data: token, error } = await supabase.rpc('portal_entrar', { p_slug: slug, p_senha: senha });
+
+    if (error || !token || !(await fetchDados(token))) {
+      setErroSenha(true);
+    } else {
+      sessionStorage.setItem(`portal_token_${slug}`, token);
+    }
+    setVerificandoSenha(false);
   }
 
   function handleLogout() {
-    if (cliente) {
-      sessionStorage.removeItem(`cliente_auth_${cliente.id}`);
-    }
+    const token = sessionStorage.getItem(`portal_token_${slug}`);
+    if (token) supabase.rpc('portal_sair', { p_token: token }).then(() => {});
+    sessionStorage.removeItem(`portal_token_${slug}`);
     setAutenticado(false);
     setSenha('');
   }
