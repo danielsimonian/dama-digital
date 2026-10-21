@@ -1611,7 +1611,7 @@ export default function ClienteDetalhesPage() {
                 <span className="text-gray-400">/cliente/{cliente.slug}</span>
                 <span className="text-gray-600">•</span>
                 <span className="text-gray-400">Senha:</span>
-                <code className="text-purple-400">{cliente.senha_acesso}</code>
+                <span className="text-gray-500">protegida</span>
               </div>
               <button
                 onClick={copiarLink}
@@ -1772,9 +1772,10 @@ export default function ClienteDetalhesPage() {
 
                 <div className="bg-gray-800/50 rounded-xl p-4">
                   <p className="text-gray-400 text-sm mb-2">Senha de Acesso</p>
-                  <code className="px-3 py-2 bg-gray-900 rounded-lg text-purple-400 text-lg font-mono">
-                    {cliente.senha_acesso}
-                  </code>
+                  <p className="text-sm text-gray-500">
+                    Protegida — não dá para ver depois de salva. Para enviar ao cliente, gere uma nova na ficha do{' '}
+                    <a href={`/painel/pessoas?id=${cliente.id}`} className="text-purple-400 underline">painel novo</a>.
+                  </p>
                 </div>
               </div>
             </div>

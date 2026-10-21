@@ -133,7 +133,7 @@ app/
 
 - `lib/auth-context.tsx` — `AuthProvider` wraps the app, exposes `useAuth()` hook
 - Admin routes check session; unauthenticated users redirect to `/admin/login`
-- Client portal uses plaintext password stored in `clientes.senha_acesso` — **not hashed**
+- Client portal password is stored only as a bcrypt hash in `clientes.senha_hash` (trigger hashes anything written to `senha_acesso` and clears it); login via RPC `portal_entrar` (10 wrong attempts / 15 min lock)
 
 ---
 
@@ -185,7 +185,7 @@ Based on code state and recent commits, likely priorities:
 3. **Vídeos reais** — placeholders ainda em produção (hero, tech, studio — sports já tem vídeo real)
 4. **Capas dos artistas** — `/studio` e `/studio/artistas` usam placeholder de iniciais; Daniel vai inserindo as imagens reais (salvar em `public/images/studio/`)
 5. **Configurar Resend** — `/api/send` existe mas não está configurado para envio em produção (formulários Tech terminal + Sports FichaInscricao)
-6. **Password hashing** for client portal access — currently plaintext in DB
+6. ~~Password hashing~~ — ✅ feito em 21/10/2026 (bcrypt, etapa 5 do /painel)
 7. **Quote PDF polish** — print CSS export could use layout refinement
 8. **Home page** — ✅ redesign completo entregue em 15/05/2026
 9. **💡 Ideia futura — DAMA Sports Fotos (estilo Banlek)** — planejado em 30/09/2026, ainda não iniciado. Atleta tira selfie e vê todas as suas fotos do torneio; fotógrafos convidados pelo admin fazem login, cadastram torneio e sobem fotos.

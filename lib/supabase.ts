@@ -39,6 +39,10 @@ export type Cliente = {
   status?: PessoaStatus;
   instrumento?: string | null;
   responsavel?: Responsavel | null;
+  // portal do cliente: a senha é guardada só como hash; `senha_acesso` serve só para gravar uma nova
+  slug?: string | null;
+  senha_hash?: string | null;
+  senha_acesso?: string | null;
 };
 
 export type Papel = 'aluno' | 'estudio' | 'tech' | 'sports';

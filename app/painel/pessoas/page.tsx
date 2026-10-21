@@ -13,6 +13,7 @@ import { DataTable, type Column } from '@/components/ds/admin/table';
 import { ScreenHeader, Chips } from '../_components/ui';
 import { ListaLancamentos } from '../_components/Lancamentos';
 import { AulasDaPessoa } from './_components/Aulas';
+import { PortalAcesso } from './_components/Portal';
 import { whatsappUrl } from '../_lib';
 
 const PAPEIS: { id: Papel; label: string; desc: string }[] = [
@@ -84,7 +85,7 @@ function formatarDesde(data: string) {
 /* Ficha                                                               */
 /* ------------------------------------------------------------------ */
 
-function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
+function Ficha({ p, onEditar, onMudou }: { p: Cliente; onEditar: () => void; onMudou: () => void }) {
   const [carregados, setCarregados] = useState<{ id: string; orcs: OrcResumo[]; lancs: Lancamento[] } | null>(null);
   const [versao, setVersao] = useState(0);
   const atual = carregados?.id === p.id ? carregados : null;
@@ -203,6 +204,8 @@ function Ficha({ p, onEditar }: { p: Cliente; onEditar: () => void }) {
           <p className="ds-annot">carregando…</p>
         )}
       </div>
+
+      <PortalAcesso p={p} onMudou={onMudou} />
 
       <a href={`/admin/clientes/${p.id}`} className="ds-annot inline-flex items-center gap-1 hover:text-ds-fg">
         conteúdo das aulas no admin antigo <ArrowUpRight className="size-3" strokeWidth={1.5} aria-hidden />
@@ -411,7 +414,7 @@ function PessoasTela() {
           />
         </div>
         <aside className="hidden border-l border-ds-line p-5 xl:block">
-          {atual ? <Ficha p={atual} onEditar={() => setForm(paraForm(atual))} /> : <p className="text-sm text-ds-subtle">Selecione uma pessoa.</p>}
+          {atual ? <Ficha p={atual} onEditar={() => setForm(paraForm(atual))} onMudou={() => setVersao((v) => v + 1)} /> : <p className="text-sm text-ds-subtle">Selecione uma pessoa.</p>}
         </aside>
       </div>
 
@@ -419,6 +422,7 @@ function PessoasTela() {
         {atual && (
           <Ficha
             p={atual}
+            onMudou={() => setVersao((v) => v + 1)}
             onEditar={() => {
               setDrawer(false);
               setForm(paraForm(atual));
