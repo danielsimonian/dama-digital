@@ -51,6 +51,14 @@ export const projects: Project[] = [
     desc: 'Site do apresentador do PORTO 360 (TV Globo) — identidade visual, palestras e contato.',
     href: 'https://maxwellrodrigues.com',
   },
+  {
+    name: 'Escola Simonian de Música',
+    tag: 'site institucional · música',
+    domain: 'escolasimonian.com.br',
+    logo: '/images/projects/simonian-logo.png',
+    desc: 'Site institucional da Escola Simonian de Música — cursos, professores, agenda e matrícula online.',
+    href: 'https://escolasimonian.com.br',
+  },
 ];
 
 const DATE_SHORT: Record<string, string> = {
@@ -259,4 +267,19 @@ export const studioCaminhos = [
   { name: 'Gravar', desc: 'Tem um projeto musical e quer produzir com qualidade.', cta: 'Falar sobre gravação' },
   { name: 'Aprender', desc: 'Quer começar do zero ou evoluir no instrumento ou na produção.', cta: 'Agendar aula experimental' },
   { name: 'Lançar', desc: 'Já tem a música gravada e quer distribuir e registrar.', cta: 'Falar sobre distribuição' },
+];
+
+// Tech
+export const techServices = [
+  { name: 'Websites', desc: 'Sites institucionais, landing pages e e-commerces que convertem.' },
+  { name: 'Sistemas web', desc: 'Plataformas sob medida: CRMs, dashboards, portais e intranets.' },
+  { name: 'Aplicativos', desc: 'Apps mobile e web — do MVP ao produto que escala.' },
+  { name: 'Automações', desc: 'Fluxos automáticos que eliminam trabalho repetitivo.' },
+  { name: 'Integrações', desc: 'APIs, webhooks e conexão entre ferramentas que não conversam.' },
+  { name: 'Consultoria', desc: 'Revisão de arquitetura, stack e estratégia de produto.' },
+];
+
+export const techLabs = [
+  { name: 'Poker Pay', desc: 'Gerenciador de cash game e torneios de poker — fichas, entradas, reentradas e pagamentos em tempo real.', href: '/labs/poker-pay' },
+  { name: 'Fidelidade Digital', desc: 'Cartão fidelidade digital para qualquer negócio. Sem papel, sem app — funciona no navegador do cliente.', href: '/labs/fidelidade' },
 ];

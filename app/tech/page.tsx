@@ -1,1030 +1,116 @@
-"use client"
-
-import { useRef, useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { motion, useInView } from 'framer-motion';
-import { JetBrains_Mono } from 'next/font/google';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
+import { ArrowUpRight, Compass, Globe, LayoutDashboard, Plug, Smartphone, Workflow } from 'lucide-react';
+import { SitePage, SiteSection, ContactSection } from '@/components/ds/page';
+import { Reveal } from '@/components/ds/reveal';
+import { buttonClass, Eyebrow, Frame, SplitTitle } from '@/components/ds/primitives';
+import { ProjectCard } from '@/components/ds/cards';
+import { ProcessNodes } from '@/components/ds/diagram';
+import { process, projects, techLabs, techServices } from '@/lib/site-data';
 
-const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' });
-
-const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
-
-const BG = 'oklch(8% 0.015 262)';
-const BG_DARK = 'oklch(5% 0.02 262)';
-const BORDER = 'oklch(22% 0.04 262)';
-const TEXT = 'oklch(93% 0.006 58)';
-const MUTED = 'oklch(50% 0.025 262)';
-const COMMENT = 'oklch(40% 0.04 262)';
-
-const services = [
-  { num: '_01', name: 'Websites', desc: 'Sites institucionais, landing pages e e-commerces que convertem.' },
-  { num: '_02', name: 'Sistemas Web', desc: 'Plataformas sob medida: CRMs, dashboards, portais e intranets.' },
-  { num: '_03', name: 'Aplicativos', desc: 'Apps mobile e web — do MVP ao produto escalável.' },
-  { num: '_04', name: 'Automações', desc: 'Fluxos automáticos que eliminam trabalho repetitivo.' },
-  { num: '_05', name: 'Integrações', desc: 'APIs, webhooks e conexão entre ferramentas que não conversam.' },
-  { num: '_06', name: 'Consultoria', desc: 'Revisão de arquitetura, stack e estratégia de produto.' },
-];
-
-const projects = [
-  {
-    tag: 'plataforma · beach tennis',
-    brandName: 'Ranking BT',
-    brandColor: '#1e56e0',
-    logo: '/images/projects/rankingbt-logo.png',
-    desc: 'Sistema completo de ranking para torneios de beach tennis — gestão de jogadores, partidas e pontuação em tempo real.',
-    href: 'https://www.rankingbt.com.br/',
-  },
-  {
-    tag: 'saúde · gestão',
-    brandName: 'Clinup',
-    brandColor: '#4BAB96',
-    logo: '/images/projects/clinup-logo.svg',
-    desc: 'Plataforma de gestão para clínicas de saúde — agendamento, prontuário e financeiro integrados.',
-    href: 'https://clinup.damadigitalcriativa.com.br',
-  },
-  {
-    tag: 'saas · varejo · estoque',
-    brandName: 'PlayStock',
-    brandColor: '#ea6c0a',
-    logo: '/images/projects/playstock-logo.svg',
-    desc: 'Plataforma SaaS multi-tenant para redes de varejo: estoque centralizado em tempo real, transferências entre lojas, catálogo com variantes e relatórios por período e unidade.',
-    href: 'https://playstock.app',
-  },
-  {
-    tag: 'site pessoal · apresentador',
-    brandName: 'Maxwell Rodrigues',
-    brandColor: '#C9A227',
-    logo: '/images/projects/maxwell-logo.png',
-    desc: 'Site pessoal do apresentador do PORTO 360 (TV Globo) e maior influenciador portuário do Brasil — identidade visual, seções de destaque, palestras e contato.',
-    href: 'https://maxwellrodrigues.com',
-  },
-  {
-    tag: 'site institucional · música',
-    brandName: 'Escola Simonian de Música',
-    brandColor: '#52B735',
-    logo: '/images/projects/simonian-logo.png',
-    desc: 'Site institucional da Escola Simonian de Música — cursos, professores, agenda e matrícula online.',
-    href: 'https://escolasimonian.com.br',
-  },
-];
-
-const heroProjects = [
-  { name: 'ClinUp.', subtitle: 'Gestão para clínicas — agendamento, prontuário e financeiro em um só sistema.' },
-  { name: 'RankingBT.com.br', subtitle: 'Plataforma de ranking e torneios de beach tennis com pontuação em tempo real.' },
-  { name: 'PlayStock.app', subtitle: 'Estoque centralizado para redes de varejo — alertas, transferências e relatórios.' },
-  { name: 'maxwellrodrigues.com', subtitle: 'Apresentador do PORTO 360 (TV Globo) — identidade e presença digital.' },
-  { name: 'escolasimonian.com.br', subtitle: 'Escola de música — cursos, agenda e matrícula online.' },
-];
-
-function TypewriterText({ texts, onIndexChange, typeSpeed = 40, deleteSpeed = 15, pauseMs = 5000 }: { texts: string[]; onIndexChange?: (i: number) => void; typeSpeed?: number; deleteSpeed?: number; pauseMs?: number }) {
-  const [displayed, setDisplayed] = useState('');
-  const ref = useRef({ index: 0, typing: true, chars: '', typeSpeed, deleteSpeed, pauseMs, texts, onIndexChange });
-
-  ref.current.typeSpeed = typeSpeed;
-  ref.current.deleteSpeed = deleteSpeed;
-  ref.current.pauseMs = pauseMs;
-  ref.current.texts = texts;
-  ref.current.onIndexChange = onIndexChange;
-
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-
-    function tick() {
-      const s = ref.current;
-      const target = s.texts[s.index];
-
-      if (s.typing) {
-        s.chars = target.slice(0, s.chars.length + 1);
-        setDisplayed(s.chars);
-        if (s.chars.length === target.length) {
-          timeout = setTimeout(() => { s.typing = false; tick(); }, s.pauseMs);
-        } else {
-          const jitter = 40 + Math.random() * 110;
-          timeout = setTimeout(tick, jitter);
-        }
-      } else {
-        s.chars = s.chars.slice(0, -1);
-        setDisplayed(s.chars);
-        if (s.chars.length === 0) {
-          const next = (s.index + 1) % s.texts.length;
-          s.index = next;
-          s.onIndexChange?.(next);
-          timeout = setTimeout(() => { s.typing = true; tick(); }, 400);
-        } else {
-          timeout = setTimeout(tick, 50);
-        }
-      }
-    }
-
-    timeout = setTimeout(tick, ref.current.typeSpeed);
-    return () => clearTimeout(timeout);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <span>
-      {displayed}
-      <span
-        style={{
-          display: 'inline-block',
-          width: '3px',
-          height: '1em',
-          backgroundColor: 'var(--color-tech)',
-          marginLeft: '4px',
-          verticalAlign: 'text-bottom',
-          animation: 'blink 1s step-end infinite',
-        }}
-      />
-    </span>
-  );
-}
-
-function SubtitleTypewriter({ text }: { text: string }) {
-  const [displayed, setDisplayed] = useState('');
-
-  useEffect(() => {
-    setDisplayed('');
-    let i = 0;
-    let timeout: ReturnType<typeof setTimeout>;
-    function tick() {
-      i++;
-      setDisplayed(text.slice(0, i));
-      if (i < text.length) timeout = setTimeout(tick, 10 + Math.random() * 15);
-    }
-    timeout = setTimeout(tick, 200);
-    return () => clearTimeout(timeout);
-  }, [text]);
-
-  return <span>{displayed}</span>;
-}
-
-const terminalLines = [
-  { type: 'prompt',  cmd: 'dama-tech init seu-projeto' },
-  { type: 'output',  text: 'analisando requisitos...' },
-  { type: 'output',  text: 'configurando stack...' },
-  { type: 'output',  text: 'buildando solução...' },
-  { type: 'success', text: '✓ pronto para lançar' },
-];
-
-const PROMPT = 'dama-tech ~ %';
-const FONT_SIZE = '0.875rem';
-const LINE_HEIGHT = 1.6;
-const PAD_H = 48;
-const PAD_V = 44;
-
-type TerminalStep = 'animating' | 'name' | 'email' | 'phone' | 'message' | 'sending' | 'done' | 'error';
-
-interface HistoryLine {
-  prompt: string;
-  answer: string;
-}
-
-const stepConfig: Record<string, { label: string; placeholder?: string; inputType?: string }> = {
-  name:    { label: 'digite seu nome:' },
-  email:   { label: 'agora seu e-mail:', inputType: 'email' },
-  phone:   { label: 'seu celular:', placeholder: '13997434878' },
-  message: { label: 'sua mensagem:' },
-};
-
-function TerminalCTA({ visible }: { visible: boolean }) {
-  const [revealed, setRevealed]       = useState(0);
-  const [step, setStep]               = useState<TerminalStep>('animating');
-  const [history, setHistory]         = useState<HistoryLine[]>([]);
-  const [currentInput, setCurrentInput] = useState('');
-  const [formData, setFormData]       = useState({ name: '', email: '', phone: '' });
-  const [cols, setCols]               = useState(80);
-  const [rows, setRows]               = useState(24);
-  const [inputError, setInputError]   = useState('');
-
-  const bodyRef    = useRef<HTMLDivElement>(null);
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const inputRef   = useRef<HTMLInputElement>(null);
-  const bottomRef  = useRef<HTMLDivElement>(null);
-
-  // Mede cols × rows reais
-  useEffect(() => {
-    const body = bodyRef.current;
-    const measure = measureRef.current;
-    if (!body || !measure) return;
-    const update = () => {
-      const charW = measure.getBoundingClientRect().width;
-      const charH = measure.getBoundingClientRect().height;
-      if (!charW || !charH) return;
-      setCols(Math.max(1, Math.floor((body.clientWidth - PAD_H) / charW)));
-      setRows(Math.max(1, Math.floor((body.clientHeight - PAD_V) / charH)));
-    };
-    const ro = new ResizeObserver(update);
-    ro.observe(body);
-    update();
-    return () => ro.disconnect();
-  }, []);
-
-  // Sequência de boot → formulário
-  useEffect(() => {
-    if (!visible) return;
-    setRevealed(0);
-    setStep('animating');
-    setHistory([]);
-    setCurrentInput('');
-    terminalLines.forEach((_, i) => {
-      setTimeout(() => setRevealed(i + 1), 500 + i * 700);
-    });
-    const totalDelay = 500 + terminalLines.length * 700 + 500;
-    setTimeout(() => setStep('name'), totalDelay);
-  }, [visible]);
-
-  // Foca input quando step muda
-  useEffect(() => {
-    if (['name', 'email', 'phone', 'message'].includes(step)) {
-      setTimeout(() => inputRef.current?.focus(), 80);
-    }
-  }, [step]);
-
-  // Auto-scroll interno do terminal
-  useEffect(() => {
-    const body = bodyRef.current;
-    if (!body) return;
-    body.scrollTop = body.scrollHeight;
-  }, [history, step, revealed]);
-
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return;
-    const value = currentInput.trim();
-
-    if (step === 'name') {
-      if (!value) return;
-      setInputError('');
-      setHistory(h => [...h, { prompt: stepConfig.name.label, answer: value }]);
-      setFormData(f => ({ ...f, name: value }));
-      setCurrentInput('');
-      setStep('email');
-    } else if (step === 'email') {
-      const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      if (!valid) { setInputError('✗ e-mail inválido. tente novamente.'); return; }
-      setInputError('');
-      setHistory(h => [...h, { prompt: stepConfig.email.label, answer: value }]);
-      setFormData(f => ({ ...f, email: value }));
-      setCurrentInput('');
-      setStep('phone');
-    } else if (step === 'phone') {
-      const digits = value.replace(/\D/g, '');
-      if (value && (digits.length < 10 || digits.length > 11)) {
-        setInputError('✗ celular inválido. informe 10 ou 11 dígitos.');
-        return;
-      }
-      setInputError('');
-      setHistory(h => [...h, { prompt: stepConfig.phone.label, answer: value || '—' }]);
-      setFormData(f => ({ ...f, phone: value }));
-      setCurrentInput('');
-      setStep('message');
-    } else if (step === 'message') {
-      if (!value) return;
-      setInputError('');
-      setHistory(h => [...h, { prompt: stepConfig.message.label, answer: value }]);
-      setCurrentInput('');
-      setStep('sending');
-      try {
-        const res = await fetch('/api/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...formData, message: value, origem: 'tech' }),
-        });
-        setStep(res.ok ? 'done' : 'error');
-      } catch {
-        setStep('error');
-      }
-    }
-  };
-
-  const isInputStep = ['name', 'email', 'phone', 'message'].includes(step);
-  const currentConfig = stepConfig[step] ?? null;
-
-  return (
-    <div style={{ borderRadius: '10px', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.6)' }}>
-
-      {/* ── Barra título macOS ── */}
-      <div style={{
-        backgroundColor: '#3C3C3C',
-        padding: '11px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        position: 'relative',
-        userSelect: 'none',
-      }}>
-        <div style={{ display: 'flex', gap: '8px', zIndex: 1 }}>
-          <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#FF5F57', display: 'block', flexShrink: 0 }} />
-          <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#FFBD2E', display: 'block', flexShrink: 0 }} />
-          <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: '#28C840', display: 'block', flexShrink: 0 }} />
-        </div>
-        <p style={{
-          position: 'absolute', left: 0, right: 0, textAlign: 'center',
-          fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
-          color: 'rgba(255,255,255,0.55)', pointerEvents: 'none',
-        }}>
-          📁 dama-tech — -zsh — {cols}×{rows}
-        </p>
-      </div>
-
-      {/* ── Corpo ── */}
-      <div
-        ref={bodyRef}
-        onClick={() => inputRef.current?.focus()}
-        style={{
-          backgroundColor: '#1C1C1C',
-          padding: '20px 24px 24px',
-          fontFamily: 'var(--font-mono)',
-          fontSize: FONT_SIZE,
-          lineHeight: LINE_HEIGHT,
-          minHeight: '22rem',
-          maxHeight: '28rem',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 0,
-          position: 'relative',
-          cursor: 'text',
-        }}
-      >
-        {/* Span invisível para medir char */}
-        <span ref={measureRef} aria-hidden="true" style={{
-          position: 'absolute', visibility: 'hidden', whiteSpace: 'pre',
-          fontFamily: 'var(--font-mono)', fontSize: FONT_SIZE, lineHeight: LINE_HEIGHT,
-        }}>M</span>
-
-        {/* Linhas de boot */}
-        {terminalLines.map((line, i) => (
-          <motion.div key={i} initial={{ opacity: 0 }} animate={revealed > i ? { opacity: 1 } : { opacity: 0 }} transition={{ duration: 0.15 }}>
-            {line.type === 'prompt' ? (
-              <p style={{ color: '#F2F2F2' }}>
-                <span style={{ color: '#6FCF97' }}>{PROMPT}</span>{' '}{line.cmd}
-              </p>
-            ) : line.type === 'success' ? (
-              <p style={{ color: '#28C840' }}>{line.text}</p>
-            ) : (
-              <p style={{ color: 'rgba(242,242,242,0.4)' }}>{line.text}</p>
-            )}
-          </motion.div>
-        ))}
-
-        {/* Histórico de respostas */}
-        {history.map((h, i) => (
-          <div key={`h-${i}`}>
-            <p style={{ color: '#F2F2F2' }}>
-              <span style={{ color: '#6FCF97' }}>{PROMPT}</span>
-              {' '}
-              <span style={{ color: 'rgba(242,242,242,0.5)' }}>{h.prompt}</span>
-              {' '}
-              {h.answer}
-            </p>
-          </div>
-        ))}
-
-        {/* Input ativo */}
-        {isInputStep && currentConfig && (
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{ color: '#6FCF97', whiteSpace: 'nowrap' }}>{PROMPT}</span>
-            <span style={{ color: 'rgba(242,242,242,0.5)', whiteSpace: 'nowrap', margin: '0 0.4em' }}>
-              {currentConfig.label}
-            </span>
-            <input
-              ref={inputRef}
-              type={currentConfig.inputType ?? 'text'}
-              value={currentInput}
-              onChange={e => {
-                const val = step === 'phone'
-                  ? e.target.value.replace(/\D/g, '')
-                  : e.target.value;
-                setCurrentInput(val);
-                setInputError('');
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder={currentConfig.placeholder ?? ''}
-              autoComplete="off"
-              spellCheck={false}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                outline: 'none',
-                color: '#F2F2F2',
-                fontFamily: 'var(--font-mono)',
-                fontSize: FONT_SIZE,
-                caretColor: '#F2F2F2',
-                flex: 1,
-                minWidth: '4ch',
-              }}
-            />
-          </div>
-        )}
-
-        {/* Erro de validação */}
-        {inputError && (
-          <p style={{ color: '#FF5F57' }}>{inputError}</p>
-        )}
-
-        {/* Enviando */}
-        {step === 'sending' && (
-          <p style={{ color: 'rgba(242,242,242,0.4)' }}>
-            enviando<span style={{ animation: 'blink 1s step-end infinite' }}>...</span>
-          </p>
-        )}
-
-        {/* Sucesso */}
-        {step === 'done' && (
-          <>
-            <p style={{ color: '#28C840' }}>✓ mensagem enviada! entraremos em contato em breve.</p>
-            <p style={{ color: '#F2F2F2' }}>
-              <span style={{ color: '#6FCF97' }}>{PROMPT}</span>{' '}
-              <span style={{ animation: 'blink 1s step-end infinite' }}>█</span>
-            </p>
-          </>
-        )}
-
-        {/* Erro */}
-        {step === 'error' && (
-          <>
-            <p style={{ color: '#FF5F57' }}>✗ erro ao enviar. tente novamente mais tarde.</p>
-            <p style={{ color: '#F2F2F2' }}>
-              <span style={{ color: '#6FCF97' }}>{PROMPT}</span>{' '}
-              <span style={{ animation: 'blink 1s step-end infinite' }}>█</span>
-            </p>
-          </>
-        )}
-
-        <div ref={bottomRef} />
-      </div>
-    </div>
-  );
-}
+const ICONES = [Globe, LayoutDashboard, Smartphone, Workflow, Plug, Compass];
 
 export default function DamaTechPage() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const servicesRef = useRef<HTMLDivElement>(null);
-  const servicesInView = useInView(servicesRef, { once: true, margin: '-8% 0px' });
-
-  const projectsRef = useRef<HTMLDivElement>(null);
-  const projectsInView = useInView(projectsRef, { once: true, amount: 0.1 });
-
-  const ctaRef = useRef<HTMLDivElement>(null);
-  const ctaInView = useInView(ctaRef, { once: true, margin: '-10% 0px' });
-
   return (
-    <div className={jetbrains.variable}>
-      <Header />
-
-      {/* ── Seção 1: Hero ── */}
-      <section
-        style={{ position: 'relative', height: '100dvh', overflow: 'hidden', backgroundColor: BG }}
-      >
-        <style>{`
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-  @keyframes card-glitch {
-    0%   { transform:translate(0) skewX(0);           filter:brightness(1); clip-path:none; }
-    8%   { transform:translate(-5px,0) skewX(-1.5deg);filter:brightness(1.8) hue-rotate(var(--glitch-hue,30deg)) saturate(2); clip-path:inset(0 0 75% 0); }
-    16%  { transform:translate(5px,1px) skewX(1deg);  filter:brightness(0.4) blur(1.5px); clip-path:inset(45% 0 30% 0); }
-    24%  { transform:translate(-3px,0);               filter:brightness(1.6) hue-rotate(calc(var(--glitch-hue,30deg) * -1)); clip-path:none; }
-    32%  { transform:translate(3px,-1px) skewX(0.5deg);filter:brightness(0.6) blur(1px); clip-path:inset(70% 0 0 0); }
-    42%  { transform:translate(-1px,0);               filter:brightness(1.3); clip-path:none; }
-    55%  { transform:translate(0) skewX(0);           filter:brightness(1.05); }
-    100% { transform:translate(0) skewX(0);           filter:brightness(1.05); }
-  }
-  .service-card.is-glitching { animation: card-glitch 1s steps(1); }
-
-  .service-card { position:relative; overflow:hidden; }
-  .service-card::before {
-    content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
-    background:hsl(calc(var(--glitch-hue-deg,262) * 1deg), 80%, 60%); opacity:0;
-  }
-  .service-card.is-glitching::before { animation: card-flash 1s steps(1); }
-  @keyframes card-flash {
-    0%  { opacity:0; } 8%  { opacity:0.18; } 16% { opacity:0; }
-    24% { opacity:0.12; } 32% { opacity:0; } 100%{ opacity:0; }
-  }
-
-  .service-card.is-glitching h3 { animation: text-glitch 1s steps(1); }
-  @keyframes text-glitch {
-    0%  { text-shadow:none; }
-    8%  { text-shadow:-3px 0 hsl(calc((var(--glitch-hue-deg,262) + 120) * 1deg),90%,65%), 3px 0 hsl(calc((var(--glitch-hue-deg,262) - 120) * 1deg),90%,65%); }
-    16% { text-shadow:none; }
-    24% { text-shadow:2px 0 hsl(calc((var(--glitch-hue-deg,262) + 60) * 1deg),90%,65%), -2px 0 hsl(calc((var(--glitch-hue-deg,262) - 60) * 1deg),90%,65%); }
-    42% { text-shadow:none; }
-    100%{ text-shadow:none; }
-  }
-
-  .project-card { position:relative; }
-  .project-border-rect {
-    stroke-dasharray: 4000;
-    stroke-dashoffset: 4000;
-    transition: stroke-dashoffset 0.7s ease;
-  }
-  .project-card:hover .project-border-rect { stroke-dashoffset: 0; }
-`}</style>
-
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/videos/tech-placeholder.mp4"
-        />
-        <div className="absolute inset-0" style={{ backgroundColor: 'oklch(8% 0.015 262 / 0.82)' }} />
-
-<div className="absolute inset-0 flex flex-col justify-center">
-          <div className="container mx-auto px-6 lg:px-12">
-
-            <p
-              className="mb-6"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.75rem', letterSpacing: '0.08em' }}
-            >
-              {'> dama_tech'}
+    <SitePage current="/tech" divisao="tech">
+      {/* ── Hero: título + painel dos projetos no ar ── */}
+      <section className="border-b border-ds-line">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 md:px-6 md:py-20 lg:grid-cols-[1.1fr_1fr] lg:px-8">
+          <Reveal>
+            <Eyebrow index="00">DAMA Tech · Software sob medida</Eyebrow>
+            <SplitTitle
+              as="h1"
+              top="Sites, sistemas e produtos"
+              bottom="do rascunho ao ar"
+              className="mt-6 lg:text-[clamp(2.75rem,1.5rem+2.4vw,4rem)]"
+            />
+            <p className="mt-6 max-w-[46ch] text-base leading-relaxed text-ds-muted md:text-lg">
+              Cada entrega é um produto, não só código. Do MVP ao sistema que roda o dia a dia da sua empresa.
             </p>
-
-            <h1
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 900,
-                fontSize: 'clamp(2.5rem, 6vw, 6rem)',
-                color: 'oklch(97% 0.006 58)',
-                lineHeight: 1,
-                letterSpacing: '-0.03em',
-              }}
-            >
-              <TypewriterText
-                texts={heroProjects.map(p => p.name)}
-                onIndexChange={setActiveIndex}
-              />
-            </h1>
-
-            <p
-              style={{
-                fontFamily: 'var(--font-body)',
-                color: 'oklch(62% 0.015 55)',
-                fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-                marginTop: '1.5rem',
-                minHeight: '1.8em',
-              }}
-            >
-              <SubtitleTypewriter text={heroProjects[activeIndex].subtitle} />
-            </p>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── Seção 2: Serviços ── */}
-      <section
-        className="py-section"
-        style={{ backgroundColor: BG, borderTop: `1px solid ${BORDER}` }}
-        ref={servicesRef}
-      >
-        <div className="container mx-auto px-6 lg:px-12">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={servicesInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, ease: EASE }}
-          >
-            <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.7rem', marginBottom: '1rem' }}>
-              // o que a gente constrói
-            </p>
-            <h2
-              className="text-3xl lg:text-4xl leading-tight"
-              style={{ fontFamily: 'var(--font-display)', fontWeight: 900, color: TEXT }}
-            >
-              Cada entrega é um produto. Não só código.
-            </h2>
-          </motion.div>
-
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px mt-12"
-            style={{ backgroundColor: BORDER }}
-            initial="hidden"
-            animate={servicesInView ? 'visible' : 'hidden'}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } } }}
-          >
-            {services.map((s) => (
-              <motion.div
-                key={s.num}
-                variants={{
-                  hidden: { opacity: 0, y: 16 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: EASE } },
-                }}
-              >
-                <div
-                  className="service-card flex flex-col gap-3 p-8 h-full"
-                  style={{ backgroundColor: BG }}
-                  onMouseEnter={(e) => {
-                    const hue = Math.floor(Math.random() * 360);
-                    e.currentTarget.style.setProperty('--glitch-hue', `${hue}deg`);
-                    e.currentTarget.style.setProperty('--glitch-hue-deg', `${hue}`);
-                    e.currentTarget.classList.add('is-glitching');
-                  }}
-                  onAnimationEnd={(e) => {
-                    if (e.animationName === 'card-glitch') {
-                      e.currentTarget.classList.remove('is-glitching');
-                    }
-                  }}
-                >
-                  {/* Número decorativo de fundo */}
-                  <span
-                    className="absolute -bottom-4 -right-2 select-none pointer-events-none"
-                    style={{
-                      fontFamily: 'var(--font-display)',
-                      fontWeight: 900,
-                      fontSize: '7rem',
-                      lineHeight: 1,
-                      color: 'var(--color-tech)',
-                      opacity: 0.04,
-                    }}
-                  >
-                    {s.num.replace('_', '')}
-                  </span>
-
-                  {/* Número pequeno */}
-                  <span
-                    style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.7rem', opacity: 0.6 }}
-                  >
-                    {s.num}
-                  </span>
-
-                  {/* Nome */}
-                  <h3
-                    className="text-xl lg:text-2xl leading-tight"
-                    style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: TEXT }}
-                  >
-                    {s.name}
-                  </h3>
-
-                  {/* Descrição */}
-                  <p
-                    className="text-sm leading-relaxed"
-                    style={{ fontFamily: 'var(--font-body)', color: MUTED }}
-                  >
-                    {s.desc}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-        </div>
-      </section>
-
-      {/* ── Seção 3: Projetos ── */}
-      <section
-        className="py-section"
-        style={{ backgroundColor: BG_DARK, borderTop: `1px solid ${BORDER}` }}
-        ref={projectsRef}
-      >
-        <div className="container mx-auto px-6 lg:px-12">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={projectsInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.7, ease: EASE }}
-          >
-            <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.7rem', marginBottom: '1rem' }}>
-              // em produção
-            </p>
-            <h2
-              className="text-3xl lg:text-4xl leading-tight"
-              style={{ fontFamily: 'var(--font-display)', fontWeight: 900, color: TEXT }}
-            >
-              Produtos que a gente construiu.
-            </h2>
-          </motion.div>
-
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-12"
-            initial="hidden"
-            animate={projectsInView ? 'visible' : 'hidden'}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1, delayChildren: 0.2 } } }}
-          >
-            {projects.map((p) => (
-              <motion.div
-                key={p.brandName}
-                variants={{
-                  hidden: { opacity: 0, y: 16 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
-                }}
-                className="project-card group flex flex-col gap-4 p-8"
-                style={{ border: `1px solid ${BORDER}` }}
-              >
-                <svg
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                >
-                  <rect
-                    className="project-border-rect"
-                    x="0.5" y="0.5"
-                    width="99" height="99"
-                    fill="none"
-                    stroke="var(--color-tech)"
-                    strokeWidth="1"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
-                <p style={{ fontFamily: 'var(--font-mono)', color: COMMENT, fontSize: '0.65rem' }}>
-                  {p.tag}
-                </p>
-                <div className="flex items-center gap-4">
-                  <Image
-                    src={p.logo}
-                    alt={p.brandName}
-                    width={44}
-                    height={44}
-                    className="object-contain rounded-xl shrink-0"
-                  />
-                  <span
-                    style={{
-                      fontFamily: 'system-ui, -apple-system, sans-serif',
-                      fontWeight: 600,
-                      fontSize: '1.5rem',
-                      color: TEXT,
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {p.brandName}
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed flex-1" style={{ fontFamily: 'var(--font-body)', color: MUTED }}>
-                  {p.desc}
-                </p>
-                {p.href && (
-                  <a
-                    href={p.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 self-start text-sm"
-                    style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.7rem' }}
-                  >
-                    Ver projeto →
-                  </a>
-                )}
-              </motion.div>
-            ))}
-          </motion.div>
-
-        </div>
-      </section>
-
-      {/* ── Seção 4: DAMA Labs ── */}
-      <section
-        className="py-section"
-        style={{ backgroundColor: BG_DARK, borderTop: `1px solid ${BORDER}` }}
-      >
-        <div className="container mx-auto px-6 lg:px-12">
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: EASE }}
-          >
-            <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.7rem', marginBottom: '1rem' }}>
-              // experimentos em produção
-            </p>
-            <h2
-              className="text-3xl lg:text-4xl leading-tight flex items-end gap-3"
-              style={{ fontFamily: 'var(--font-display)', fontWeight: 900, color: TEXT }}
-            >
-              DAMA Labs
-              <span className="inline-flex items-center justify-center" style={{ width: '1em', height: '1em', flexShrink: 0, transform: 'translateY(-0.32em)', position: 'relative', zIndex: 1, filter: 'drop-shadow(-18px 0px 10px oklch(62% 0.22 262 / 0.7))' }}>
-                <svg viewBox="0 0 28 33" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                  <defs>
-                    <clipPath id="flask-clip-labs">
-                      <path d="M 10 3 L 18 3 L 18 11 L 23 26 Q 24 32 14 32 Q 4 32 5 26 L 10 11 Z" />
-                    </clipPath>
-                  </defs>
-
-                  {/* Líquido (fundo do frasco) */}
-                  <rect x="0" y="16" width="28" height="18" fill="var(--color-tech)" fillOpacity={0.28} clipPath="url(#flask-clip-labs)" />
-
-                  {/* Bolinhas aglomeradas na superfície */}
-                  <g clipPath="url(#flask-clip-labs)">
-                    {[
-                      { cx: 11,  r: 0.55, delay: 0,    dur: 2.4 },
-                      { cx: 13,  r: 0.75, delay: 0.4,  dur: 3.0 },
-                      { cx: 14.5,r: 0.45, delay: 0.9,  dur: 2.1 },
-                      { cx: 16,  r: 0.65, delay: 0.2,  dur: 2.7 },
-                      { cx: 17.5,r: 0.5,  delay: 1.3,  dur: 2.3 },
-                    ].map((b, i) => (
-                      <motion.circle
-                        key={`surface-${i}`}
-                        cx={b.cx}
-                        r={b.r}
-                        fill="none"
-                        stroke="var(--color-tech)"
-                        strokeWidth={0.5}
-                        animate={{
-                          cy:      [17.5, 15.5, 16.5, 15, 16, 17.5],
-                          opacity: [0,    0.6,  0.6,  0.6, 0.6,  0],
-                        }}
-                        transition={{
-                          duration: b.dur,
-                          delay: b.delay,
-                          repeat: Infinity,
-                          ease: 'easeInOut',
-                        }}
-                      />
-                    ))}
-                  </g>
-
-                  {/* Borbulhas internas no líquido */}
-                  <g clipPath="url(#flask-clip-labs)">
-                    {[
-                      { cx: 10, cy: 30, r: 0.6, delay: 0,    dur: 1.3 },
-                      { cx: 14, cy: 29, r: 0.4, delay: 0.45, dur: 1.0 },
-                      { cx: 18, cy: 31, r: 0.7, delay: 0.9,  dur: 1.5 },
-                      { cx: 12, cy: 27, r: 0.5, delay: 1.3,  dur: 1.1 },
-                      { cx: 16, cy: 28, r: 0.35,delay: 0.65, dur: 0.95 },
-                    ].map((b, i) => (
-                      <motion.circle
-                        key={`bubble-inner-${i}`}
-                        cx={b.cx}
-                        r={b.r}
-                        fill="none"
-                        stroke="var(--color-tech)"
-                        strokeWidth={0.5}
-                        animate={{
-                          cy:      [b.cy, 17, 17, b.cy],
-                          opacity: [0,   0.65,  0,    0],
-                        }}
-                        transition={{
-                          duration: b.dur,
-                          delay: b.delay,
-                          repeat: Infinity,
-                          ease: 'easeOut',
-                          times: [0, 0.78, 0.92, 1],
-                        }}
-                      />
-                    ))}
-                  </g>
-
-                  {/* Bolinhas subindo */}
-                  {[
-                    { cx: 12, delay: 0,    r: 0.8 },
-                    { cx: 14, delay: 0.85, r: 1.5 },
-                    { cx: 16, delay: 1.7,  r: 1.1 },
-                  ].map((b, i) => (
-                    <motion.circle
-                      key={i}
-                      cx={b.cx}
-                      r={b.r}
-                      stroke="var(--color-tech)"
-                      strokeWidth={0.7}
-                      fill="none"
-                      animate={{
-                        cy:      [16,   -18,   -18,  -18,   -18,   16],
-                        r:       [b.r,  b.r,   b.r,  b.r,     8,  b.r],
-                        opacity: [0.9,  0.9,     0,  0.55,    0,    0],
-                      }}
-                      transition={{
-                        duration: 2.8,
-                        delay: b.delay,
-                        repeat: Infinity,
-                        ease: 'easeOut',
-                        times: [0, 0.60, 0.68, 0.69, 0.84, 1],
-                      }}
-                    />
-                  ))}
-
-                  {/* Contorno do frasco Erlenmeyer (por cima) */}
-                  <path
-                    d="M 10 3 L 18 3 L 18 11 L 23 26 Q 24 32 14 32 Q 4 32 5 26 L 10 11 Z"
-                    stroke="var(--color-tech)"
-                    strokeWidth={0.9}
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </h2>
-            <p
-              className="text-base mt-3 max-w-lg"
-              style={{ fontFamily: 'var(--font-body)', color: MUTED }}
-            >
-              Ideias que a gente coloca pra rodar — produtos internos que podem virar o próximo projeto da sua empresa.
-            </p>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px mt-12" style={{ backgroundColor: BORDER }}>
-            {[
-              {
-                num: '_01',
-                name: 'Poker Pay',
-                desc: 'Gerenciador de cash game e torneios de poker — fichas, entradas, reentradas e pagamentos em tempo real.',
-                href: '/labs/poker-pay',
-              },
-              {
-                num: '_02',
-                name: 'Fidelidade Digital',
-                desc: 'Crie cartões fidelidade digitais para qualquer negócio. Sem papel, sem app — funciona no navegador do cliente.',
-                href: '/labs/fidelidade',
-              },
-            ].map((lab) => (
-              <a
-                key={lab.num}
-                href={lab.href}
-                className="group flex flex-col gap-3 p-8"
-                style={{ backgroundColor: BG_DARK }}
-              >
-                <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.7rem', opacity: 0.6 }}>
-                  {lab.num}
-                </span>
-                <h3
-                  className="text-xl lg:text-2xl leading-tight group-hover:opacity-70 transition-opacity duration-200"
-                  style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: TEXT }}
-                >
-                  {lab.name}
-                </h3>
-                <p className="text-sm leading-relaxed flex-1" style={{ fontFamily: 'var(--font-body)', color: MUTED }}>
-                  {lab.desc}
-                </p>
-                <span
-                  className="text-sm mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-tech)', fontSize: '0.7rem' }}
-                >
-                  Abrir →
-                </span>
-              </a>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── Seção 6: CTA ── */}
-      <section
-        className="py-section"
-        style={{ backgroundColor: 'var(--color-tech)' }}
-        ref={ctaRef}
-      >
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-
-            {/* Esquerda — texto */}
-            <motion.div
-              initial={{ opacity: 0, x: -40 }}
-              animate={ctaInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.7, ease: EASE }}
-            >
-              <p style={{ fontFamily: 'var(--font-mono)', color: 'oklch(97% 0.006 58 / 0.6)', fontSize: '0.75rem', marginBottom: '1.5rem' }}>
-                {'> pronto?'}
-              </p>
-
-              <h2
-                className="text-4xl lg:text-5xl leading-tight mb-4"
-                style={{ fontFamily: 'var(--font-display)', fontWeight: 900, color: 'oklch(97% 0.006 58)' }}
-              >
-                Tem um projeto em mente?
-              </h2>
-
-              <p
-                className="text-lg mb-10"
-                style={{ fontFamily: 'var(--font-body)', color: 'oklch(97% 0.006 58 / 0.75)' }}
-              >
-                A gente transforma a ideia em produto. Sem enrolação.
-              </p>
-
-              <Link
-                href="/#contato"
-                className="inline-block text-sm font-medium px-8 py-3 transition-colors duration-200"
-                style={{
-                  fontFamily: 'var(--font-ui)',
-                  border: '1px solid oklch(97% 0.006 58 / 0.8)',
-                  color: 'oklch(97% 0.006 58)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = 'oklch(97% 0.006 58)';
-                  e.currentTarget.style.color = 'var(--color-tech)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'oklch(97% 0.006 58)';
-                }}
-              >
-                Entrar em contato
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link href="#contato" className={buttonClass({ size: 'lg' })}>
+                Começar um projeto
               </Link>
-            </motion.div>
+              <Link href="#projetos" className={buttonClass({ variant: 'bracket' })}>
+                Ver projetos
+              </Link>
+            </div>
+          </Reveal>
 
-            {/* Direita — terminal */}
-            <motion.div
-              initial={{ opacity: 0, x: 40 }}
-              animate={ctaInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ duration: 0.7, delay: 0.15, ease: EASE }}
-            >
-              <TerminalCTA visible={ctaInView} />
-            </motion.div>
-
-          </div>
+          <Reveal delay={0.1}>
+            <Frame className="bg-ds-surface p-5 font-ds-mono text-sm sm:p-6 [--ds-corner:var(--ds-accent)]">
+              <p className="ds-annot flex items-center justify-between">
+                <span>dama-tech ~ % deploy --status</span>
+                <span className="text-ds-accent">{String(projects.length).padStart(2, '0')} no ar</span>
+              </p>
+              <ul className="mt-4 divide-y divide-ds-line border-y border-ds-line">
+                {projects.map((p) => (
+                  <li key={p.domain}>
+                    <a href={p.href} target="_blank" rel="noopener noreferrer" className="group flex min-h-12 items-center gap-3 py-2.5">
+                      <span className="size-1.5 shrink-0 rounded-full bg-ds-accent" aria-hidden />
+                      <span className="min-w-0 flex-1 truncate text-ds-fg group-hover:underline">{p.domain}</span>
+                      <span className="hidden shrink-0 text-xs text-ds-subtle sm:inline">{p.tag}</span>
+                      <ArrowUpRight className="size-4 shrink-0 text-ds-subtle transition-colors group-hover:text-ds-accent" strokeWidth={1.5} aria-hidden />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </Frame>
+          </Reveal>
         </div>
       </section>
 
-      <Footer />
-    </div>
+      {/* ── Serviços ── */}
+      <SiteSection index="01" eyebrow="O que a gente faz" top="Cada entrega é um produto" bottom="não só código">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {techServices.map((s, i) => {
+            const Icone = ICONES[i];
+            return (
+              <Frame key={s.name} interactive className="group flex flex-col p-6">
+                <div className="flex items-center justify-between">
+                  <span className="ds-annot tabular-nums transition-colors group-hover:text-ds-accent">_{String(i + 1).padStart(2, '0')}</span>
+                  <Icone className="size-5 text-ds-subtle transition-colors group-hover:text-ds-accent" strokeWidth={1.5} aria-hidden />
+                </div>
+                <h3 className="mt-8 text-lg font-medium tracking-tight text-ds-fg">{s.name}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ds-muted">{s.desc}</p>
+              </Frame>
+            );
+          })}
+        </div>
+      </SiteSection>
+
+      {/* ── Projetos ── */}
+      <SiteSection id="projetos" index="02" eyebrow="Projetos" top="Produtos que a gente construiu" bottom="e que estão no ar hoje">
+        <div className="border-b border-ds-line">
+          {projects.map((p, i) => (
+            <ProjectCard key={p.name} project={p} index={i} />
+          ))}
+        </div>
+      </SiteSection>
+
+      {/* ── Processo ── */}
+      <SiteSection index="03" eyebrow="Processo" top="Do briefing ao deploy" bottom="com prévias toda semana">
+        <ProcessNodes steps={process} divisao="tech" />
+      </SiteSection>
+
+      {/* ── Labs ── */}
+      <SiteSection index="04" eyebrow="DAMA Labs" top="Ideias que a gente põe pra rodar" bottom="produtos internos, abertos para testar">
+        <div className="grid gap-2 md:grid-cols-2">
+          {techLabs.map((l, i) => (
+            <Link key={l.href} href={l.href} className="group">
+              <Frame interactive className="flex h-full flex-col p-6">
+                <span className="ds-annot tabular-nums transition-colors group-hover:text-ds-accent">_{String(i + 1).padStart(2, '0')}</span>
+                <h3 className="mt-6 text-2xl font-medium tracking-tight text-ds-fg">{l.name}</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-ds-muted">{l.desc}</p>
+                <span className="mt-6 inline-flex items-center gap-1.5 text-sm text-ds-fg transition-colors group-hover:text-ds-accent">
+                  Abrir <ArrowUpRight className="size-4" strokeWidth={1.5} aria-hidden />
+                </span>
+              </Frame>
+            </Link>
+          ))}
+        </div>
+      </SiteSection>
+
+      <ContactSection index="05" divisao="tech" top="Tem um sistema na cabeça?" bottom="conta pra gente o que precisa rodar" />
+    </SitePage>
   );
 }
