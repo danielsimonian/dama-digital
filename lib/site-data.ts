@@ -280,6 +280,6 @@ export const techServices = [
 ];
 
 export const techLabs = [
-  { name: 'Poker Pay', desc: 'Gerenciador de cash game e torneios de poker — fichas, entradas, reentradas e pagamentos em tempo real.', href: '/labs/poker-pay' },
-  { name: 'Fidelidade Digital', desc: 'Cartão fidelidade digital para qualquer negócio. Sem papel, sem app — funciona no navegador do cliente.', href: '/labs/fidelidade' },
+  { name: 'Poker Pay', tag: 'cash game · torneios · ranking', desc: 'Gerenciador de cash game e torneios de poker — fichas, entradas, reentradas e pagamentos em tempo real.', href: '/labs/poker-pay' },
+  { name: 'Fidelidade Digital', tag: 'fidelidade · QR code · negócios', desc: 'Cartão fidelidade digital para qualquer negócio. Sem papel, sem app — funciona no navegador do cliente.', href: '/labs/fidelidade' },
 ];
