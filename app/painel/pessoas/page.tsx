@@ -441,7 +441,8 @@ function PessoasTela() {
         }
       >
         {form && (
-          <div className="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
+          // -m-1 p-1: o contorno de foco (2px + 2px de offset) não é cortado pela rolagem
+          <div className="-m-1 max-h-[60vh] space-y-4 overflow-y-auto p-1 pr-2">
             <TextField label="Nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} autoFocus />
             <TextField label="WhatsApp" type="tel" optional value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(13) 99999-9999" />
             <fieldset>
