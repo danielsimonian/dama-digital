@@ -160,10 +160,20 @@ export function WeekCalendar({
 const OPCOES: Presenca[] = ['realizada', 'falta', 'justificada', 'reposicao'];
 
 /** Marcação de presença em um toque. */
-export function AttendanceControl({ value, onChange, wide }: { value: Presenca; onChange: (p: Presenca) => void; wide?: boolean }) {
+export function AttendanceControl({
+  value,
+  onChange,
+  wide,
+  opcoes = OPCOES,
+}: {
+  value: Presenca;
+  onChange: (p: Presenca) => void;
+  wide?: boolean;
+  opcoes?: Presenca[];
+}) {
   return (
     <div role="radiogroup" aria-label="Presença" className={cn('grid grid-cols-2 gap-1', wide && 'sm:grid-cols-4')} data-divisao="studio">
-      {OPCOES.map((p) => {
+      {opcoes.map((p) => {
         const on = value === p;
         return (
           <button
