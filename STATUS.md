@@ -18,6 +18,7 @@ Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design Sys
 - Regras das aulas: pacote antecipado de 4 aulas (R$ 400) ou avulsa (R$ 130); horário fixo semanal; uma sala; realizada e falta gastam crédito, justificada não (permite reposição)
 - Histórico migrado: `servicos` (23) e `sessoes` (54) → `lancamentos`/`eventos_agenda` (coluna `legado`); tabelas antigas intactas. Orçamentos aprovados antes do painel não geraram lançamentos
 - Portal do cliente no DS v2 (22/10/2026), via `portal_painel`: totais, sessões/aulas (pacote e presença), financeiro, conteúdo e orçamentos. `portal_dados` fica só por compatibilidade
+- Proposta pública `/orcamento/[slug]` no DS v2 (22/10/2026): tema claro, acento da divisão, aprovação com confirmação, pacotes, "Baixar PDF" pela impressão
 - `/admin` antigo apagado; endereços antigos redirecionam para o `/painel` (`next.config.ts`). Os 2 orçamentos com pacotes (vencidos em 30/06) foram marcados como expirados
 
 **Segurança (PR #2 e #7):**

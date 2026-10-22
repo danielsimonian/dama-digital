@@ -1,769 +1,472 @@
-// ============================================
-// ARQUIVO: app/orcamento/[slug]/page.tsx
-// VERSÃO COM PRINT CSS + SUPORTE A PACOTES
-// ============================================
+// Proposta pública (link enviado ao cliente): ver, baixar em PDF e aprovar. Dados via RPCs orcamento_*.
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Download, Check, MessageCircle, ChevronDown, ChevronUp, Loader2, Lock, Heart, Sparkles, Sun, Moon, Star } from 'lucide-react';
-import { supabase, formatarMoeda, formatarData, DIVISAO_CONFIG } from '@/lib/supabase';
+import { useParams } from 'next/navigation';
+import { Geist, Geist_Mono } from 'next/font/google';
+import { Check, Download, MessageCircle } from 'lucide-react';
+import { supabase, type OrcamentoItem, type OrcamentoPublico } from '@/lib/supabase';
+import { cn, Alert, Button, buttonClass, DIVISAO_LABEL, Eyebrow, Frame, Skeleton } from '@/components/ds/primitives';
+import { Modal } from '@/components/ds/interactive';
+import { DamaLogo } from '@/components/ds/site';
+
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist',
+  display: 'swap',
+});
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+  display: 'swap',
+});
+
+const WHATSAPP = '5513997434878';
+const ETAPAS = ['Proposta', 'Aprovação', 'Produção', 'Entrega'];
+const MES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+// datas "YYYY-MM-DD" lidas sem fuso, para não voltar um dia
+const dataLonga = (iso: string) => `${Number(iso.slice(8, 10))} de ${MES[Number(iso.slice(5, 7)) - 1]} de ${iso.slice(0, 4)}`;
+const whats = (texto: string) => `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(texto)}`;
+
+type Detalhe = { texto: string; valor: number | null } | string;
+const detalhesDe = (i: OrcamentoItem) => ((i.detalhes ?? []) as Detalhe[]).map((d) => (typeof d === 'string' ? { texto: d, valor: null } : d));
+const valorItem = (i: OrcamentoItem) => Number(i.valor) * Number(i.quantidade);
+
+type Estado = { tipo: 'carregando' } | { tipo: 'inexistente' } | { tipo: 'rascunho' } | { tipo: 'ok'; orc: OrcamentoPublico };
 
 export default function OrcamentoPublicoPage() {
-  const params = useParams();
-  const slug = params?.slug as string;
-
-  const [orcamento, setOrcamento] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [pacoteParaAprovar, setPacoteParaAprovar] = useState<string | null>(null);
+  const { slug } = useParams<{ slug: string }>();
+  const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' });
+  const [confirmar, setConfirmar] = useState<{ pacote: string | null } | null>(null);
   const [aprovando, setAprovando] = useState(false);
-  const [justApproved, setJustApproved] = useState(false);
-  const [temaClaro, setTemaClaro] = useState(false);
-  const viewRegistered = useRef(false);
-
-  const whatsappNumber = '5513997434878';
-
-  function getItemConfig(categoria: string) {
-    if (categoria?.toLowerCase().includes('tech')) return DIVISAO_CONFIG.tech;
-    if (categoria?.toLowerCase().includes('sports')) return DIVISAO_CONFIG.sports;
-    if (categoria?.toLowerCase().includes('studio')) return DIVISAO_CONFIG.studio;
-    return DIVISAO_CONFIG[orcamento?.divisao as keyof typeof DIVISAO_CONFIG] || DIVISAO_CONFIG.tech;
-  }
+  const [erro, setErro] = useState('');
+  const [acabouDeAprovar, setAcabouDeAprovar] = useState(false);
+  const visto = useRef(false);
 
   useEffect(() => {
-    if (slug) fetchOrcamento();
+    supabase.rpc('orcamento_publico', { p_slug: slug }).then(({ data, error }) => {
+      const orc = data as OrcamentoPublico | null;
+      if (error || !orc) return setEstado({ tipo: 'inexistente' });
+      if (orc.status === 'rascunho') return setEstado({ tipo: 'rascunho' });
+      setEstado({ tipo: 'ok', orc });
+      document.title = `Proposta ${orc.numero} — ${orc.projeto_titulo} · DAMA`;
+      if (orc.status === 'enviado' && !visto.current) {
+        visto.current = true;
+        supabase.rpc('orcamento_registrar_visualizacao', { p_slug: slug }).then(({ data: ok }) => {
+          if (ok) setEstado((e) => (e.tipo === 'ok' ? { tipo: 'ok', orc: { ...e.orc, status: 'visualizado' } } : e));
+        });
+      }
+    });
   }, [slug]);
 
-  async function fetchOrcamento() {
-    try {
-      const { data: orc, error: orcError } = await supabase.rpc('orcamento_publico', { p_slug: slug });
-
-      if (orcError || !orc) { setError('not_found'); setLoading(false); return; }
-
-      if (orc.status === 'rascunho') { setError('rascunho'); setLoading(false); return; }
-
-      setOrcamento(orc);
-
-      if (orc.status === 'enviado' && !viewRegistered.current) {
-        viewRegistered.current = true;
-        registrarVisualizacao();
-      }
-
-      setLoading(false);
-    } catch (err) {
-      setError('not_found');
-      setLoading(false);
-    }
-  }
-
-  async function registrarVisualizacao() {
-    try {
-      const { data: ok, error } = await supabase.rpc('orcamento_registrar_visualizacao', { p_slug: slug });
-      if (!error && ok) setOrcamento((prev: any) => prev ? { ...prev, status: 'visualizado' } : prev);
-    } catch (err) {
-      console.error('Erro ao registrar visualização:', err);
-    }
-  }
-
-  function handleAprovarPacote(nomePacote?: string) {
-    if (nomePacote) setPacoteParaAprovar(nomePacote);
-    setShowConfirmModal(true);
-  }
-
-  async function aprovarOrcamento() {
+  const aprovar = async () => {
+    if (!confirmar || estado.tipo !== 'ok') return;
     setAprovando(true);
-    try {
-      const { data: ok, error } = await supabase.rpc('orcamento_aprovar', {
-        p_slug: slug,
-        p_pacote: pacoteParaAprovar ?? null,
-      });
-
-      if (error || !ok) {
-        alert('Erro ao aprovar orçamento. Tente novamente.');
-        setAprovando(false);
-        return;
-      }
-
-      setOrcamento({ ...orcamento, status: 'aprovado', pacote_escolhido: pacoteParaAprovar || null });
-      setShowConfirmModal(false);
-      setPacoteParaAprovar(null);
-      setJustApproved(true);
-    } catch (err) {
-      alert('Erro ao aprovar orçamento. Tente novamente.');
-    } finally {
-      setAprovando(false);
+    setErro('');
+    const { data: ok, error } = await supabase.rpc('orcamento_aprovar', {
+      p_slug: slug,
+      p_pacote: confirmar.pacote,
+    });
+    setAprovando(false);
+    if (error || !ok) {
+      setErro('Não foi possível aprovar agora. Tente de novo em instantes ou fale com a gente no WhatsApp.');
+      return;
     }
-  }
+    setEstado({
+      tipo: 'ok',
+      orc: {
+        ...estado.orc,
+        status: 'aprovado',
+        pacote_escolhido: confirmar.pacote ?? estado.orc.pacote_escolhido,
+      },
+    });
+    setConfirmar(null);
+    setAcabouDeAprovar(true);
+  };
 
-  function toggleItem(itemId: string) {
-    setExpandedItems(prev =>
-      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
-    );
-  }
-
-  function gerarPDF() {
-    const temaAnterior = temaClaro;
-    setTemaClaro(true);
-    if (orcamento?.itens) {
-      const todosIds = orcamento.itens
-        .filter((item: any) => item.detalhes?.length > 0)
-        .map((item: any) => item.id);
-      setExpandedItems(todosIds);
-    }
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => setTemaClaro(temaAnterior), 500);
-    }, 300);
-  }
-
-  // Agrupar itens por pacote (para modo pacotes)
-  function getPacotesAgrupados(): { nome: string; destaque: boolean; itens: any[] }[] {
-    if (!orcamento || orcamento.tipo !== 'pacotes') return [];
-    const map = new Map<string, { nome: string; destaque: boolean; itens: any[] }>();
-    for (const item of orcamento.itens) {
-      const nome = item.pacote || 'Padrão';
-      if (!map.has(nome)) {
-        map.set(nome, { nome, destaque: Boolean(item.pacote_destaque), itens: [] });
-      }
-      map.get(nome)!.itens.push(item);
-    }
-    return Array.from(map.values());
-  }
-
-  // Loading
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-400">Carregando orçamento...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error === 'rascunho') {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white p-4">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock size={32} className="text-yellow-400" />
-          </div>
-          <h1 className="text-2xl font-bold mb-2">Orçamento ainda não disponível</h1>
-          <p className="text-gray-400 mb-6">Este orçamento ainda está sendo preparado. Em breve você receberá o link atualizado.</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl transition-colors">
-            Ir para o site
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !orcamento) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center text-white p-4">
-        <div className="text-center">
-          <p className="text-6xl mb-4">😕</p>
-          <h1 className="text-2xl font-bold mb-2">Orçamento não encontrado</h1>
-          <p className="text-gray-400 mb-6">O link pode estar incorreto ou o orçamento foi removido.</p>
-          <Link href="/" className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl transition-colors">
-            Ir para o site
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const subtotal = orcamento.itens.reduce((acc: number, item: any) =>
-    acc + (Number(item.valor) * Number(item.quantidade)), 0
-  );
-  const total = subtotal - Number(orcamento.desconto || 0);
-  const totalMensal = orcamento.itens.reduce((acc: number, item: any) =>
-    acc + (Number(item.valor_mensal) || 0), 0
-  );
-  const isAprovado = orcamento.status === 'aprovado';
-  const divisaoConfig = DIVISAO_CONFIG[orcamento.divisao as keyof typeof DIVISAO_CONFIG] || DIVISAO_CONFIG.tech;
-  const isPacotes = orcamento.tipo === 'pacotes';
-  const pacotesAgrupados = getPacotesAgrupados();
+  const divisao = estado.tipo === 'ok' ? estado.orc.divisao : undefined;
 
   return (
-    <>
-      {/* CSS para impressão */}
-      <style jsx global>{`
+    <div className={`${geist.variable} ${geistMono.variable} ds min-h-dvh bg-ds-bg text-ds-fg`} data-theme="light">
+      {/* o acento da divisão vale para quem está dentro do .ds */}
+      <div data-divisao={divisao}>
+        <style>{`
         @media print {
-          @page { size: A4; margin: 10mm; }
-          * {
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            color-adjust: exact !important;
-          }
-          html, body { background: white !important; }
-          .print-container { background: white !important; color: #111 !important; }
+          @page { size: A4; margin: 14mm; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           .no-print { display: none !important; }
-          .print-only { display: block !important; }
-          .print-break-avoid { break-inside: avoid !important; page-break-inside: avoid !important; }
-          .print-break-before { break-before: page !important; page-break-before: always !important; }
-          .details-content { display: block !important; max-height: none !important; overflow: visible !important; }
-          .expand-button { display: none !important; }
-          .pacotes-grid { grid-template-columns: 1fr !important; }
+          .print-avoid { break-inside: avoid; }
         }
-        @media screen { .print-only { display: none !important; } }
       `}</style>
 
-      <div className={`print-container min-h-screen transition-colors duration-300 ${
-        temaClaro
-          ? 'bg-gray-100 text-gray-900'
-          : 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 text-white'
-      }`}>
-        {/* Header para impressão */}
-        <div className="print-only px-4 py-6 border-b border-gray-300 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col items-center">
-              <img src="/images/logo.png" alt="DAMA Digital" className="h-12 invert" />
-              <span className="text-gray-500 text-[12px] -mt-3">Digital Criativa</span>
-            </div>
-            <div className="text-right text-xs text-gray-600">
-              <p>damadigitalcriativa@gmail.com</p>
-              <p>(13) 99743-4878</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Header fixo (tela) */}
-        <header className={`no-print sticky top-0 z-50 backdrop-blur-md border-b transition-colors duration-300 ${
-          temaClaro ? 'bg-white/80 border-gray-200' : 'bg-gray-900/80 border-gray-800'
-        }`}>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-            <Link href="/" className="flex flex-col items-center justify-center">
-              <img src="/images/logo.png" alt="DAMA Digital" className={`h-12 ${temaClaro ? 'invert' : ''}`} />
-              <div className="hidden sm:block -mt-3">
-                <span className={`text-[12px] ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>Digital Criativa</span>
-              </div>
+        <header className="border-b border-ds-line">
+          <div className="mx-auto flex h-16 max-w-4xl items-center justify-between gap-4 px-4 md:px-6">
+            <Link href="/" aria-label="DAMA Digital — site">
+              <DamaLogo className="h-7" />
             </Link>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setTemaClaro(!temaClaro)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
-                  temaClaro ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' : 'bg-gray-800 hover:bg-gray-700 text-white'
-                }`}
-                title={temaClaro ? 'Versão escura' : 'Versão para impressão'}
-              >
-                {temaClaro ? <Moon size={18} /> : <Sun size={18} />}
-              </button>
-              <button
-                onClick={gerarPDF}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
-                  temaClaro ? 'bg-gray-200 hover:bg-gray-300 text-gray-800' : 'bg-gray-800 hover:bg-gray-700 text-white'
-                }`}
-              >
-                <Download size={18} />
-                <span className="hidden sm:inline">Baixar PDF</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Conteúdo */}
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-          {/* Saudação */}
-          <div className="mb-10 print-break-avoid">
-            <p className={`mb-2 ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>
-              Olá{orcamento.cliente?.nome ? `, ${orcamento.cliente.nome}` : ''} ✨
-            </p>
-            <h1 className="text-3xl sm:text-4xl font-bold mb-4">
-              Proposta para{' '}
-              <span className={`bg-gradient-to-r ${divisaoConfig.gradiente} bg-clip-text text-transparent`}>
-                {orcamento.projeto_titulo}
-              </span>
-            </h1>
-            {orcamento.projeto_descricao && (
-              <p className={`text-lg ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>{orcamento.projeto_descricao}</p>
-            )}
-          </div>
-
-          {/* Meta Info */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-10 print-break-avoid">
-            {[
-              { label: 'Número', value: orcamento.numero },
-              { label: 'Data', value: formatarData(orcamento.data_emissao) },
-              { label: 'Válido até', value: orcamento.validade ? formatarData(orcamento.validade) : '-' },
-              { label: 'Status', value: isAprovado ? '✓ Aprovado' : 'Aguardando' }
-            ].map((item, i) => (
-              <div key={i} className={`rounded-xl p-4 border ${
-                temaClaro ? 'bg-gray-200/50 border-gray-300' : 'bg-gray-800/50 border-gray-700/50'
-              }`}>
-                <p className="text-xs uppercase tracking-wider mb-1 text-gray-500">{item.label}</p>
-                <p className="font-medium text-sm sm:text-base">{item.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* ── Pacotes ─────────────────────────────────────────────────────── */}
-          {isPacotes ? (
-            <div className="mb-10">
-              <h2 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                <span className={`w-2 h-2 bg-gradient-to-r ${divisaoConfig.gradiente} rounded-full`} />
-                Escolha seu Pacote
-              </h2>
-
-              <div className="pacotes-grid grid grid-cols-1 md:grid-cols-3 gap-6">
-                {pacotesAgrupados.map((pacote) => {
-                  const pacoteTotal = pacote.itens.reduce(
-                    (acc: number, item: any) => acc + Number(item.valor) * Number(item.quantidade), 0
-                  );
-                  const pacoteMensal = pacote.itens.reduce(
-                    (acc: number, item: any) => acc + (Number(item.valor_mensal) || 0), 0
-                  );
-                  const isEscolhido = isAprovado && orcamento.pacote_escolhido === pacote.nome;
-
-                  return (
-                    <div
-                      key={pacote.nome}
-                      className={`relative rounded-2xl border overflow-hidden flex flex-col transition-all print-break-avoid ${
-                        pacote.destaque
-                          ? `border-2 ${divisaoConfig.borderColor} shadow-lg`
-                          : 'border border-gray-700'
-                      } ${temaClaro ? 'bg-gray-200/50' : 'bg-gray-800/30'} ${
-                        isEscolhido ? 'ring-2 ring-emerald-500 ring-offset-1 ring-offset-transparent' : ''
-                      }`}
-                    >
-                      {/* Badge Recomendado */}
-                      {pacote.destaque && (
-                        <div className={`bg-gradient-to-r ${divisaoConfig.gradiente} text-white text-center py-2 text-xs font-bold tracking-wider flex items-center justify-center gap-1`}>
-                          <Star size={12} className="fill-white" />
-                          RECOMENDADO
-                        </div>
-                      )}
-
-                      {/* Badge Escolhido */}
-                      {isEscolhido && (
-                        <div className="bg-emerald-500 text-white text-center py-2 text-xs font-bold tracking-wider flex items-center justify-center gap-1">
-                          <Check size={12} />
-                          PACOTE ESCOLHIDO
-                        </div>
-                      )}
-
-                      <div className="p-6 flex flex-col flex-1">
-                        {/* Nome do pacote */}
-                        <h3 className="text-xl font-bold mb-1">{pacote.nome}</h3>
-
-                        {/* Preço */}
-                        <div className="mb-6">
-                          <div className={`text-3xl font-bold bg-gradient-to-r ${divisaoConfig.gradiente} bg-clip-text text-transparent`}>
-                            {formatarMoeda(pacoteTotal)}
-                          </div>
-                          {pacoteMensal > 0 && (
-                            <p className={`text-sm font-medium mt-1 ${divisaoConfig.textColor}`}>
-                              + {formatarMoeda(pacoteMensal)}/mês
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Lista de itens */}
-                        <ul className="space-y-4 flex-1 mb-6">
-                          {pacote.itens.map((item: any) => (
-                            <li key={item.id}>
-                              <div className="flex items-start justify-between gap-2">
-                                <span className="flex items-start gap-2 font-medium">
-                                  <Check className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-                                  {item.nome}
-                                </span>
-                                {Number(item.valor) > 0 && (
-                                  <span className={`text-sm font-medium flex-shrink-0 ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>
-                                    {formatarMoeda(Number(item.valor) * Number(item.quantidade))}
-                                  </span>
-                                )}
-                              </div>
-                              {item.valor_mensal > 0 && (
-                                <p className={`text-xs mt-0.5 ml-6 font-medium ${divisaoConfig.textColor}`}>
-                                  + {formatarMoeda(Number(item.valor_mensal))}/mês
-                                  {item.descricao_mensal && (
-                                    <span className={`font-normal ml-1 ${temaClaro ? 'text-gray-500' : 'text-gray-500'}`}>
-                                      ({item.descricao_mensal})
-                                    </span>
-                                  )}
-                                </p>
-                              )}
-                              {item.descricao && (
-                                <p className={`text-xs mt-1 ml-6 ${temaClaro ? 'text-gray-500' : 'text-gray-500'}`}>
-                                  {item.descricao}
-                                </p>
-                              )}
-                              {item.detalhes?.length > 0 && (
-                                <ul className="mt-1 ml-6 space-y-0.5">
-                                  {item.detalhes.map((d: any, i: number) => (
-                                    <li key={i} className={`text-xs flex items-center gap-1.5 ${temaClaro ? 'text-gray-500' : 'text-gray-500'}`}>
-                                      <span className="w-1 h-1 rounded-full bg-gray-500 flex-shrink-0" />
-                                      {d.texto || d}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-
-                        {/* Botão aprovar */}
-                        {!isAprovado && (
-                          <button
-                            onClick={() => handleAprovarPacote(pacote.nome)}
-                            className={`no-print w-full py-3 px-4 rounded-xl font-semibold transition-all hover:opacity-90 active:scale-[0.98] ${
-                              pacote.destaque
-                                ? `bg-gradient-to-r ${divisaoConfig.gradiente} text-white shadow-lg`
-                                : `${temaClaro ? 'bg-gray-300 text-gray-800 hover:bg-gray-400' : 'bg-gray-700 text-white hover:bg-gray-600'}`
-                            }`}
-                          >
-                            Aprovar este Pacote
-                          </button>
-                        )}
-
-                        {isEscolhido && !justApproved && (
-                          <div className="flex items-center justify-center gap-2 py-3 text-emerald-400 font-semibold">
-                            <Check size={18} />
-                            Aprovado
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            /* ── Itens (simples) ─────────────────────────────────────────── */
-            <div className="mb-10">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span className={`w-2 h-2 bg-gradient-to-r ${divisaoConfig.gradiente} rounded-full`} />
-                Serviços Inclusos
-              </h2>
-
-              <div className="space-y-4">
-                {orcamento.itens.map((item: any) => {
-                  const isExpanded = expandedItems.includes(item.id);
-                  const itemConfig = getItemConfig(item.categoria);
-
-                  return (
-                    <div
-                      key={item.id}
-                      className={`print-break-avoid rounded-2xl border overflow-hidden transition-colors ${itemConfig.borderColor} ${
-                        temaClaro ? 'bg-gray-200/50' : 'bg-gray-800/30'
-                      }`}
-                    >
-                      <div className="p-5 cursor-pointer" onClick={() => toggleItem(item.id)}>
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <span className={`inline-block text-xs px-2 py-1 rounded-full mb-2 ${itemConfig.bgLight} ${itemConfig.textColor}`}>
-                              {item.categoria}
-                            </span>
-                            <h3 className="font-semibold text-lg mb-1">{item.nome}</h3>
-                            {item.descricao && (
-                              <p className={`text-sm ${temaClaro ? 'text-gray-600' : 'text-gray-400'}`}>{item.descricao}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between sm:flex-col sm:items-end gap-2">
-                            <div className="text-right">
-                              {(Number(item.valor) > 0 || !(item.valor_mensal > 0)) && (
-                                <p className="text-xl font-semibold">
-                                  {formatarMoeda(Number(item.valor) * Number(item.quantidade))}
-                                </p>
-                              )}
-                              {item.valor_mensal > 0 && (
-                                <p className={`text-sm font-medium ${itemConfig.textColor}`}>
-                                  {Number(item.valor) > 0 && '+ '}{formatarMoeda(Number(item.valor_mensal))}/mês
-                                  {item.descricao_mensal && (
-                                    <span className={`font-normal ml-1 ${temaClaro ? 'text-gray-500' : 'text-gray-400'}`}>
-                                      ({item.descricao_mensal})
-                                    </span>
-                                  )}
-                                </p>
-                              )}
-                            </div>
-                            {item.detalhes?.length > 0 && (
-                              <button className={`expand-button text-xs flex items-center gap-1 ${itemConfig.textColor}`}>
-                                {isExpanded ? 'Menos' : 'Detalhes'}
-                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {item.detalhes?.length > 0 && (
-                        <div className={`details-content px-5 pb-5 pt-2 border-t border-gray-800/50 ${isExpanded ? 'block' : 'hidden'}`}>
-                          <p className="text-xs uppercase tracking-wider mb-3 text-gray-500">O que está incluso:</p>
-                          <ul className="space-y-2">
-                            {item.detalhes.map((detalhe: any, i: number) => (
-                              <li key={i} className={`flex items-center justify-between text-sm ${temaClaro ? 'text-gray-700' : 'text-gray-300'}`}>
-                                <span className="flex items-center gap-2">
-                                  <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                                  {detalhe.texto || detalhe}
-                                </span>
-                                {detalhe.valor && (
-                                  <span className={temaClaro ? 'text-gray-500' : 'text-gray-400'}>
-                                    {formatarMoeda(Number(detalhe.valor))}
-                                  </span>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
-                          {item.detalhes.some((d: any) => d.valor) && (
-                            <div className={`mt-3 pt-3 border-t flex justify-between items-center ${temaClaro ? 'border-gray-300' : 'border-gray-700'}`}>
-                              <span className={`text-sm ${temaClaro ? 'text-gray-500' : 'text-gray-400'}`}>Subtotal</span>
-                              <span className="font-semibold">
-                                {formatarMoeda(item.detalhes.reduce((acc: number, d: any) => acc + (Number(d.valor) || 0), 0))}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Total (apenas no modo simples) */}
-          {!isPacotes && (
-            <div className={`print-break-avoid rounded-2xl p-6 border ${divisaoConfig.borderColor} mb-10 ${temaClaro ? 'bg-gray-200/50' : 'bg-gray-800/40'}`}>
-              <div className="flex justify-between items-center mb-3">
-                <span className={temaClaro ? 'text-gray-500' : 'text-gray-400'}>Subtotal</span>
-                <span>{formatarMoeda(subtotal)}</span>
-              </div>
-              {Number(orcamento.desconto) > 0 && (
-                <div className="flex justify-between items-center mb-3 text-emerald-400">
-                  <span>Desconto especial</span>
-                  <span>- {formatarMoeda(Number(orcamento.desconto))}</span>
-                </div>
-              )}
-              <div className={`h-px my-4 ${temaClaro ? 'bg-gray-300' : 'bg-gray-700'}`} />
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold">Total</span>
-                <span className={`text-3xl font-bold bg-gradient-to-r ${divisaoConfig.gradiente} bg-clip-text text-transparent`}>
-                  {formatarMoeda(total)}
-                </span>
-              </div>
-              {totalMensal > 0 && (
-                <div className={`mt-3 pt-3 border-t flex justify-between items-center ${temaClaro ? 'border-gray-300' : 'border-gray-700'}`}>
-                  <span className={`text-sm ${temaClaro ? 'text-gray-500' : 'text-gray-400'}`}>Recorrência mensal</span>
-                  <span className={`font-semibold text-lg bg-gradient-to-r ${divisaoConfig.gradiente} bg-clip-text text-transparent`}>
-                    + {formatarMoeda(totalMensal)}/mês
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Condições */}
-          {(orcamento.prazo_entrega || orcamento.condicoes_pagamento || orcamento.observacoes) && (
-            <div className={`print-break-avoid mb-10 p-5 rounded-xl border space-y-3 ${
-              temaClaro ? 'bg-gray-200/50 border-gray-300' : 'bg-gray-800/30 border-gray-700/50'
-            }`}>
-              {orcamento.prazo_entrega && (
-                <p className="text-sm">
-                  <span className="text-gray-500">Prazo de entrega:</span>{' '}
-                  <span className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>{orcamento.prazo_entrega}</span>
-                </p>
-              )}
-              {orcamento.condicoes_pagamento && (
-                <p className="text-sm">
-                  <span className="text-gray-500">Pagamento:</span>{' '}
-                  <span className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>{orcamento.condicoes_pagamento}</span>
-                </p>
-              )}
-              {orcamento.observacoes && (
-                <p className="text-sm">
-                  <span className="text-gray-500">Observações:</span>{' '}
-                  <span className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>{orcamento.observacoes}</span>
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Banner Aprovado */}
-          {isAprovado && (
-            <div className={`print-break-avoid mb-6 p-5 rounded-2xl border ${
-              justApproved
-                ? 'bg-emerald-500/20 border-emerald-500/50 animate-pulse'
-                : 'bg-emerald-500/10 border-emerald-500/30'
-            } flex items-center gap-4`}>
-              <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/30">
-                <Check size={28} />
-              </div>
-              <div>
-                <p className={`font-semibold text-lg ${temaClaro ? 'text-emerald-600' : 'text-emerald-400'}`}>
-                  {justApproved ? '🎉 Orçamento Aprovado com Sucesso!' : 'Orçamento Aprovado!'}
-                </p>
-                {orcamento.pacote_escolhido && (
-                  <p className={`text-sm font-medium mb-1 ${temaClaro ? 'text-emerald-700' : 'text-emerald-300'}`}>
-                    Pacote escolhido: <strong>{orcamento.pacote_escolhido}</strong>
-                  </p>
-                )}
-                <p className={temaClaro ? 'text-gray-700' : 'text-gray-300'}>
-                  {justApproved
-                    ? 'Obrigado pela confiança! Nossa equipe entrará em contato em breve para alinhar os próximos passos.'
-                    : 'Entraremos em contato em breve para alinhar os próximos passos.'
-                  }
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Ações */}
-          <div className="no-print">
-            {!isAprovado ? (
-              <div className="flex flex-col sm:flex-row gap-4">
-                {/* Botão aprovar (só no modo simples) */}
-                {!isPacotes && (
-                  <button
-                    onClick={() => handleAprovarPacote()}
-                    className={`flex-1 py-4 px-6 bg-gradient-to-r ${divisaoConfig.gradiente} hover:opacity-90 rounded-xl font-semibold text-lg transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 shadow-lg`}
-                  >
-                    <Check size={24} />
-                    Aprovar Orçamento
-                  </button>
-                )}
+            {estado.tipo === 'ok' ? (
+              <div className="no-print flex items-center gap-2">
+                <button onClick={() => window.print()} className={buttonClass({ variant: 'ghost', size: 'sm' })}>
+                  <Download className="size-4" strokeWidth={1.5} aria-hidden /> <span className="hidden sm:inline">Baixar PDF</span>
+                  <span className="sr-only sm:hidden">Baixar PDF</span>
+                </button>
                 <a
-                  href={`https://wa.me/${whatsappNumber}?text=Olá! Gostaria de falar sobre o orçamento ${orcamento.numero}`}
+                  href={whats(`Olá! Quero falar sobre a proposta ${estado.orc.numero}.`)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`${isPacotes ? 'w-full' : 'flex-1'} py-4 px-6 rounded-xl font-semibold text-lg transition-all border flex items-center justify-center gap-2 ${
-                    temaClaro
-                      ? 'bg-gray-200 hover:bg-gray-300 border-gray-300 text-gray-800'
-                      : 'bg-gray-800 hover:bg-gray-700 border-gray-700 text-white'
-                  }`}
+                  className={buttonClass({ variant: 'secondary', size: 'sm' })}
                 >
-                  <MessageCircle size={24} />
-                  {isPacotes ? 'Dúvidas? Fale no WhatsApp' : 'Falar no WhatsApp'}
+                  <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden /> WhatsApp
                 </a>
               </div>
             ) : (
-              <a
-                href={`https://wa.me/${whatsappNumber}?text=Olá! Acabei de aprovar o orçamento ${orcamento.numero}${orcamento.pacote_escolhido ? ` (Pacote ${orcamento.pacote_escolhido})` : ''} e gostaria de alinhar os próximos passos.`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`w-full py-4 px-6 bg-gradient-to-r ${divisaoConfig.gradiente} hover:opacity-90 rounded-xl font-semibold text-lg transition-all flex items-center justify-center gap-2 shadow-lg`}
-              >
-                <MessageCircle size={24} />
-                Falar com a DAMA no WhatsApp
-              </a>
+              <span className="ds-annot uppercase">Proposta</span>
             )}
           </div>
+        </header>
 
-          {/* Mensagem otimista */}
-          <div className="mt-12 text-center print-break-avoid">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Sparkles className={`w-5 h-5 ${divisaoConfig.textColor}`} />
-              <span className={`text-lg font-medium ${divisaoConfig.textColor}`}>
-                Conte com a gente para transformar suas ideias em realidade!
-              </span>
-              <Sparkles className={`w-5 h-5 ${divisaoConfig.textColor}`} />
-            </div>
-          </div>
-        </main>
-
-        {/* Footer (tela) */}
-        <footer className={`no-print border-t mt-8 ${temaClaro ? 'border-gray-300' : 'border-gray-800'}`}>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 text-center">
-            <div className="flex justify-center mb-4">
-              <Link href="/" className="flex flex-col items-center justify-center">
-                <img src="/images/logo.png" alt="DAMA Digital" className={`h-12 ${temaClaro ? 'invert' : ''}`} />
-                <div className="hidden sm:block -mt-3">
-                  <span className="text-gray-300 font-bold text-xl">Digital Criativa</span>
-                </div>
-                <p className="text-gray-500 text-sm mb-6">Criando experiências digitais únicas</p>
-              </Link>
-            </div>
-            <div className="flex flex-wrap justify-center gap-6 text-sm mb-6">
-              <a href={`https://wa.me/${whatsappNumber}`} className={`${divisaoConfig.textColor} hover:opacity-80 flex items-center gap-2`}>
-                <MessageCircle size={18} />
-                WhatsApp
-              </a>
-              <a href="mailto:damadigitalcriativa@gmail.com" className={`${divisaoConfig.textColor} hover:opacity-80`}>
-                ✉️ damadigitalcriativa@gmail.com
-              </a>
-            </div>
-            <div className="flex items-center justify-center gap-1 text-gray-600 text-sm">
-              <span>Feito com</span>
-              <Heart size={14} className="text-pink-500 fill-pink-500" />
-              <span>pela DAMA • {new Date().getFullYear()}</span>
-            </div>
-          </div>
-        </footer>
-
-        {/* Footer (print) */}
-        <div className="print-only mt-10 pt-6 border-t border-gray-300 text-center">
-          <div className="flex flex-col items-center mb-3">
-            <img src="/images/logo.png" alt="DAMA Digital" className="h-10 invert" />
-            <span className="text-gray-500 text-[12px] -mt-3">Digital Criativa</span>
-          </div>
-          <div className="flex justify-center gap-4 text-xs text-gray-500 mb-2">
-            <span>📱 (13) 99743-4878</span>
-            <span>✉️ damadigitalcriativa@gmail.com</span>
-          </div>
-          <p className="text-gray-400 text-xs">
-            Feito com ❤️ pela DAMA • {new Date().getFullYear()}
-          </p>
-        </div>
-
-        {/* Modal de Confirmação */}
-        {showConfirmModal && (
-          <div className="no-print fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-gray-900 rounded-2xl p-6 max-w-md w-full border border-gray-800">
-              <div className="flex justify-center mb-4">
-                <div className={`w-16 h-16 bg-gradient-to-br ${divisaoConfig.gradiente} rounded-2xl flex items-center justify-center`}>
-                  <Check size={32} />
-                </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-center">Confirmar Aprovação</h3>
-
-              {/* Pacote escolhido */}
-              {pacoteParaAprovar && (
-                <div className={`mb-4 p-3 rounded-xl border text-center ${divisaoConfig.bgLight} ${divisaoConfig.borderColor}`}>
-                  <p className="text-xs text-gray-400 mb-1">Pacote selecionado</p>
-                  <p className={`font-bold text-lg ${divisaoConfig.textColor}`}>{pacoteParaAprovar}</p>
-                </div>
-              )}
-
-              <p className="text-gray-400 mb-6 text-center">
-                Ao aprovar, você concorda com os termos e valores apresentados.
-                Nossa equipe entrará em contato para alinhar os próximos passos.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { setShowConfirmModal(false); setPacoteParaAprovar(null); }}
-                  disabled={aprovando}
-                  className="flex-1 py-3 px-4 bg-gray-800 hover:bg-gray-700 rounded-xl font-medium transition-colors disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={aprovarOrcamento}
-                  disabled={aprovando}
-                  className={`flex-1 py-3 px-4 bg-gradient-to-r ${divisaoConfig.gradiente} hover:opacity-90 rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2`}
-                >
-                  {aprovando ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Aprovando...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={18} />
-                      Confirmar
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+        {estado.tipo === 'carregando' && (
+          <div className="mx-auto max-w-4xl space-y-4 px-4 py-12 md:px-6">
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-12 w-3/4" />
+            <Skeleton className="h-64" />
           </div>
         )}
+
+        {(estado.tipo === 'inexistente' || estado.tipo === 'rascunho') && (
+          <div className="mx-auto max-w-md px-4 py-24 text-center">
+            <Eyebrow>{estado.tipo === 'rascunho' ? 'Em preparo' : '404'}</Eyebrow>
+            <h1 className="mt-4 text-2xl font-medium tracking-tight">
+              {estado.tipo === 'rascunho' ? 'Essa proposta ainda está sendo preparada' : 'Proposta não encontrada'}
+            </h1>
+            <p className="mt-2 text-sm text-ds-muted">
+              {estado.tipo === 'rascunho'
+                ? 'Assim que ficar pronta, a gente te manda o link.'
+                : 'O link pode estar incompleto. Confira a mensagem que a gente te mandou.'}
+            </p>
+            <a
+              href={whats('Olá! Não consegui abrir a proposta que vocês me mandaram.')}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonClass({
+                variant: 'secondary',
+                className: 'mt-8',
+              })}
+            >
+              <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden /> Falar com a DAMA
+            </a>
+          </div>
+        )}
+
+        {estado.tipo === 'ok' && (
+          <Proposta
+            orc={estado.orc}
+            acabouDeAprovar={acabouDeAprovar}
+            onAprovar={(pacote) => {
+              setErro('');
+              setConfirmar({ pacote });
+            }}
+          />
+        )}
+
+        <Modal
+          open={!!confirmar}
+          onClose={() => !aprovando && setConfirmar(null)}
+          index={estado.tipo === 'ok' ? `proposta ${estado.orc.numero}` : undefined}
+          title={confirmar?.pacote ? `Aprovar o pacote ${confirmar.pacote}?` : 'Aprovar esta proposta?'}
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setConfirmar(null)} disabled={aprovando}>
+                Cancelar
+              </Button>
+              <Button onClick={aprovar} loading={aprovando}>
+                <Check className="size-4" strokeWidth={1.5} aria-hidden /> Aprovar
+              </Button>
+            </>
+          }
+        >
+          <p>Ao aprovar, você concorda com os itens, valores e condições desta proposta. A gente entra em contato para combinar os próximos passos.</p>
+          {erro && (
+            <div className="mt-4">
+              <Alert tone="danger" title="Não deu certo">
+                {erro}
+              </Alert>
+            </div>
+          )}
+        </Modal>
       </div>
-    </>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Documento                                                           */
+/* ------------------------------------------------------------------ */
+
+function Proposta({ orc, acabouDeAprovar, onAprovar }: { orc: OrcamentoPublico; acabouDeAprovar: boolean; onAprovar: (pacote: string | null) => void }) {
+  const pacotes = orc.tipo === 'pacotes';
+  const subtotal = orc.itens.reduce((s, i) => s + valorItem(i), 0);
+  const desconto = Number(orc.desconto) || 0;
+  const total = Math.max(0, subtotal - desconto);
+  const mensal = orc.itens.reduce((s, i) => s + (Number(i.valor_mensal) || 0), 0);
+  const aberto = orc.status === 'enviado' || orc.status === 'visualizado';
+  const etapa = orc.status === 'aprovado' ? 1 : 0;
+
+  return (
+    <main className="mx-auto max-w-4xl px-4 md:px-6">
+      {/* Abertura */}
+      <section className="print-avoid border-b border-ds-line py-10 md:py-14">
+        <Eyebrow>
+          {DIVISAO_LABEL[orc.divisao]} · Proposta {orc.numero}
+        </Eyebrow>
+        <h1 className="mt-5 text-[clamp(2rem,1.3rem+2.4vw,3.25rem)] font-medium leading-[1.08] tracking-tight">
+          {orc.projeto_titulo}
+          {orc.cliente?.nome && !orc.projeto_titulo.toLowerCase().includes(orc.cliente.nome.toLowerCase()) && (
+            <span className="block text-ds-subtle">para {orc.cliente.nome}</span>
+          )}
+        </h1>
+        {orc.projeto_descricao && (
+          <p className="mt-6 max-w-[62ch] whitespace-pre-line text-base leading-relaxed text-ds-muted md:text-lg">{orc.projeto_descricao}</p>
+        )}
+
+        <dl className="mt-10 grid grid-cols-2 border-t border-ds-line sm:grid-cols-4">
+          {[
+            ['Número', orc.numero],
+            ['Emitida em', dataLonga(orc.data_emissao)],
+            ['Válida até', orc.validade ? dataLonga(orc.validade) : '—'],
+            ['Situação', SITUACAO[orc.status]],
+          ].map(([k, v]) => (
+            <div key={k} className="border-b border-ds-line py-3 pr-4 sm:border-b-0">
+              <dt className="ds-annot uppercase">{k}</dt>
+              <dd className="mt-1 text-sm text-ds-fg">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      {/* Itens */}
+      <section className="border-b border-ds-line py-10 md:py-14">
+        <p className="ds-annot mb-6 uppercase">{pacotes ? 'Escolha um pacote' : 'O que está incluído'}</p>
+        {pacotes ? (
+          <Pacotes orc={orc} aberto={aberto} onAprovar={onAprovar} />
+        ) : (
+          <>
+            <ol className="border-t border-ds-line">
+              {orc.itens.map((item, i) => (
+                <Item key={item.id} item={item} index={i} />
+              ))}
+            </ol>
+
+            <div className="print-avoid ml-auto mt-8 max-w-sm space-y-2 text-sm">
+              {desconto > 0 && (
+                <>
+                  <Linha label="Subtotal" valor={brl(subtotal)} />
+                  <Linha label="Desconto" valor={`− ${brl(desconto)}`} />
+                </>
+              )}
+              <div className="flex items-baseline justify-between gap-4 border-t border-ds-fg pt-3">
+                <span className="ds-annot uppercase">Total</span>
+                <span className="text-3xl font-medium tracking-tight tabular-nums">{brl(total)}</span>
+              </div>
+              {mensal > 0 && <Linha label="Recorrente" valor={`+ ${brl(mensal)}/mês`} />}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* Condições */}
+      {(orc.prazo_entrega || orc.condicoes_pagamento || orc.observacoes) && (
+        <section className="print-avoid border-b border-ds-line py-10 md:py-14">
+          <p className="ds-annot mb-6 uppercase">Condições</p>
+          <dl className="divide-y divide-ds-line border-y border-ds-line">
+            {[
+              ['Prazo', orc.prazo_entrega],
+              ['Pagamento', orc.condicoes_pagamento],
+              ['Observações', orc.observacoes],
+            ]
+              .filter(([, v]) => v)
+              .map(([k, v]) => (
+                <div key={k} className="grid gap-1 py-4 sm:grid-cols-[10rem_1fr] sm:gap-6">
+                  <dt className="ds-annot uppercase">{k}</dt>
+                  <dd className="whitespace-pre-line text-sm leading-relaxed text-ds-fg">{v}</dd>
+                </div>
+              ))}
+          </dl>
+        </section>
+      )}
+
+      {/* Decisão */}
+      <section className="no-print py-10 md:py-14">
+        {orc.status === 'aprovado' ? (
+          <Frame className={cn('bg-ds-surface p-6 sm:p-8 [--ds-corner:var(--ds-accent)]')}>
+            <p className="ds-annot flex items-center gap-2 uppercase text-ds-accent!">
+              <Check className="size-4" strokeWidth={2} aria-hidden /> Aprovada
+              {orc.pacote_escolhido ? ` · pacote ${orc.pacote_escolhido}` : ''}
+            </p>
+            <h2 className="mt-4 text-2xl font-medium tracking-tight">{acabouDeAprovar ? 'Obrigado pela confiança!' : 'Proposta aprovada'}</h2>
+            <p className="mt-2 max-w-[56ch] text-sm text-ds-muted">A gente entra em contato para combinar o início. Se quiser adiantar, chama no WhatsApp.</p>
+            <ol className="mt-6 grid grid-cols-4 gap-2">
+              {ETAPAS.map((e, i) => (
+                <li key={e} className={cn('border-t pt-2', i <= etapa ? 'border-ds-accent' : 'border-ds-line')}>
+                  <span className={cn('ds-annot block tabular-nums', i <= etapa && 'text-ds-fg')}>{String(i + 1).padStart(2, '0')}</span>
+                  <span className={cn('text-xs', i <= etapa ? 'text-ds-fg' : 'text-ds-subtle')}>{e}</span>
+                </li>
+              ))}
+            </ol>
+            <a
+              href={whats(`Olá! Acabei de aprovar a proposta ${orc.numero}${orc.pacote_escolhido ? ` (pacote ${orc.pacote_escolhido})` : ''}.`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={buttonClass({ className: 'mt-8' })}
+            >
+              <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden /> Falar com a DAMA
+            </a>
+          </Frame>
+        ) : aberto ? (
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-medium tracking-tight">Tudo certo por aí?</h2>
+              <p className="mt-2 max-w-[48ch] text-sm text-ds-muted">
+                {pacotes ? 'Escolha um dos pacotes acima para aprovar.' : 'Aprovando, a gente já reserva a agenda e combina o início com você.'} Ficou alguma
+                dúvida? Fala com a gente.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href={whats(`Olá! Tenho uma dúvida sobre a proposta ${orc.numero}.`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonClass({ variant: 'secondary', size: 'lg' })}
+              >
+                <MessageCircle className="size-4" strokeWidth={1.5} aria-hidden /> Tirar dúvida
+              </a>
+              {!pacotes && (
+                <Button size="lg" onClick={() => onAprovar(null)}>
+                  <Check className="size-4" strokeWidth={1.5} aria-hidden /> Aprovar proposta
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <Alert tone="warning" title={orc.status === 'expirado' ? 'Esta proposta venceu' : 'Esta proposta foi recusada'}>
+            Se ainda tiver interesse, fala com a gente que preparamos uma versão atualizada.
+          </Alert>
+        )}
+      </section>
+
+      <footer className="border-t border-ds-line py-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="ds-annot">DAMA Digital · Santos · SP</p>
+          <p className="ds-annot">(13) 99743-4878 · damadigitalcriativa.com.br</p>
+        </div>
+      </footer>
+    </main>
+  );
+}
+
+const SITUACAO: Record<OrcamentoPublico['status'], string> = {
+  rascunho: 'Em preparo',
+  enviado: 'Aguardando sua resposta',
+  visualizado: 'Aguardando sua resposta',
+  aprovado: 'Aprovada',
+  recusado: 'Recusada',
+  expirado: 'Vencida',
+};
+
+function Linha({ label, valor }: { label: string; valor: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 text-ds-muted">
+      <span>{label}</span>
+      <span className="font-ds-mono tabular-nums">{valor}</span>
+    </div>
+  );
+}
+
+function Item({ item, index }: { item: OrcamentoItem; index: number }) {
+  const detalhes = detalhesDe(item);
+  const v = valorItem(item);
+  const m = Number(item.valor_mensal) || 0;
+  return (
+    <li className="print-avoid grid gap-x-6 gap-y-2 border-b border-ds-line py-5 sm:grid-cols-[2.5rem_1fr_auto]">
+      <span className="ds-annot tabular-nums">_{String(index + 1).padStart(2, '0')}</span>
+      <div className="min-w-0">
+        <p className="text-base font-medium text-ds-fg">
+          {item.nome}
+          {Number(item.quantidade) > 1 && <span className="ds-annot ml-2">× {item.quantidade}</span>}
+        </p>
+        {item.categoria && <p className="ds-annot mt-0.5">{item.categoria}</p>}
+        {item.descricao && <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-ds-muted">{item.descricao}</p>}
+        {detalhes.length > 0 && (
+          <ul className="mt-3 space-y-1.5">
+            {detalhes.map((d, i) => (
+              <li key={i} className="flex items-baseline gap-2 text-sm text-ds-muted">
+                <span className="size-1 shrink-0 translate-y-[-2px] bg-ds-accent" aria-hidden />
+                <span className="flex-1">{d.texto}</span>
+                {d.valor ? <span className="font-ds-mono text-xs tabular-nums">{brl(Number(d.valor))}</span> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className="text-left sm:text-right">
+        {(v > 0 || !m) && <p className="font-ds-mono text-base tabular-nums text-ds-fg">{brl(v)}</p>}
+        {m > 0 && (
+          <p className="font-ds-mono text-sm tabular-nums text-ds-muted">
+            {v > 0 && '+ '}
+            {brl(m)}/mês
+          </p>
+        )}
+        {m > 0 && item.descricao_mensal && <p className="ds-annot mt-0.5">{item.descricao_mensal}</p>}
+      </div>
+    </li>
+  );
+}
+
+function Pacotes({ orc, aberto, onAprovar }: { orc: OrcamentoPublico; aberto: boolean; onAprovar: (pacote: string) => void }) {
+  const grupos = new Map<string, { nome: string; destaque: boolean; itens: OrcamentoItem[] }>();
+  for (const item of orc.itens) {
+    const nome = item.pacote || 'Padrão';
+    const g = grupos.get(nome) ?? { nome, destaque: false, itens: [] };
+    g.destaque ||= Boolean(item.pacote_destaque);
+    g.itens.push(item);
+    grupos.set(nome, g);
+  }
+
+  return (
+    <div className="grid gap-2 md:grid-cols-3">
+      {[...grupos.values()].map((p) => {
+        const total = p.itens.reduce((s, i) => s + valorItem(i), 0);
+        const mensal = p.itens.reduce((s, i) => s + (Number(i.valor_mensal) || 0), 0);
+        const escolhido = orc.status === 'aprovado' && orc.pacote_escolhido === p.nome;
+        return (
+          <Frame key={p.nome} className={cn('print-avoid flex flex-col p-5', p.destaque || escolhido ? 'bg-ds-surface [--ds-corner:var(--ds-accent)]' : '')}>
+            <p className="ds-annot h-4 uppercase text-ds-accent!">{escolhido ? 'escolhido' : p.destaque ? 'recomendado' : ''}</p>
+            <p className="mt-2 text-lg font-medium tracking-tight">{p.nome}</p>
+            <p className="mt-4 text-2xl font-medium tracking-tight tabular-nums">{brl(total)}</p>
+            {mensal > 0 && <p className="ds-annot">+ {brl(mensal)}/mês</p>}
+            <ul className="mt-5 flex-1 space-y-2 border-t border-ds-line pt-4">
+              {p.itens.map((i) => (
+                <li key={i.id} className="flex items-start gap-2 text-sm text-ds-muted">
+                  <Check className="mt-0.5 size-3.5 shrink-0 text-ds-accent" strokeWidth={2} aria-hidden />
+                  <span>
+                    {i.nome}
+                    {i.descricao && <span className="block text-xs text-ds-subtle">{i.descricao}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {aberto && (
+              <Button variant={p.destaque ? 'primary' : 'secondary'} className="no-print mt-6 w-full" onClick={() => onAprovar(p.nome)}>
+                Escolher este pacote
+              </Button>
+            )}
+          </Frame>
+        );
+      })}
+    </div>
   );
 }
