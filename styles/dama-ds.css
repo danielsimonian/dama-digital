@@ -150,9 +150,12 @@
   color: var(--ds-accent-fg);
 }
 
-.ds :focus-visible {
-  outline: 2px solid var(--ds-accent);
-  outline-offset: 2px;
+/* em @layer base para que `focus-visible:outline-none` dos campos (borda + anel) vença */
+@layer base {
+  .ds :focus-visible {
+    outline: 2px solid var(--ds-accent);
+    outline-offset: 2px;
+  }
 }
 
 @layer utilities {
