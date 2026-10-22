@@ -73,8 +73,8 @@ export default function InicioPage() {
         sub={hoje}
         title={`${saudacao()}${nome ? `, ${nome}` : ''}`}
         actions={
-          <ButtonLink size="sm" href="/painel/pessoas?novo=1">
-            <UserPlus className="size-4" strokeWidth={1.5} aria-hidden /> Nova pessoa
+          <ButtonLink size="sm" href="/painel/clientes?novo=1">
+            <UserPlus className="size-4" strokeWidth={1.5} aria-hidden /> Novo cliente
           </ButtonLink>
         }
       />
@@ -82,7 +82,7 @@ export default function InicioPage() {
         <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
           {r ? (
             <>
-              <KpiTile label="Pessoas" value={String(r.pessoas)} note={r.leads ? `+ ${r.leads} lead${r.leads === 1 ? '' : 's'}` : 'cadastradas'} />
+              <KpiTile label="Clientes" value={String(r.pessoas)} note={r.leads ? `+ ${r.leads} lead${r.leads === 1 ? '' : 's'}` : 'cadastrados'} />
               <KpiTile label="Alunos ativos" value={String(r.alunos)} note="DAMA Studio · música" />
               <KpiTile label="Orçamentos abertos" value={String(r.abertos.length)} note={`${r.aprovadosAno} aprovado${r.aprovadosAno === 1 ? '' : 's'} em ${new Date().getFullYear()}`} />
               <KpiTile

@@ -3,11 +3,10 @@
 import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, UserPlus, MessageCircle, Pencil, FileText, Mail } from 'lucide-react';
-import { supabase, type Cliente, type Divisao, type Lancamento, type Orcamento, type Papel, type PessoaStatus, type Responsavel } from '@/lib/supabase';
-import { cn, Button, Avatar, Alert, DivisionBadge } from '@/components/ds/primitives';
-import { Drawer, Modal, useToast } from '@/components/ds/interactive';
-import { TextField, TextArea, SelectField, Checkbox } from '@/components/ds/fields';
+import { Search, UserPlus, MessageCircle, Pencil, FileText, ArrowUpRight } from 'lucide-react';
+import { supabase, type Cliente, type Lancamento, type Orcamento, type Papel } from '@/lib/supabase';
+import { Button, ButtonLink, Avatar, Alert, DivisionBadge } from '@/components/ds/primitives';
+import { Drawer } from '@/components/ds/interactive';
 import { PapelBadge } from '@/components/ds/admin/display';
 import { DataTable, type Column } from '@/components/ds/admin/table';
 import { ScreenHeader, Chips } from '../_components/ui';
@@ -15,72 +14,11 @@ import { ListaLancamentos } from '../_components/Lancamentos';
 import { AulasDaPessoa } from './_components/Aulas';
 import { PortalAcesso } from './_components/Portal';
 import { ConteudoDaPessoa } from './_components/Conteudo';
+import { ClienteModal } from './_components/ClienteModal';
+import { formatarDesde, ORC_STATUS, RESP_FOTO, RESP_LABEL, STATUS_LABEL } from './_lib';
 import { whatsappUrl } from '../_lib';
 
-const PAPEIS: { id: Papel; label: string; desc: string }[] = [
-  { id: 'aluno', label: 'Aluno', desc: 'aulas de música · DAMA Studio' },
-  { id: 'estudio', label: 'Estúdio', desc: 'gravação, mix, produção' },
-  { id: 'tech', label: 'Tech', desc: 'sites e sistemas' },
-  { id: 'sports', label: 'Sports', desc: 'torneios e eventos' },
-];
-
-const STATUS_LABEL: Record<PessoaStatus, string> = { ativo: 'Ativo', pausado: 'Pausado', lead: 'Lead' };
-const RESP_LABEL: Record<Responsavel, string> = { daniel: 'Daniel Simonian', marcella: 'Marcella Lima' };
-const RESP_FOTO: Record<Responsavel, string> = { daniel: '/images/daniel.png', marcella: '/images/marcella.png' };
-
-const ORC_STATUS: Record<Orcamento['status'], string> = {
-  rascunho: 'rascunho',
-  enviado: 'enviado',
-  visualizado: 'visualizado',
-  aprovado: 'aprovado',
-  recusado: 'recusado',
-  expirado: 'expirado',
-};
-
 type OrcResumo = Pick<Orcamento, 'id' | 'numero' | 'projeto_titulo' | 'status' | 'divisao' | 'data_emissao'>;
-
-type Form = {
-  id?: string;
-  nome: string;
-  papeis: Papel[];
-  status: PessoaStatus;
-  telefone: string;
-  email: string;
-  empresa: string;
-  documento: string;
-  instrumento: string;
-  responsavel: Responsavel | '';
-  notas: string;
-};
-
-const VAZIO: Form = { nome: '', papeis: [], status: 'ativo', telefone: '', email: '', empresa: '', documento: '', instrumento: '', responsavel: '', notas: '' };
-
-function paraForm(c: Cliente): Form {
-  return {
-    id: c.id,
-    nome: c.nome,
-    papeis: c.papeis ?? [],
-    status: c.status ?? 'ativo',
-    telefone: c.telefone ?? '',
-    email: c.email ?? '',
-    empresa: c.empresa ?? '',
-    documento: c.documento ?? '',
-    instrumento: c.instrumento ?? '',
-    responsavel: c.responsavel ?? '',
-    notas: c.notas ?? '',
-  };
-}
-
-// o portal ainda lê `areas` (divisões)
-function areasDosPapeis(papeis: Papel[]): Divisao[] {
-  const areas = new Set<Divisao>();
-  for (const p of papeis) areas.add(p === 'aluno' || p === 'estudio' ? 'studio' : p);
-  return [...areas];
-}
-
-function formatarDesde(data: string) {
-  return new Date(data).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', '').replace(' de ', ' ');
-}
 
 /* ------------------------------------------------------------------ */
 /* Ficha                                                               */
@@ -120,6 +58,10 @@ function Ficha({ p, onEditar, onMudou }: { p: Cliente; onEditar: () => void; onM
           </div>
         </div>
       </div>
+
+      <ButtonLink href={`/painel/clientes/${p.id}`} variant="secondary" size="sm" className="h-10 w-full">
+        Abrir página do cliente <ArrowUpRight className="size-4" strokeWidth={1.5} aria-hidden />
+      </ButtonLink>
 
       <div className="grid grid-cols-2 gap-2">
         {wa ? (
@@ -217,8 +159,7 @@ function Ficha({ p, onEditar, onMudou }: { p: Cliente; onEditar: () => void; onM
 /* Tela                                                                */
 /* ------------------------------------------------------------------ */
 
-function PessoasTela() {
-  const toast = useToast();
+function ClientesTela() {
   const router = useRouter();
   const params = useSearchParams();
   const [pessoas, setPessoas] = useState<Cliente[] | null>(null);
@@ -227,8 +168,7 @@ function PessoasTela() {
   const [filtro, setFiltro] = useState<'todos' | Papel | 'sem'>('todos');
   const [sel, setSel] = useState<string | null>(null);
   const [drawer, setDrawer] = useState(false);
-  const [form, setForm] = useState<Form | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  const [editar, setEditar] = useState<Cliente | 'novo' | null>(null);
   const [versao, setVersao] = useState(0);
   const [pedido, setPedido] = useState('');
 
@@ -248,14 +188,14 @@ function PessoasTela() {
   if (queryUrl !== pedido) {
     setPedido(queryUrl);
     const id = params.get('id');
-    if (params.get('novo') === '1') setForm(VAZIO);
+    if (params.get('novo') === '1') setEditar('novo');
     else if (id) {
       setSel(id);
       if (typeof window !== 'undefined' && window.innerWidth < 1280) setDrawer(true);
     }
   }
   useEffect(() => {
-    if (queryUrl) router.replace('/painel/pessoas');
+    if (queryUrl) router.replace('/painel/clientes');
   }, [queryUrl, router]);
 
   const lista = pessoas ?? [];
@@ -267,40 +207,6 @@ function PessoasTela() {
     return okPapel && okBusca;
   });
   const atual = lista.find((p) => p.id === sel) ?? filtradas[0] ?? null;
-
-  const salvar = async () => {
-    if (!form) return;
-    if (!form.nome.trim()) {
-      toast({ tone: 'danger', title: 'O nome é obrigatório' });
-      return;
-    }
-    setSalvando(true);
-    const dados = {
-      nome: form.nome.trim(),
-      papeis: form.papeis,
-      areas: areasDosPapeis(form.papeis),
-      status: form.status,
-      telefone: form.telefone.trim() || null,
-      email: form.email.trim() || null,
-      empresa: form.empresa.trim() || null,
-      documento: form.documento.trim() || null,
-      instrumento: form.papeis.includes('aluno') ? form.instrumento.trim() || null : null,
-      responsavel: form.responsavel || null,
-      notas: form.notas.trim() || null,
-    };
-    const res = form.id
-      ? await supabase.from('clientes').update(dados).eq('id', form.id).select('id').single()
-      : await supabase.from('clientes').insert(dados).select('id').single();
-    setSalvando(false);
-    if (res.error) {
-      toast({ tone: 'danger', title: 'Não foi possível salvar', description: res.error.message });
-      return;
-    }
-    toast({ tone: 'success', title: form.id ? 'Cadastro atualizado' : 'Pessoa cadastrada', description: dados.nome });
-    setSel(res.data.id);
-    setForm(null);
-    setVersao((v) => v + 1);
-  };
 
   const conta = (f: Papel) => lista.filter((p) => (p.papeis ?? []).includes(f)).length;
   const semPapel = lista.filter((p) => !(p.papeis ?? []).length).length;
@@ -349,15 +255,13 @@ function PessoasTela() {
     },
   ];
 
-  const papelSel = form?.papeis ?? [];
-
   return (
     <>
       <ScreenHeader
-        sub="alunos e clientes · um cadastro por pessoa"
-        title="Pessoas"
+        sub="pessoas e empresas · um cadastro por cliente"
+        title="Clientes"
         actions={
-          <Button size="sm" onClick={() => setForm(VAZIO)}>
+          <Button size="sm" onClick={() => setEditar('novo')}>
             <UserPlus className="size-4" strokeWidth={1.5} aria-hidden /> Cadastrar
           </Button>
         }
@@ -366,7 +270,7 @@ function PessoasTela() {
         <div className="min-w-0 p-4 md:p-6">
           {erro && (
             <div className="mb-4">
-              <Alert tone="danger" title="Erro ao carregar pessoas">
+              <Alert tone="danger" title="Erro ao carregar clientes">
                 {erro}
               </Alert>
             </div>
@@ -378,7 +282,7 @@ function PessoasTela() {
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 placeholder="Buscar nome, empresa, contato"
-                aria-label="Buscar pessoa"
+                aria-label="Buscar cliente"
                 className="h-8 w-full rounded-ds-xs border border-ds-line bg-ds-surface pl-8 pr-2 text-sm outline-none focus:border-ds-accent"
               />
             </div>
@@ -407,13 +311,13 @@ function PessoasTela() {
             }}
             empty={
               <p className="border-y border-ds-line py-10 text-center text-sm text-ds-subtle">
-                {busca ? `Ninguém com “${busca}”.` : 'Ninguém aqui ainda.'} Cadastre pelo botão acima ou pelo ⌘K.
+                {busca ? `Nenhum cliente com “${busca}”.` : 'Nenhum cliente ainda.'} Cadastre pelo botão acima ou pelo ⌘K.
               </p>
             }
           />
         </div>
         <aside className="hidden border-l border-ds-line p-5 xl:block">
-          {atual ? <Ficha p={atual} onEditar={() => setForm(paraForm(atual))} onMudou={() => setVersao((v) => v + 1)} /> : <p className="text-sm text-ds-subtle">Selecione uma pessoa.</p>}
+          {atual ? <Ficha p={atual} onEditar={() => setEditar(atual)} onMudou={() => setVersao((v) => v + 1)} /> : <p className="text-sm text-ds-subtle">Selecione um cliente.</p>}
         </aside>
       </div>
 
@@ -424,87 +328,32 @@ function PessoasTela() {
             onMudou={() => setVersao((v) => v + 1)}
             onEditar={() => {
               setDrawer(false);
-              setForm(paraForm(atual));
+              setEditar(atual);
             }}
           />
         )}
       </Drawer>
 
-      <Modal
-        open={!!form}
-        onClose={() => setForm(null)}
-        index={form?.id ? 'editar cadastro' : 'nome e WhatsApp bastam · o resto pode vir depois'}
-        title={form?.id ? form.nome || 'Pessoa' : 'Nova pessoa'}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setForm(null)}>
-              Cancelar
-            </Button>
-            <Button onClick={salvar} loading={salvando}>
-              Salvar
-            </Button>
-          </>
-        }
-      >
-        {form && (
-          // -m-1 p-1: o contorno de foco (2px + 2px de offset) não é cortado pela rolagem
-          <div className="-m-1 max-h-[60vh] space-y-4 overflow-y-auto p-1 pr-2">
-            <TextField label="Nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} autoFocus />
-            <TextField label="WhatsApp" type="tel" optional value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} placeholder="(13) 99999-9999" />
-            <fieldset>
-              <legend className="mb-1 text-sm text-ds-fg">Papéis</legend>
-              <div className="grid grid-cols-2 gap-x-3">
-                {PAPEIS.map((r) => (
-                  <Checkbox
-                    key={r.id}
-                    label={r.label}
-                    description={r.desc}
-                    checked={papelSel.includes(r.id)}
-                    onChange={(e) =>
-                      setForm({ ...form, papeis: e.target.checked ? [...form.papeis, r.id] : form.papeis.filter((x) => x !== r.id) })
-                    }
-                  />
-                ))}
-              </div>
-            </fieldset>
-            {papelSel.includes('aluno') && (
-              <TextField label="Instrumento" optional value={form.instrumento} onChange={(e) => setForm({ ...form, instrumento: e.target.value })} placeholder="Violão, piano, canto…" />
-            )}
-            <div className="grid grid-cols-2 gap-3">
-              <SelectField
-                label="Status"
-                value={form.status}
-                onChange={(e) => setForm({ ...form, status: e.target.value as PessoaStatus })}
-                options={(Object.keys(STATUS_LABEL) as PessoaStatus[]).map((s) => ({ value: s, label: STATUS_LABEL[s] }))}
-              />
-              <SelectField
-                label="Responsável"
-                value={form.responsavel}
-                onChange={(e) => setForm({ ...form, responsavel: e.target.value as Responsavel | '' })}
-                options={[
-                  { value: '', label: '—' },
-                  { value: 'daniel', label: 'Daniel' },
-                  { value: 'marcella', label: 'Marcella' },
-                ]}
-              />
-            </div>
-            <TextField label="E-mail" type="email" optional value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} leading={<Mail className="size-4" strokeWidth={1.5} />} />
-            <div className="grid grid-cols-2 gap-3">
-              <TextField label="Empresa" optional value={form.empresa} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
-              <TextField label="CPF/CNPJ" optional value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
-            </div>
-            <TextArea label="Notas" optional value={form.notas} onChange={(e) => setForm({ ...form, notas: e.target.value })} className={cn('min-h-20')} />
-          </div>
-        )}
-      </Modal>
+      {editar && (
+        <ClienteModal
+          key={editar === 'novo' ? 'novo' : editar.id}
+          cliente={editar}
+          onClose={() => setEditar(null)}
+          onSalvo={(id) => {
+            setSel(id);
+            setEditar(null);
+            setVersao((v) => v + 1);
+          }}
+        />
+      )}
     </>
   );
 }
 
-export default function PessoasPage() {
+export default function ClientesPage() {
   return (
     <Suspense>
-      <PessoasTela />
+      <ClientesTela />
     </Suspense>
   );
 }

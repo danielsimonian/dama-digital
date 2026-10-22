@@ -226,7 +226,7 @@ export default function FinanceiroPage() {
               <input
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar pessoa ou descrição"
+                placeholder="Buscar cliente ou descrição"
                 aria-label="Buscar lançamento"
                 className="h-8 w-full rounded-ds-xs border border-ds-line bg-ds-surface pl-8 pr-2 text-sm outline-none focus:border-ds-accent"
               />

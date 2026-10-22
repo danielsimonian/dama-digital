@@ -86,7 +86,7 @@ export function AgendarModal({
 
   const salvar = async () => {
     if (!completo || !titulo.trim() || (tipo !== 'outro' && !clienteId)) {
-      toast({ tone: 'danger', title: 'Preencha pessoa, título, data e hora' });
+      toast({ tone: 'danger', title: 'Preencha cliente, título, data e hora' });
       return;
     }
     setSalvando(true);
@@ -146,7 +146,7 @@ export function AgendarModal({
           />
         )}
         <SelectField
-          label="Pessoa"
+          label="Cliente"
           optional={tipo === 'outro'}
           value={clienteId}
           placeholder="Escolha"

@@ -13,7 +13,7 @@ Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design Sys
 ## Last Session Summary (21/10/2026)
 
 **`/painel` — admin novo (PRs #1, #3–#8), substitui o `/admin`:**
-- Telas: Início (hoje, KPIs), Pessoas (ficha com aulas, orçamentos, financeiro, conteúdo das aulas, acesso ao portal), Agenda (semana, presença, reposição), Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K
+- Telas: Início (hoje, KPIs), Clientes (lista com ficha rápida + página dedicada `/painel/clientes/[id]` com totais, por divisão, financeiro, orçamentos, aulas, histórico, conteúdo e portal; `/painel/pessoas` redireciona), Agenda (semana, presença, reposição), Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K
 - Banco (`supabase/migrations/`): `catalogo_servicos`, `orcamento_versoes`, `lancamentos` (gatilho gera parcelas ao aprovar orçamento), `matriculas`, `pacotes_aulas`, `eventos_agenda` (`gerar_aulas` materializa aulas semanais; `aplicar_presenca` consome crédito)
 - Regras das aulas: pacote antecipado de 4 aulas (R$ 400) ou avulsa (R$ 130); horário fixo semanal; uma sala; realizada e falta gastam crédito, justificada não (permite reposição)
 - Histórico migrado: `servicos` (23) e `sessoes` (54) → `lancamentos`/`eventos_agenda` (coluna `legado`); tabelas antigas intactas. Orçamentos aprovados antes do painel não geraram lançamentos

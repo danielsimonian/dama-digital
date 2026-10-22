@@ -15,7 +15,7 @@ Leia o arquivo da skill antes de responder qualquer pedido relacionado a orçame
 **DAMA Digital** is a Brazilian creative agency platform built and operated by founders Daniel Simonian and Marcella Lima. The app consolidates three product areas:
 
 1. **Agency Website** — Home + three divisions: DAMA Tech (índigo), DAMA Sports (tijolo), DAMA Studio (musgo) — Design System v2
-2. **Admin (`/painel`)** — internal CRM: pessoas, agenda/aulas, financeiro, orçamentos, catálogo (the old `/admin` redirects here)
+2. **Admin (`/painel`)** — internal CRM: clientes, agenda/aulas, financeiro, orçamentos, catálogo (the old `/admin` redirects here)
 3. **Client Portal** — password-gated per-client area with sessions, content and charges tabs
 4. **Labs** — experimental products: Poker Pay (cash game + tournament manager) and Fidelidade Digital (loyalty card system)
 
@@ -28,7 +28,7 @@ The app is deployed on Vercel. Backend is 100% serverless: Supabase (PostgreSQL 
 **Branch ativa:** `main` (produção) — domínio oficial: https://www.damadigitalcriativa.com.br
 
 **Atualizado em 21/10/2026** (detalhes em `STATUS.md`):
-- **Admin novo `/painel`** no ar (PRs #1–#8): Início, Pessoas, Agenda, Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K. o `/admin` antigo foi apagado — os endereços antigos redirecionam para o painel (`next.config.ts`)
+- **Admin novo `/painel`** no ar (PRs #1–#8): Início, Clientes (lista + página por cliente), Agenda, Financeiro, Orçamentos (gerador v2), Catálogo, ⌘K. o `/admin` antigo foi apagado — os endereços antigos redirecionam para o painel (`next.config.ts`)
 - **Segurança** (PRs #2, #7): RLS só para `public.equipe`; portal e orçamento público via funções SECURITY DEFINER; senha do portal com hash bcrypt
 - **Site público no Design System v2** (PRs #9, #10): Home, `/tech`, `/sports`, `/sports/[slug]`, `/studio`, `/studio/artistas`. `/labs` (índice) também; Poker Pay e Fidelidade mantêm a interface própria
 - **Design System v2** em `/designsystem` e `/designsystem/admin` (catálogo; `noindex`). Linguagem "manual de campo": base monocromática, hairlines, cantos marcados, anotações em Geist Mono, acento só por divisão
@@ -71,7 +71,8 @@ app/
 ├── painel/                       # Admin novo — requires Supabase auth + public.equipe
 │   ├── entrar/                   # Login
 │   ├── page.tsx                  # Início: KPIs, aulas de hoje, orçamentos abertos
-│   ├── pessoas/                  # Cadastro único (papéis aluno/estúdio/tech/sports) + ficha (aulas, orçamentos, financeiro, conteúdo, portal)
+│   ├── clientes/                 # Cadastro único de pessoas e empresas (papéis aluno/estúdio/tech/sports) + ficha rápida (/painel/pessoas redireciona)
+│   │   └── [id]/                 # Página do cliente: recebido/a receber/atraso, por divisão, financeiro, orçamentos, aulas, histórico, conteúdo, portal
 │   ├── agenda/                   # Semana: aulas recorrentes, sessões, presença, reposição
 │   ├── financeiro/               # Lançamentos: recebido × a receber, atrasados
 │   ├── orcamentos/               # Lista + [id] editor v2 (QuoteBuilder)
@@ -97,7 +98,7 @@ app/
 
 ### Data layer
 
-- **Supabase** handles: `clientes` (pessoas), `orcamentos`, `orcamento_itens`, `orcamento_versoes`, `catalogo_servicos`, `lancamentos`, `matriculas`, `pacotes_aulas`, `eventos_agenda`, `aulas_modulos`/`aulas_conteudos`, `equipe`, `portal_sessoes`. Legacy `servicos`, `sessoes`, `pagamentos` kept untouched (migrated to `lancamentos`/`eventos_agenda`)
+- **Supabase** handles: `clientes` (pessoas e empresas), `orcamentos`, `orcamento_itens`, `orcamento_versoes`, `catalogo_servicos`, `lancamentos`, `matriculas`, `pacotes_aulas`, `eventos_agenda`, `aulas_modulos`/`aulas_conteudos`, `equipe`, `portal_sessoes`. Legacy `servicos`, `sessoes`, `pagamentos` kept untouched (migrated to `lancamentos`/`eventos_agenda`)
 - **Redis** handles: poker player registry, poker sessions (7-day TTL), poker groups, loyalty shops
 - **Migrations** are versioned in `supabase/migrations/` and applied via the Supabase MCP (`apply_migration`)
 - **Site content** (projects, tournaments, releases, services) lives in `lib/site-data.ts` + `lib/sports-events.ts` + `lib/constants.ts`
