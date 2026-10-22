@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowUpRight, Compass, Globe, LayoutDashboard, Plug, Smartphone, Workflow } from 'lucide-react';
 import { SitePage, SiteSection, ContactSection } from '@/components/ds/page';
 import { Reveal } from '@/components/ds/reveal';
-import { buttonClass, Eyebrow, Frame, SplitTitle } from '@/components/ds/primitives';
+import { ArrowLink, buttonClass, Eyebrow, Frame, SplitTitle } from '@/components/ds/primitives';
 import { ProjectCard } from '@/components/ds/cards';
 import { ProcessNodes } from '@/components/ds/diagram';
 import { process, projects, techLabs, techServices } from '@/lib/site-data';
@@ -93,7 +93,13 @@ export default function DamaTechPage() {
       </SiteSection>
 
       {/* ── Labs ── */}
-      <SiteSection index="04" eyebrow="DAMA Labs" top="Ideias que a gente põe pra rodar" bottom="produtos internos, abertos para testar">
+      <SiteSection
+        index="04"
+        eyebrow="DAMA Labs"
+        top="Ideias que a gente põe pra rodar"
+        bottom="produtos internos, abertos para testar"
+        aside={<ArrowLink href="/labs">Ver todos os Labs</ArrowLink>}
+      >
         <div className="grid gap-2 md:grid-cols-2">
           {techLabs.map((l, i) => (
             <Link key={l.href} href={l.href} className="group">
