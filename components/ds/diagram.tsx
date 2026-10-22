@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
+import { useRef, useState } from 'react';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 import type { Divisao } from '@/lib/supabase';
 import { cn, DIVISAO_LABEL } from './primitives';
 
@@ -42,6 +42,10 @@ export function DivisionDiagram({
   const [inner, setInner] = useState<Divisao | null>(null);
   const active = controlled !== undefined ? controlled : inner;
   const reduce = useReducedMotion();
+  // o Safari do iPhone não dispara o "entrou na tela" em elementos internos do SVG;
+  // observamos a caixa de fora e animamos tudo a partir dela
+  const ref = useRef<HTMLDivElement>(null);
+  const visto = useInView(ref, { once: true, amount: 0.2 });
   const set = (d: Divisao | null) => {
     setInner(d);
     onActiveChange?.(d);
@@ -52,8 +56,7 @@ export function DivisionDiagram({
       ? {}
       : {
           initial: { pathLength: 0, opacity: 0 },
-          whileInView: { pathLength: 1, opacity: 1 },
-          viewport: { once: true },
+          animate: visto ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 },
           transition: { pathLength: { duration: 1.4, ease: EASE, delay }, opacity: { duration: 0.2, delay } },
         };
 
@@ -62,13 +65,12 @@ export function DivisionDiagram({
       ? {}
       : {
           initial: { opacity: 0 },
-          whileInView: { opacity: 1 },
-          viewport: { once: true },
+          animate: { opacity: visto ? 1 : 0 },
           transition: { duration: 0.6, delay },
         };
 
   return (
-    <div className={cn('w-full', className)}>
+    <div ref={ref} className={cn('w-full', className)}>
       <svg viewBox="0 0 500 410" className="h-auto w-full overflow-visible" role="img" aria-label="Diagrama das três divisões da DAMA: Tech, Sports e Studio, ligadas ao núcleo DAMA">
         {/* eixos de construção */}
         <g className="stroke-ds-line" strokeWidth={1} fill="none">
