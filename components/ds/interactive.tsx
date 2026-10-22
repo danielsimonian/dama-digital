@@ -195,7 +195,8 @@ export function Tabs({
               onClick={() => setActive(t.id)}
               onKeyDown={(e) => onKey(e, i)}
               className={cn(
-                'relative inline-flex h-10 shrink-0 items-center gap-2 px-3 text-sm transition-colors',
+                // contorno para dentro: a lista rola na horizontal e cortaria o de fora
+                'relative inline-flex h-10 shrink-0 items-center gap-2 px-3 text-sm transition-colors focus-visible:-outline-offset-2!',
                 variant === 'line'
                   ? selected
                     ? 'text-ds-fg'
