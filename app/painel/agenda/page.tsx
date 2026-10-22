@@ -195,7 +195,7 @@ export default function AgendaPage() {
             <p className="ds-annot py-10 text-center">carregando…</p>
           ) : blocos.length === 0 ? (
             <p className="border-y border-ds-line py-10 text-center text-sm text-ds-subtle">
-              Semana livre. As aulas aparecem aqui sozinhas a partir das matrículas (ficha da pessoa).
+              Semana livre. As aulas aparecem aqui sozinhas a partir das matrículas (página do cliente).
             </p>
           ) : (
             <WeekCalendar
@@ -230,7 +230,7 @@ export default function AgendaPage() {
               </div>
 
               {atual.cliente_id && (
-                <Link href={`/painel/pessoas?id=${atual.cliente_id}`} className="flex w-full items-center gap-3 border border-ds-line p-3 text-left hover:bg-ds-surface">
+                <Link href={`/painel/clientes/${atual.cliente_id}`} className="flex w-full items-center gap-3 border border-ds-line p-3 text-left hover:bg-ds-surface">
                   <Avatar name={nomes[atual.cliente_id] ?? '?'} size="sm" />
                   <span className="min-w-0 flex-1 truncate text-sm">{nomes[atual.cliente_id]}</span>
                   <Seta className="size-4 text-ds-subtle" strokeWidth={1.5} aria-hidden />

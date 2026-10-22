@@ -67,7 +67,7 @@ export function HojePanel() {
               <li key={e.id} className="flex flex-wrap items-center gap-3 py-3">
                 <span className="w-12 font-ds-mono text-xs tabular-nums text-ds-muted">{horaTexto(ini)}</span>
                 <span className={cn('h-8 w-0.5', e.tipo === 'aula' ? 'bg-ds-accent' : 'bg-ds-accent/40')} />
-                <Link href={e.cliente_id ? `/painel/pessoas?id=${e.cliente_id}` : '/painel/agenda'} className="min-w-0 flex-1">
+                <Link href={e.cliente_id ? `/painel/clientes/${e.cliente_id}` : '/painel/agenda'} className="min-w-0 flex-1">
                   <span className="block truncate text-sm text-ds-fg hover:underline">{e.cliente?.nome ?? e.titulo}</span>
                   <span className="block truncate text-xs text-ds-muted">{e.cliente ? e.titulo : e.tipo === 'sessao' ? 'Sessão de estúdio' : 'Agenda'}</span>
                 </Link>

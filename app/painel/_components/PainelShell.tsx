@@ -14,7 +14,7 @@ type Theme = 'light' | 'dark';
 
 const NAV: (NavItem & { href: string })[] = [
   { id: 'inicio', href: '/painel', label: 'Início', icon: <LayoutGrid /> },
-  { id: 'pessoas', href: '/painel/pessoas', label: 'Pessoas', icon: <Users /> },
+  { id: 'clientes', href: '/painel/clientes', label: 'Clientes', icon: <Users /> },
   { id: 'agenda', href: '/painel/agenda', label: 'Agenda', icon: <CalendarDays /> },
   { id: 'financeiro', href: '/painel/financeiro', label: 'Financeiro', icon: <Wallet /> },
   { id: 'orcamentos', href: '/painel/orcamentos', label: 'Orçamentos', icon: <FileText /> },
@@ -111,11 +111,11 @@ export function PainelShell({ children }: { children: ReactNode }) {
     const foto = profile?.avatar_url || FOTOS[nome.split(' ')[0].toLowerCase()] || null;
     const active = activeId(pathname);
     const commands: Command[] = [
-      { id: 'n-pessoa', group: 'Criar', label: 'Nova pessoa', icon: <UserPlus />, run: () => router.push('/painel/pessoas?novo=1') },
+      { id: 'n-cliente', group: 'Criar', label: 'Novo cliente', icon: <UserPlus />, run: () => router.push('/painel/clientes?novo=1') },
       { id: 'n-orc', group: 'Criar', label: 'Novo orçamento', icon: <FileText />, run: () => router.push('/painel/orcamentos/novo') },
       { id: 'n-item', group: 'Criar', label: 'Novo item no catálogo', icon: <Plus />, run: () => router.push('/painel/catalogo?novo=1') },
       ...NAV.map((n) => ({ id: `go-${n.id}`, group: 'Ir para', label: n.label, icon: n.icon, run: () => router.push(n.href) })),
-      ...pessoas.map((p) => ({ id: `p-${p.id}`, group: 'Pessoas', label: p.nome, icon: <Users />, run: () => router.push(`/painel/pessoas?id=${p.id}`) })),
+      ...pessoas.map((p) => ({ id: `p-${p.id}`, group: 'Clientes', label: p.nome, icon: <Users />, run: () => router.push(`/painel/clientes/${p.id}`) })),
     ];
 
     body = (

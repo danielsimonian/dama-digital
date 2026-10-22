@@ -7,8 +7,9 @@ const nextConfig: NextConfig = {
       { source: "/admin", destination: "/painel", permanent: false },
       { source: "/admin/login", destination: "/painel/entrar", permanent: false },
       { source: "/admin/configuracoes", destination: "/painel", permanent: false },
-      { source: "/admin/clientes", destination: "/painel/pessoas", permanent: false },
-      { source: "/admin/clientes/:id", destination: "/painel/pessoas?id=:id", permanent: false },
+      { source: "/admin/clientes", destination: "/painel/clientes", permanent: false },
+      { source: "/painel/pessoas", destination: "/painel/clientes", permanent: false },
+      { source: "/admin/clientes/:id", destination: "/painel/clientes/:id", permanent: false },
       { source: "/admin/orcamentos", destination: "/painel/orcamentos", permanent: false },
       { source: "/admin/orcamentos/:id", destination: "/painel/orcamentos/:id", permanent: false },
     ];

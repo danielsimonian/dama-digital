@@ -153,7 +153,7 @@ export function CommandPalette({ open, onClose, commands }: { open: boolean; onC
               }
               if (e.key === 'Enter' && filtered[idx]) run(filtered[idx]);
             }}
-            placeholder="Buscar pessoa, ir para tela ou criar…"
+            placeholder="Buscar cliente, ir para tela ou criar…"
             aria-label="Comando"
             className="h-14 flex-1 bg-transparent text-base outline-none placeholder:text-ds-subtle focus-visible:outline-none"
           />

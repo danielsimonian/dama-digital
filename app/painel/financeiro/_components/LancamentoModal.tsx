@@ -21,18 +21,21 @@ const ORIGEM_LABEL: Record<Lancamento['origem'], string> = {
 export function LancamentoModal({
   lancamento,
   clientes,
+  clienteInicial,
   onClose,
   onSalvo,
 }: {
   lancamento: Lancamento | 'novo';
   clientes: Pick<Cliente, 'id' | 'nome'>[];
+  /** cliente já escolhido num lançamento novo (página do cliente) */
+  clienteInicial?: string;
   onClose: () => void;
   onSalvo: () => void;
 }) {
   const toast = useToast();
   const l = lancamento === 'novo' ? null : lancamento;
   const [descricao, setDescricao] = useState(l?.descricao ?? '');
-  const [clienteId, setClienteId] = useState(l?.cliente_id ?? '');
+  const [clienteId, setClienteId] = useState(l?.cliente_id ?? clienteInicial ?? '');
   const [divisao, setDivisao] = useState<Divisao>(l?.divisao ?? 'studio');
   const [valor, setValor] = useState(l ? String(l.valor) : '');
   const [vencimento, setVencimento] = useState(l?.vencimento ?? hojeISO());
@@ -101,7 +104,7 @@ export function LancamentoModal({
       <div className="-m-1 max-h-[60vh] space-y-4 overflow-y-auto p-1 pr-2">
         <TextField label="Descrição" value={descricao} onChange={(e) => setDescricao(e.target.value)} autoFocus={!l} />
         <SelectField
-          label="Pessoa"
+          label="Cliente"
           optional
           value={clienteId}
           onChange={(e) => setClienteId(e.target.value)}
