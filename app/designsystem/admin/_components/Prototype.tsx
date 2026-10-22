@@ -760,7 +760,7 @@ export function AdminPrototype() {
                   onClick={() => setOrcSel(o.numero)}
                   aria-pressed={o.numero === orcSel}
                   data-divisao={o.divisao}
-                  className={cn('block w-full px-4 py-3 text-left transition-colors', o.numero === orcSel ? 'bg-ds-surface-2 shadow-[inset_0_-2px_0_var(--ds-accent)]' : 'hover:bg-ds-surface')}
+                  className={cn('block w-full px-4 py-3 text-left transition-colors focus-visible:-outline-offset-2!', o.numero === orcSel ? 'bg-ds-surface-2 shadow-[inset_0_-2px_0_var(--ds-accent)]' : 'hover:bg-ds-surface')}
                 >
                   <span className="flex items-center justify-between gap-2">
                     <span className="font-ds-mono text-xs text-ds-subtle">#{o.numero} · v{o.versao}</span>
