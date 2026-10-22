@@ -78,7 +78,7 @@ app/
 │   ├── orcamentos/               # Lista + [id] editor v2 (QuoteBuilder)
 │   └── catalogo/                 # Serviços e preços por divisão
 ├── cliente/[slug]/               # Client portal (DS v2) — password-gated per slug; data via RPC portal_painel (filtered by the ficha switches)
-├── orcamento/[slug]/             # Public quote view/approval page (RPCs orcamento_*)
+├── orcamento/[slug]/             # Public quote (DS v2, light theme, print = PDF): view/approve, packages supported (RPCs orcamento_*)
 ├── labs/
 │   ├── poker-pay/                # Cash game lobby, sessions, players, groups, ranking, report
 │   └── fidelidade/               # Loyalty store create + [slug] card view
@@ -116,7 +116,7 @@ app/
 
 1. **Single Next.js app** covers marketing site, admin, client portal, and labs — no separate services
 2. **Upstash Redis** for poker/loyalty: sessions are ephemeral and real-time; no need to persist in Postgres
-3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the public quote page. E-mail templates (`lib/email-templates.ts`) carry the DS accents as hex
+3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. All UI takes the accent from the DS (`data-divisao`, which must sit inside the `.ds` element); `DIVISAO_CONFIG` in `lib/supabase.ts` is no longer used by screens (kept because the `Divisao` type derives from it). E-mail templates (`lib/email-templates.ts`) carry the DS accents as hex
 4. **Password-protected client portal** uses a slug URL + bcrypt-hashed password (not Supabase Auth per-client — only 3 of 14 clients have e-mail)
 5. **Auto-save** in CashGame: 1-second debounce writes session state to Redis on every change
 6. **Quote lifecycle**: `rascunho → enviado → visualizado → aprovado | recusado | expirado`
@@ -161,7 +161,7 @@ Likely priorities:
 2. **Testar o Resend** — `RESEND_API_KEY` já está na Vercel; falta um envio real pelo briefing para confirmar o remetente
 3. **Catálogo de preços** do `/painel` ainda vazio (o `/designsystem` mostra "valor de exemplo")
 4. **Vídeos reais** — Home e divisões novas já não usam os placeholders
-5. **Quote PDF polish** — print CSS export could use layout refinement
+5. **PDF da proposta** — a página pública já imprime em tema claro; conferir o resultado do "Baixar PDF" em papel A4
 6. **💡 Ideia futura — DAMA Sports Fotos (estilo Banlek)** — planejado em 30/09/2026, ainda não iniciado. Atleta tira selfie e vê todas as suas fotos do torneio; fotógrafos convidados pelo admin fazem login, cadastram torneio e sobem fotos.
    - Fotos grátis no MVP (venda via Pix = fase 2)
    - Stack 100% gratuita: `@vladmandic/human` (reconhecimento facial no navegador) + pgvector no Supabase (`halfvec(1024)`, RPC `buscar_fotos_por_rosto`) + Cloudflare R2 free (10 GB, egress grátis) com `aws4fetch` para URLs de upload assinadas — deps já aprovadas pelo Daniel
@@ -185,7 +185,7 @@ Likely priorities:
 - **Scope**: Make only the change asked. Do not refactor surrounding code, add comments, or "clean up" unless asked.
 - **Quote generation**: Always read `skills/orcamentos/SKILL.md` before producing quote content.
 - **Supabase types**: All DB types are defined in `lib/supabase.ts`. Extend there when adding new fields — do not redeclare inline.
-- **Division colors**: In new UI (site and `/painel`), use the DS accent via `data-divisao` + `ds-accent` tokens and `DIVISAO_LABEL` from `components/ds/primitives`. In the legacy screens that still use it, use `DIVISAO_CONFIG` from `lib/supabase.ts`. Never hardcode division colors.
+- **Division colors**: In new UI (site and `/painel`), use the DS accent via `data-divisao` + `ds-accent` tokens and `DIVISAO_LABEL` from `components/ds/primitives`. Never hardcode division colors (except the e-mail templates, which need hex).
 - **Redis vs Supabase**: Poker and loyalty data lives in Redis. Client/quote/service data lives in Supabase. Don't mix.
 - **New pages**: Follow the existing App Router conventions — `page.tsx` inside a folder, `layout.tsx` only when needed.
 - **No mocks**: Do not mock Supabase or Redis in any code. Use the real clients.

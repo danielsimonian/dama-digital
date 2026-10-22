@@ -142,6 +142,9 @@ export type OrcamentoItem = {
   unidade?: CatalogoUnidade | null;
 };
 
+/** Retorno de `orcamento_publico(slug)`; rascunho volta só com o status. */
+export type OrcamentoPublico = Omit<Orcamento, 'cliente' | 'itens'> & { cliente: { nome: string } | null; itens: OrcamentoItem[] };
+
 export type OrcamentoVersao = {
   id: string;
   orcamento_id: string;
