@@ -243,6 +243,33 @@ export type EventoAgenda = {
   updated_at: string;
 };
 
+/** Retorno de `portal_painel(token)`: só o que os interruptores da ficha deixam o cliente ver. */
+export type PortalPainel = {
+  cliente: {
+    nome: string;
+    empresa: string | null;
+    papeis: Papel[];
+    ver_sessoes: boolean;
+    ver_servicos: boolean;
+    ver_conteudo: boolean;
+    ver_financeiro: boolean;
+    aluno: boolean;
+  };
+  lancamentos: Pick<Lancamento, 'id' | 'descricao' | 'origem' | 'divisao' | 'valor' | 'vencimento' | 'status' | 'pago_em' | 'forma'>[];
+  agenda: (Pick<EventoAgenda, 'id' | 'tipo' | 'titulo' | 'inicio' | 'fim' | 'presenca'> & { reposicao: boolean; valor: number | null; pago: boolean | null })[];
+  matriculas: {
+    id: string;
+    instrumento: string | null;
+    modalidade: Matricula['modalidade'];
+    horarios: HorarioAula[];
+    duracao_min: number;
+    aulas_por_pacote: number;
+    pacotes: { numero: number; total: number; pago: boolean; usos: { presenca: PresencaAgenda; reposicao: boolean }[] }[];
+  }[];
+  modulos: (Pick<AulaModulo, 'id' | 'titulo' | 'descricao'> & { conteudos: Pick<AulaConteudo, 'id' | 'tipo' | 'titulo' | 'descricao' | 'url' | 'conteudo'>[] })[];
+  orcamentos: (Pick<Orcamento, 'numero' | 'slug' | 'divisao' | 'status' | 'validade'> & { titulo: string; data: string; total: number })[];
+};
+
 // ============================================
 // FUNÇÕES AUXILIARES
 // ============================================
