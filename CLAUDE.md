@@ -77,7 +77,7 @@ app/
 │   ├── financeiro/               # Lançamentos: recebido × a receber, atrasados
 │   ├── orcamentos/               # Lista + [id] editor v2 (QuoteBuilder)
 │   └── catalogo/                 # Serviços e preços por divisão
-├── cliente/[slug]/               # Client portal — password-gated per slug (RPCs portal_*)
+├── cliente/[slug]/               # Client portal (DS v2) — password-gated per slug; data via RPC portal_painel (filtered by the ficha switches)
 ├── orcamento/[slug]/             # Public quote view/approval page (RPCs orcamento_*)
 ├── labs/
 │   ├── poker-pay/                # Cash game lobby, sessions, players, groups, ranking, report
@@ -116,7 +116,7 @@ app/
 
 1. **Single Next.js app** covers marketing site, admin, client portal, and labs — no separate services
 2. **Upstash Redis** for poker/loyalty: sessions are ephemeral and real-time; no need to persist in Postgres
-3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the portal and the public quote page. E-mail templates (`lib/email-templates.ts`) carry the DS accents as hex
+3. **Division system** (`tech` | `sports` | `studio`) is a first-class concept embedded in quotes, colors, routing, and config. New UI takes the accent from the DS (`data-divisao`); `DIVISAO_CONFIG` in `lib/supabase.ts` is still used by the public quote page. E-mail templates (`lib/email-templates.ts`) carry the DS accents as hex
 4. **Password-protected client portal** uses a slug URL + bcrypt-hashed password (not Supabase Auth per-client — only 3 of 14 clients have e-mail)
 5. **Auto-save** in CashGame: 1-second debounce writes session state to Redis on every change
 6. **Quote lifecycle**: `rascunho → enviado → visualizado → aprovado | recusado | expirado`
@@ -148,7 +148,7 @@ app/
 | `supabase/migrations/` | Migrações SQL versionadas (RLS, painel, portal) |
 | `components/labs/CashGame.tsx` | Largest file (1,257 lines) — full poker cash game manager |
 | `components/BriefingForm.tsx` | 544 lines — client briefing intake form |
-| `app/cliente/[slug]/page.tsx` | Client portal with Sessões / Conteúdo / Financeiro / Serviços tabs |
+| `app/cliente/[slug]/page.tsx` | Client portal (login + `_components/Portal.tsx`: Sessões/Aulas, Financeiro, Conteúdo, Orçamentos) |
 | `app/painel/` | Admin novo (ver Routing structure) |
 
 ---
