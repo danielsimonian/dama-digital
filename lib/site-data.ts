@@ -113,7 +113,8 @@ export const services: Service[] = [
     divisao: 'tech',
     name: 'Site institucional',
     desc: 'Site rápido, editável e pronto para aparecer no Google.',
-    from: 'R$ 3.900',
+    from: 'R$ —',
+    exemplo: true,
     unit: 'projeto',
     items: ['Design sob medida', 'Até 6 páginas', 'Formulário + WhatsApp', 'Publicação na Vercel'],
   },
@@ -121,7 +122,8 @@ export const services: Service[] = [
     divisao: 'sports',
     name: 'Cobertura de torneio',
     desc: 'Foto, vídeo e reels do primeiro saque à premiação.',
-    from: 'R$ 4.700',
+    from: 'R$ —',
+    exemplo: true,
     unit: 'evento',
     items: ['2 fotógrafos', 'Reel no mesmo dia', 'Galeria para atletas', 'Transmissão opcional'],
     highlight: true,
@@ -130,7 +132,8 @@ export const services: Service[] = [
     divisao: 'studio',
     name: 'Single completo',
     desc: 'Da pré-produção à faixa pronta nas plataformas.',
-    from: 'R$ 2.480',
+    from: 'R$ —',
+    exemplo: true,
     unit: 'faixa',
     items: ['Produção e arranjo', 'Mixagem e master', 'Distribuição digital', 'Capa para Spotify'],
   },
@@ -280,6 +283,6 @@ export const techServices = [
 ];
 
 export const techLabs = [
-  { name: 'Poker Pay', desc: 'Gerenciador de cash game e torneios de poker — fichas, entradas, reentradas e pagamentos em tempo real.', href: '/labs/poker-pay' },
-  { name: 'Fidelidade Digital', desc: 'Cartão fidelidade digital para qualquer negócio. Sem papel, sem app — funciona no navegador do cliente.', href: '/labs/fidelidade' },
+  { name: 'Poker Pay', tag: 'cash game · torneios · ranking', desc: 'Gerenciador de cash game e torneios de poker — fichas, entradas, reentradas e pagamentos em tempo real.', href: '/labs/poker-pay' },
+  { name: 'Fidelidade Digital', tag: 'fidelidade · QR code · negócios', desc: 'Cartão fidelidade digital para qualquer negócio. Sem papel, sem app — funciona no navegador do cliente.', href: '/labs/fidelidade' },
 ];

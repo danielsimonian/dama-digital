@@ -6,7 +6,7 @@
 
 ## Active Focus
 
-Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design System v2 — tudo em produção. Próximos: Labs no DS, limpeza do código antigo.
+Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design System v2 — tudo em produção. Próximos: catálogo de preços, teste real do formulário.
 
 ---
 
@@ -18,7 +18,7 @@ Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design Sys
 - Regras das aulas: pacote antecipado de 4 aulas (R$ 400) ou avulsa (R$ 130); horário fixo semanal; uma sala; realizada e falta gastam crédito, justificada não (permite reposição)
 - Histórico migrado: `servicos` (23) e `sessoes` (54) → `lancamentos`/`eventos_agenda` (coluna `legado`); tabelas antigas intactas. Orçamentos aprovados antes do painel não geraram lançamentos
 - Portal do cliente lê das tabelas novas (`portal_dados`)
-- `/admin` redireciona para o `/painel` (`next.config.ts`); só `/admin/orcamentos/[id]` segue vivo para orçamentos com **pacotes** (2 em aberto)
+- `/admin` antigo apagado; endereços antigos redirecionam para o `/painel` (`next.config.ts`). Os 2 orçamentos com pacotes (vencidos em 30/06) foram marcados como expirados
 
 **Segurança (PR #2 e #7):**
 - RLS: tabelas só para `public.equipe` (3 contas) via `is_equipe()`; portal e orçamento público só por funções SECURITY DEFINER
@@ -30,7 +30,8 @@ Admin novo (`/painel`) e site público (Home + Tech/Sports/Studio) no Design Sys
 - Home, `/tech`, `/sports`, `/sports/[slug]`, `/studio`, `/studio/artistas` usam `components/ds` (`SitePage`, `SiteSection`, `ContactSection` em `components/ds/page.tsx`)
 - Conteúdo centralizado em `lib/site-data.ts` (projetos, torneios, catálogo de 40 lançamentos, serviços…)
 - Briefing com envio real pelo `/api/send` e a divisão já escolhida em cada página
-- Ainda no visual antigo: `/labs` (e Poker Pay / Fidelidade)
+- `/labs` (índice) no DS; Poker Pay e Fidelidade mantêm a interface própria. Seções e header/footer antigos apagados
+- E-mails do formulário no estilo do DS (`lib/email-templates.ts`)
 
 ---
 
@@ -57,9 +58,8 @@ Commits em `main`: `ec3af0a` (design system do site) + `ec38115` (design system 
 ## Pendências
 
 - **Resend:** `RESEND_API_KEY` já está na Vercel (conferido em 21/10/2026 sem enviar e-mail); falta só um envio de teste real pelo site para confirmar o domínio remetente
-- **Código antigo para apagar:** seções da Home antiga (`components/sections/*`), `components/layout/Header|Footer` (só o `/labs` usa), `/admin` (depois dos 2 orçamentos com pacotes)
-- **Labs** no Design System
-- Preços ilustrativos no `/designsystem` (R$ 3.900 / 4.700 / 2.480)
+- **Catálogo de preços** do `/painel` vazio — o `/designsystem` mostra os cards de serviço como "valor de exemplo"
+- **Orçamentos com pacotes:** o gerador v2 não monta pacotes (trazer se voltar a usar)
 - Vídeos reais (`tech-placeholder.mp4`, `studio-placeholder.mp4` não são mais usados nas páginas novas)
 
 ---

@@ -71,7 +71,7 @@ function paraForm(c: Cliente): Form {
   };
 }
 
-// o /admin antigo e o portal ainda leem `areas` (divisões)
+// o portal ainda lê `areas` (divisões)
 function areasDosPapeis(papeis: Papel[]): Divisao[] {
   const areas = new Set<Divisao>();
   for (const p of papeis) areas.add(p === 'aluno' || p === 'estudio' ? 'studio' : p);
