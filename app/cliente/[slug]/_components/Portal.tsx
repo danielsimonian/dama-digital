@@ -62,7 +62,6 @@ export function PortalConteudo({ dados }: { dados: PortalPainel }) {
   const verDinheiro = c.ver_financeiro || c.ver_servicos || c.ver_sessoes;
   const abertos = lancamentos.filter((l) => l.status !== 'pago');
   const atrasados = abertos.filter((l) => situacao(l) === 'atrasado');
-  const pagos = lancamentos.filter((l) => l.status === 'pago');
   const primeiro = c.nome.trim().split(/\s+/)[0];
 
   const tabs = [
@@ -89,7 +88,8 @@ export function PortalConteudo({ dados }: { dados: PortalPainel }) {
             <span className="block text-ds-subtle">Tudo o que a gente faz junto, num lugar só.</span>
           </h1>
 
-          <div className="mt-10 grid grid-cols-2 gap-2 md:grid-cols-4">
+          {/* quanto o cliente já pagou no total fica só no /painel */}
+          <div className="mt-10 grid gap-2 sm:grid-cols-3">
             {verDinheiro && (
               <>
                 <Numero label="A pagar" valor={brl(soma(abertos))} nota={abertos.length ? `${abertos.length} em aberto` : 'tudo em dia'} />
@@ -99,7 +99,6 @@ export function PortalConteudo({ dados }: { dados: PortalPainel }) {
                   nota={atrasados.length ? `${atrasados.length} vencido${atrasados.length === 1 ? '' : 's'}` : 'nada vencido'}
                   alerta={atrasados.length > 0}
                 />
-                <Numero label="Já pago" valor={brl(soma(pagos))} nota={`${pagos.length} pagamento${pagos.length === 1 ? '' : 's'}`} />
               </>
             )}
             <Numero
@@ -169,25 +168,21 @@ function Agenda({ proximos, passados, matriculas }: { proximos: Evento[]; passad
         </div>
       )}
 
-      {porMes(passados, (e) => e.inicio).map(([mes, evs]) => {
-        const comValor = evs.filter((e) => e.valor !== null);
-        return (
-          <div key={mes}>
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <p className="ds-annot uppercase">{mesDe(mes)}</p>
-              <p className="ds-annot tabular-nums">
-                {evs.length} {evs.length === 1 ? 'horário' : 'horários'}
-                {comValor.length > 0 && ` · ${brl(comValor.reduce((s, e) => s + Number(e.valor), 0))}`}
-              </p>
-            </div>
-            <ul className="divide-y divide-ds-line border-y border-ds-line">
-              {evs.map((e) => (
-                <LinhaEvento key={e.id} e={e} />
-              ))}
-            </ul>
+      {porMes(passados, (e) => e.inicio).map(([mes, evs]) => (
+        <div key={mes}>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <p className="ds-annot uppercase">{mesDe(mes)}</p>
+            <p className="ds-annot tabular-nums">
+              {evs.length} {evs.length === 1 ? 'horário' : 'horários'}
+            </p>
           </div>
-        );
-      })}
+          <ul className="divide-y divide-ds-line border-y border-ds-line">
+            {evs.map((e) => (
+              <LinhaEvento key={e.id} e={e} />
+            ))}
+          </ul>
+        </div>
+      ))}
 
       {!proximos.length && !passados.length && !matriculas.length && <p className="text-sm text-ds-subtle">Nenhum horário ainda.</p>}
     </div>
@@ -301,7 +296,9 @@ function Financeiro({ lancamentos }: { lancamentos: Lanc[] }) {
         <div key={mes}>
           <div className="mb-3 flex items-baseline justify-between gap-2">
             <p className="ds-annot uppercase">{mesDe(mes)}</p>
-            <p className="ds-annot tabular-nums">{brl(soma(ls), true)}</p>
+            {ls.some((l) => l.status !== 'pago') && (
+              <p className="ds-annot tabular-nums">{brl(soma(ls.filter((l) => l.status !== 'pago')), true)} a pagar</p>
+            )}
           </div>
           <ul className="divide-y divide-ds-line border-y border-ds-line">
             {ls.map((l) => {
