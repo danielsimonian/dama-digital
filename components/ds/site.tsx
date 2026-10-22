@@ -231,7 +231,7 @@ export function Hero() {
 const FOOTER_COLS = [
   { title: 'Divisões', links: [['DAMA Tech', '/tech'], ['DAMA Sports', '/sports'], ['DAMA Studio', '/studio'], ['Artistas', '/studio/artistas']] },
   { title: 'Torneios', links: [['6º Open SPFC', '/sports/6o-open-spfc'], ['Seletiva Pan-Americano', '/sports/seletiva-pan-americano'], ['Open Santos ASSESP', '/sports/open-santos-assesp']] },
-  { title: 'Labs', links: [['Poker Pay', '/labs/poker-pay'], ['Fidelidade Digital', '/labs/fidelidade']] },
+  { title: 'Labs', links: [['Todos os Labs', '/labs'], ['Poker Pay', '/labs/poker-pay'], ['Fidelidade Digital', '/labs/fidelidade']] },
 ] as const;
 
 export function SiteFooter() {
